@@ -222,7 +222,7 @@ CREATE TABLE sys_tenant
     tenant_id             nvarchar(20)                    NOT NULL,
     contact_user_name     nvarchar(20)                    NULL,
     contact_phone         nvarchar(20)                    NULL,
-    company_name          nvarchar(50)                    NULL,
+    company_name          nvarchar(30)                    NULL,
     license_number        nvarchar(30)                    NULL,
     address               nvarchar(200)                   NULL,
     intro                 nvarchar(200)                   NULL,
