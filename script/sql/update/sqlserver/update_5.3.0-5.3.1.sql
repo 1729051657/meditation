@@ -7,3 +7,12 @@ EXEC sp_addextendedproperty
 'TABLE', N'flow_node',
 'COLUMN', N'ext'
 GO
+
+ALTER TABLE sys_oss ADD ext1 nvarchar(255) NULL;
+
+EXEC sp_addextendedproperty
+'MS_Description', N'扩展属性',
+'SCHEMA', N'dbo',
+'TABLE', N'sys_oss',
+'COLUMN', N'ext1'
+GO
