@@ -8,7 +8,7 @@ EXEC sp_addextendedproperty
 'COLUMN', N'ext'
 GO
 
-ALTER TABLE sys_oss ADD ext1 nvarchar(255) NULL;
+ALTER TABLE sys_oss ADD ext1 nvarchar(500) NULL;
 
 EXEC sp_addextendedproperty
 'MS_Description', N'扩展属性',
