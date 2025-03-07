@@ -17,6 +17,7 @@ import org.dromara.common.core.constant.TenantConstants;
 import org.dromara.common.core.domain.dto.PostDTO;
 import org.dromara.common.core.domain.dto.RoleDTO;
 import org.dromara.common.core.domain.model.LoginUser;
+import org.dromara.common.core.domain.model.XcxLoginUser;
 import org.dromara.common.core.enums.LoginType;
 import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.exception.user.UserException;
@@ -109,7 +110,7 @@ public class SysLoginService {
      */
     public void logout() {
         try {
-            LoginUser loginUser = LoginHelper.getLoginUser();
+            XcxLoginUser loginUser = LoginHelper.getLoginUser();
             if (ObjectUtil.isNull(loginUser)) {
                 return;
             }
