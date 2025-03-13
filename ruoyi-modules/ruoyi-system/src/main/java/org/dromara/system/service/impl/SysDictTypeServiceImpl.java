@@ -1,5 +1,6 @@
 package org.dromara.system.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -8,6 +9,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.dromara.common.core.constant.CacheNames;
+import org.dromara.common.core.domain.dto.DictDataDTO;
+import org.dromara.common.core.domain.dto.DictTypeDTO;
 import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.service.DictService;
 import org.dromara.common.core.utils.MapstructUtils;
@@ -121,6 +124,7 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService, DictService 
      * @param dictType 字典类型
      * @return 字典类型
      */
+    @Cacheable(cacheNames = CacheNames.SYS_DICT_TYPE, key = "#dictType")
     @Override
     public SysDictTypeVo selectDictTypeByType(String dictType) {
         return baseMapper.selectVoOne(new LambdaQueryWrapper<SysDictType>().eq(SysDictType::getDictType, dictType));
@@ -140,6 +144,7 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService, DictService 
                 throw new ServiceException(String.format("%1$s已分配,不能删除", dictType.getDictName()));
             }
             CacheUtils.evict(CacheNames.SYS_DICT, dictType.getDictType());
+            CacheUtils.evict(CacheNames.SYS_DICT_TYPE, dictType.getDictType());
         }
         baseMapper.deleteByIds(Arrays.asList(dictIds));
     }
@@ -150,6 +155,7 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService, DictService 
     @Override
     public void resetDictCache() {
         CacheUtils.clear(CacheNames.SYS_DICT);
+        CacheUtils.clear(CacheNames.SYS_DICT_TYPE);
     }
 
     /**
@@ -188,6 +194,7 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService, DictService 
         int row = baseMapper.updateById(dict);
         if (row > 0) {
             CacheUtils.evict(CacheNames.SYS_DICT, oldDict.getDictType());
+            CacheUtils.evict(CacheNames.SYS_DICT_TYPE, oldDict.getDictType());
             return dictDataMapper.selectDictDataByType(dict.getDictType());
         }
         throw new ServiceException("操作失败");
@@ -249,10 +256,40 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService, DictService 
         }
     }
 
+    /**
+     * 获取字典下所有的字典值与标签
+     *
+     * @param dictType 字典类型
+     * @return dictValue为key，dictLabel为值组成的Map
+     */
     @Override
     public Map<String, String> getAllDictByDictType(String dictType) {
-        List<SysDictDataVo> list = selectDictDataByType(dictType);
+        List<SysDictDataVo> list = SpringUtils.getAopProxy(this).selectDictDataByType(dictType);
         return StreamUtils.toMap(list, SysDictDataVo::getDictValue, SysDictDataVo::getDictLabel);
+    }
+
+    /**
+     * 根据字典类型查询详细信息
+     *
+     * @param dictType 字典类型
+     * @return 字典类型详细信息
+     */
+    @Override
+    public DictTypeDTO getDictType(String dictType) {
+        SysDictTypeVo vo = SpringUtils.getAopProxy(this).selectDictTypeByType(dictType);
+        return BeanUtil.toBean(vo, DictTypeDTO.class);
+    }
+
+    /**
+     * 根据字典类型查询字典数据列表
+     *
+     * @param dictType 字典类型
+     * @return 字典数据列表
+     */
+    @Override
+    public List<DictDataDTO> getDictData(String dictType) {
+        List<SysDictDataVo> list = SpringUtils.getAopProxy(this).selectDictDataByType(dictType);
+        return BeanUtil.copyToList(list, DictDataDTO.class);
     }
 
 }
