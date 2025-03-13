@@ -87,6 +87,6 @@ public class SysDept extends TenantEntity {
      * 子部门
      */
     @TableField(exist = false)
-    private List<SysMenu> children = new ArrayList<>();
+    private List<SysDept> children = new ArrayList<>();
 
 }
