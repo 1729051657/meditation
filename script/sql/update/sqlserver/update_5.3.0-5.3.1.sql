@@ -8,6 +8,9 @@ EXEC sp_addextendedproperty
 'COLUMN', N'ext'
 GO
 
+CREATE NONCLUSTERED INDEX user_associated_idx ON flow_user (associated ASC)
+GO
+
 ALTER TABLE sys_oss ADD ext1 nvarchar(500) NULL;
 
 EXEC sp_addextendedproperty
