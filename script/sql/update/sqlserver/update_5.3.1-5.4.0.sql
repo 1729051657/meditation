@@ -1,14 +1,6 @@
-IF ((SELECT COUNT(*) FROM ::fn_listextendedproperty('MS_Description',
-'SCHEMA', N'dbo',
-'TABLE', N'flow_task',
-'COLUMN', N'flow_status')) > 0)
-  EXEC sp_updateextendedproperty
-'MS_Description', N'流程状态（0待提交 1审批中 2审批通过 4终止 5作废 6撤销 8已完成 9已退回 10失效 11拿回）',
-'SCHEMA', N'dbo',
-'TABLE', N'flow_task',
-'COLUMN', N'flow_status'
-ELSE
-  EXEC sp_addextendedproperty
+ALTER TABLE flow_task ADD flow_status nvarchar(20) NULL;
+
+EXEC sp_addextendedproperty
 'MS_Description', N'流程状态（0待提交 1审批中 2审批通过 4终止 5作废 6撤销 8已完成 9已退回 10失效 11拿回）',
 'SCHEMA', N'dbo',
 'TABLE', N'flow_task',
