@@ -51,8 +51,8 @@ public class SysMenuController extends BaseController {
      * 获取菜单列表
      */
     @SaCheckRole(value = {
-            TenantConstants.SUPER_ADMIN_ROLE_KEY,
-            TenantConstants.TENANT_ADMIN_ROLE_KEY
+        TenantConstants.SUPER_ADMIN_ROLE_KEY,
+        TenantConstants.TENANT_ADMIN_ROLE_KEY
     }, mode = SaMode.OR)
     @SaCheckPermission("system:menu:list")
     @GetMapping("/list")
@@ -67,8 +67,8 @@ public class SysMenuController extends BaseController {
      * @param menuId 菜单ID
      */
     @SaCheckRole(value = {
-            TenantConstants.SUPER_ADMIN_ROLE_KEY,
-            TenantConstants.TENANT_ADMIN_ROLE_KEY
+        TenantConstants.SUPER_ADMIN_ROLE_KEY,
+        TenantConstants.TENANT_ADMIN_ROLE_KEY
     }, mode = SaMode.OR)
     @SaCheckPermission("system:menu:query")
     @GetMapping(value = "/{menuId}")
@@ -171,6 +171,24 @@ public class SysMenuController extends BaseController {
     }
 
     public record MenuTreeSelectVo(List<Long> checkedKeys, List<Tree<Long>> menus) {
+    }
+
+    /**
+     * 批量级联删除菜单
+     *
+     * @param menuIds 菜单ID串
+     */
+    @SaCheckRole(TenantConstants.SUPER_ADMIN_ROLE_KEY)
+    @SaCheckPermission("system:menu:remove")
+    @Log(title = "菜单管理", businessType = BusinessType.DELETE)
+    @DeleteMapping("/cascade/{menuIds}")
+    public R<Void> remove(@PathVariable("menuIds") Long[] menuIds) {
+        List<Long> menuIdList = List.of(menuIds);
+        if (menuService.hasChildByMenuId(menuIdList)) {
+            return R.warn("存在子菜单,不允许删除");
+        }
+        menuService.deleteMenuById(menuIdList);
+        return R.ok();
     }
 
 }
