@@ -2494,6 +2494,14 @@ INSERT sys_role_menu VALUES (3, 118);
 GO
 INSERT sys_role_menu VALUES (3, 123);
 GO
+INSERT sys_role_menu VALUES (3, 130);
+GO
+INSERT sys_role_menu VALUES (3, 131);
+GO
+INSERT sys_role_menu VALUES (3, 132);
+GO
+INSERT sys_role_menu VALUES (3, 133);
+GO
 INSERT sys_role_menu VALUES (3, 500);
 GO
 INSERT sys_role_menu VALUES (3, 501);
@@ -2661,6 +2669,8 @@ GO
 INSERT sys_role_menu VALUES (3, 11642);
 GO
 INSERT sys_role_menu VALUES (3, 11643);
+GO
+INSERT sys_role_menu VALUES (3, 11701);
 GO
 INSERT sys_role_menu VALUES (4, 5);
 GO
