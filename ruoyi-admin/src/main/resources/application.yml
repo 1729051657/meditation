@@ -21,8 +21,8 @@ server:
       worker: 256
 
 captcha:
+  # 是否启用验证码校验
   enable: true
-  # 页面 <参数设置> 可开启关闭 验证码校验
   # 验证码类型 math 数组计算 char 字符验证
   type: MATH
   # line 线段干扰 circle 圆圈干扰 shear 扭曲干扰
@@ -110,7 +110,7 @@ security:
     - /error
     - /*/api-docs
     - /*/api-docs/**
-    - /warm-flow-ui/token-name
+    - /warm-flow-ui/config
 
 # 多租户配置
 tenant:
@@ -177,9 +177,6 @@ springdoc:
   api-docs:
     # 是否开启接口文档
     enabled: true
-#  swagger-ui:
-#    # 持久化认证数据
-#    persistAuthorization: true
   info:
     # 标题
     title: '标题：RuoYi-Vue-Plus多租户管理系统_接口文档'

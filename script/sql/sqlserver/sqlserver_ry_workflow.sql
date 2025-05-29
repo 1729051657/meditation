@@ -1,3 +1,6 @@
+-- ----------------------------
+-- 0、warm-flow-all.sql，地址：https://gitee.com/dromara/warm-flow/blob/master/sql/sqlserver/sqlserver.sql
+-- ----------------------------
 CREATE TABLE flow_definition (
     id bigint NOT NULL,
     flow_code nvarchar(40) NOT NULL,
@@ -523,7 +526,7 @@ EXEC sp_addextendedproperty
 GO
 
 EXEC sp_addextendedproperty
-'MS_Description', N'流程状态（0待提交 1审批中 2 审批通过 3自动通过 4终止 5作废 6撤销 7取回  8已完成 9已退回 10失效）',
+'MS_Description', N'流程状态（0待提交 1审批中 2审批通过 4终止 5作废 6撤销 8已完成 9已退回 10失效 11拿回）',
 'SCHEMA', N'dbo',
 'TABLE', N'flow_instance',
 'COLUMN', N'flow_status'
@@ -598,6 +601,7 @@ CREATE TABLE flow_task (
     node_code nvarchar(100) NOT NULL,
     node_name nvarchar(100) NULL,
     node_type tinyint NOT NULL,
+    flow_status nvarchar(20) NOT NULL,
     form_custom nchar(1) DEFAULT('N') NULL,
     form_path nvarchar(100) NULL,
     create_time datetime2(7)  NULL,
@@ -651,6 +655,13 @@ EXEC sp_addextendedproperty
 'SCHEMA', N'dbo',
 'TABLE', N'flow_task',
 'COLUMN', N'node_type'
+GO
+
+EXEC sp_addextendedproperty
+'MS_Description', N'流程状态（0待提交 1审批中 2审批通过 4终止 5作废 6撤销 8已完成 9已退回 10失效 11拿回）',
+'SCHEMA', N'dbo',
+'TABLE', N'flow_task',
+'COLUMN', N'flow_status'
 GO
 
 EXEC sp_addextendedproperty
@@ -824,7 +835,7 @@ EXEC sp_addextendedproperty
 GO
 
 EXEC sp_addextendedproperty
-'MS_Description', N'流程状态（1审批中 2 审批通过 9已退回 10失效）',
+'MS_Description', N'流程状态（0待提交 1审批中 2审批通过 4终止 5作废 6撤销 8已完成 9已退回 10失效 11拿回）',
 'SCHEMA', N'dbo',
 'TABLE', N'flow_his_task',
 'COLUMN', N'flow_status'
@@ -1260,6 +1271,10 @@ GO
 INSERT sys_menu VALUES (11630, N'流程监控', 11616, 4, N'monitor', NULL, N'', 1, 0, N'M', N'0', N'0', N'', N'monitor', 103, 1, GETDATE(), NULL, NULL, N'');
 GO
 INSERT sys_menu VALUES (11631, N'待办任务', 11630, 2, N'allTaskWaiting', N'workflow/task/allTaskWaiting', N'', 1, 1, N'C', N'0', N'0', N'', N'waiting', 103, 1, GETDATE(), NULL, NULL, N'');
+GO
+INSERT sys_menu VALUES (11700, N'流程设计', 11616, 5, N'design/index',   N'workflow/processDefinition/design', N'', 1, 1, N'C', N'1', N'0', N'workflow:leave:edit', N'#', 103, 1, GETDATE(), NULL, NULL, N'');
+GO
+INSERT sys_menu VALUES (11701, N'请假申请', 11616, 6, N'leaveEdit/index', N'workflow/leave/leaveEdit', N'', 1, 1, N'C', N'1', N'0', N'workflow:leave:edit', N'#', 103, 1, GETDATE(), NULL, NULL, N'');
 GO
 
 -- 流程分类管理相关按钮
