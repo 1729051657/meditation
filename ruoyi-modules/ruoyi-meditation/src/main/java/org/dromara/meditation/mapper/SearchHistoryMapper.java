@@ -1,0 +1,15 @@
+package org.dromara.meditation.mapper;
+
+import org.dromara.meditation.domain.SearchHistory;
+import org.dromara.meditation.domain.vo.SearchHistoryVo;
+import org.dromara.common.mybatis.core.mapper.BaseMapperPlus;
+
+/**
+ * 搜索历史Mapper接口
+ *
+ * @author kdc
+ * @date 2025-08-14
+ */
+public interface SearchHistoryMapper extends BaseMapperPlus<SearchHistory, SearchHistoryVo> {
+
+}
