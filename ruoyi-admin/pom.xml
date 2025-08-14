@@ -84,7 +84,7 @@
         <!--  demo模块  -->
         <dependency>
             <groupId>org.dromara</groupId>
-            <artifactId>ruoyi-demo</artifactId>
+            <artifactId>ruoyi-meditation</artifactId>
         </dependency>
 
         <!--  工作流模块  -->

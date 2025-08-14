@@ -346,7 +346,7 @@
 
             <dependency>
                 <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-demo</artifactId>
+                <artifactId>ruoyi-meditation</artifactId>
                 <version>${revision}</version>
             </dependency>
 
