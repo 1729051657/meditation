@@ -6,17 +6,17 @@
 const envConfig = {
   // 开发环境
   development: {
-    baseUrl: 'http://localhost:8080',
+    baseUrl: 'http://localhost:8080/meditation',
     debug: true
   },
   // 测试环境
   test: {
-    baseUrl: 'https://test-api.example.com',
+    baseUrl: 'https://test-api.example.com/meditation',
     debug: true
   },
   // 生产环境
   production: {
-    baseUrl: 'https://api.example.com',
+    baseUrl: 'https://api.example.com/meditation',
     debug: false
   }
 }
@@ -36,7 +36,7 @@ export const debug = config.debug
 // 其他配置
 export const appConfig = {
   // 应用名称
-  appName: '校园安全巡检',
+  appName: '冥想空间',
   
   // 版本号
   version: '1.0.0',
@@ -56,8 +56,8 @@ export const appConfig = {
   // 支持的图片格式
   imageTypes: ['jpg', 'jpeg', 'png', 'gif'],
   
-  // 微信小程序AppID（商户端）
-  wechatAppId: 'wx03df4b0ec47009cd', // 请替换为实际的商户端小程序AppID
+  // 微信小程序AppID
+  wechatAppId: 'wx_meditation_app', // 请替换为实际的冥想小程序AppID
   
   // 微信小程序Secret（仅在后端配置，前端不需要）
   // wechatAppSecret: 'your_app_secret'

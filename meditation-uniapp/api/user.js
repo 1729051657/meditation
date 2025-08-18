@@ -5,26 +5,29 @@ import { get, post, put, del } from '@/utils/request'
  */
 
 // 获取用户信息
-export const getUserInfo = () => {
-  return get('/system/user/profile', {}, false)
+export const getUserProfile = () => {
+  return get('/api/user/profile', {}, false)
 }
 
 // 更新用户信息
 export const updateUserInfo = (data) => {
-  return put('/system/user/profile', data, '更新中...')
+  return put('/api/user/profile', data, '更新中...')
 }
 
 // 修改密码
 export const changePassword = (data) => {
-  return put('/system/user/profile/password', data, '修改中...')
+  return put('/api/user/password', data, '修改中...')
 }
 
 // 更新头像
 export const updateAvatar = (data) => {
-  return post('/system/user/profile/avatar', data, '上传中...')
+  return post('/api/user/avatar', data, '上传中...')
 }
 
-// 提交实名认证
-export const submitRealNameAuth = (data) => {
-  return post('/system/user/realNameAuth', data, '认证中...')
+// 获取用户统计信息
+export const getUserStats = () => {
+  return get('/api/user/stats', {}, false)
 }
+
+// 兼容旧接口名称
+export const getUserInfo = getUserProfile

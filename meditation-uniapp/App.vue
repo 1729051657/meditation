@@ -13,7 +13,7 @@
 			...mapState('user', ['userInfo', 'token'])
 		},
 		onLaunch: function() {
-			console.log('校园安全巡检启动')
+			console.log('冥想空间应用启动')
 			
 			// 初始化应用
 			this.initApplication()
