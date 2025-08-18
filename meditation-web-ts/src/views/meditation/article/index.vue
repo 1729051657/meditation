@@ -7,8 +7,11 @@
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="封面" prop="cover">
-              <el-input v-model="queryParams.cover" placeholder="请输入封面" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+                <el-option label="启用" value="0" />
+                <el-option label="停用" value="1" />
+              </el-select>
             </el-form-item>
             <el-form-item label="摘要" prop="summary">
               <el-input v-model="queryParams.summary" placeholder="请输入摘要" clearable @keyup.enter="handleQuery" />
@@ -71,14 +74,19 @@
             <image-preview :src="scope.row.cover" :width="50" :height="50"/>
           </template>
         </el-table-column>
-        <el-table-column label="摘要" align="center" prop="summary" />
-        <el-table-column label="内容" align="center" prop="content" :show-overflow-tooltip="true" />
+        <el-table-column label="摘要" align="center" prop="summary" :show-overflow-tooltip="true" />
         <el-table-column label="作者" align="center" prop="authorId">
           <template #default="scope">
             <span>{{ userList.find(u => u.userId == scope.row.authorId)?.nickName || scope.row.authorId }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="发布时间" align="center" prop="publishTime" width="180">
           <template #default="scope">
             <span>{{ parseTime(scope.row.publishTime, '{y}-{m}-{d}') }}</span>
@@ -101,7 +109,7 @@
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </el-card>
     <!-- 添加或修改冥想知识文章对话框 -->
-    <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
+    <el-dialog :title="dialog.title" v-model="dialog.visible" width="800px" append-to-body>
       <el-form ref="articleFormRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
@@ -135,6 +143,12 @@
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
           <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />

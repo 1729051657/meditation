@@ -66,10 +66,24 @@
             <image-preview :src="scope.row.imageUrl" :width="50" :height="50"/>
           </template>
         </el-table-column>
-        <el-table-column label="链接类型" align="center" prop="linkType" />
-        <el-table-column label="链接目标" align="center" prop="linkTarget" />
+        <el-table-column label="链接类型" align="center" prop="linkType">
+          <template #default="scope">
+            <el-tag v-if="scope.row.linkType === 'none'">无链接</el-tag>
+            <el-tag v-else-if="scope.row.linkType === 'url'" type="info">外部链接</el-tag>
+            <el-tag v-else-if="scope.row.linkType === 'series'" type="success">系列详情</el-tag>
+            <el-tag v-else-if="scope.row.linkType === 'article'" type="warning">文章详情</el-tag>
+            <el-tag v-else>{{ scope.row.linkType }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="链接目标" align="center" prop="linkTarget" :show-overflow-tooltip="true" />
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="生效时间" align="center" prop="startTime" width="180">
           <template #default="scope">
             <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}</span>
@@ -101,7 +115,15 @@
           <el-input v-model="form.page" placeholder="请输入所属页面" />
         </el-form-item>
         <el-form-item label="图片" prop="image">
-          <image-upload v-model="form.image"/>
+          <image-upload v-model="form.image" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="链接类型" prop="linkType">
+          <el-select v-model="form.linkType" placeholder="请选择链接类型">
+            <el-option label="无链接" value="none" />
+            <el-option label="外部链接" value="url" />
+            <el-option label="系列详情" value="series" />
+            <el-option label="文章详情" value="article" />
+          </el-select>
         </el-form-item>
         <el-form-item label="链接目标" prop="linkTarget">
           <el-input v-model="form.linkTarget" placeholder="请输入链接目标" />
@@ -124,6 +146,12 @@
             value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="请选择失效时间">
           </el-date-picker>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
