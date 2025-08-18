@@ -13,8 +13,11 @@
             <el-form-item label="分类编码" prop="code">
               <el-input v-model="queryParams.code" placeholder="请输入分类编码" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="图标" prop="icon">
-              <el-input v-model="queryParams.icon" placeholder="请输入图标" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+                <el-option label="启用" value="0" />
+                <el-option label="停用" value="1" />
+              </el-select>
             </el-form-item>
             <el-form-item label="简介" prop="description">
               <el-input v-model="queryParams.description" placeholder="请输入简介" clearable @keyup.enter="handleQuery" />
@@ -55,10 +58,20 @@
         <el-table-column label="父分类" align="center" prop="parentId" />
         <el-table-column label="分类名称" align="center" prop="name" />
         <el-table-column label="分类编码" align="center" prop="code" />
-        <el-table-column label="图标" align="center" prop="icon" />
-        <el-table-column label="简介" align="center" prop="description" />
+        <el-table-column label="图标" align="center" prop="icon">
+          <template #default="scope">
+            <image-preview :src="scope.row.icon" :width="30" :height="30"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="简介" align="center" prop="description" :show-overflow-tooltip="true" />
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
@@ -102,6 +115,12 @@
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
           <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />

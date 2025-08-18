@@ -61,7 +61,14 @@
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="推荐位ID" align="center" prop="slotId" />
-        <el-table-column label="内容类型" align="center" prop="contentType" />
+        <el-table-column label="内容类型" align="center" prop="contentType">
+          <template #default="scope">
+            <el-tag v-if="scope.row.contentType === 'series'" type="success">系列</el-tag>
+            <el-tag v-else-if="scope.row.contentType === 'article'" type="warning">文章</el-tag>
+            <el-tag v-else-if="scope.row.contentType === 'track'" type="info">音频</el-tag>
+            <el-tag v-else>{{ scope.row.contentType }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="内容ID" align="center" prop="contentId" />
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
         <el-table-column label="生效时间" align="center" prop="startTime" width="180">
@@ -74,7 +81,13 @@
             <span>{{ parseTime(scope.row.endTime, '{y}-{m}-{d}') }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
@@ -94,6 +107,13 @@
       <el-form ref="recommendItemFormRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="推荐位ID" prop="slotId">
           <el-input v-model="form.slotId" placeholder="请输入推荐位ID" />
+        </el-form-item>
+        <el-form-item label="内容类型" prop="contentType">
+          <el-select v-model="form.contentType" placeholder="请选择内容类型">
+            <el-option label="系列" value="series" />
+            <el-option label="文章" value="article" />
+            <el-option label="音频" value="track" />
+          </el-select>
         </el-form-item>
         <el-form-item label="内容ID" prop="contentId">
           <el-input v-model="form.contentId" placeholder="请输入内容ID" />
@@ -116,6 +136,12 @@
             value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="请选择失效时间">
           </el-date-picker>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
