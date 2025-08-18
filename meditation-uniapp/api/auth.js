@@ -19,12 +19,13 @@ export const inspectionWechatLogin = (data) => {
     clientId: appConfig.wechatAppId,
     grantType: 'xcx',
     tenantId: data.tenantId || '000000',
-    deptId: data.deptId
+    encryptedData: data.encryptedData,
+    iv: data.iv
   }
   return post('/xcx/auth/login', loginData, '验证登录中...')
 }
 
-// 登出（使用小程序专用接口）
+// 登出
 export const logout = () => {
   return post('/xcx/auth/logout', {}, '退出中...')
 }
