@@ -42,8 +42,20 @@
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="标签名称" align="center" prop="name" />
-        <el-table-column label="标签类型" align="center" prop="type" />
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="标签类型" align="center" prop="type">
+          <template #default="scope">
+            <el-tag v-if="scope.row.type === 'series'" type="success">系列标签</el-tag>
+            <el-tag v-else-if="scope.row.type === 'article'" type="warning">文章标签</el-tag>
+            <el-tag v-else>{{ scope.row.type }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="排序" align="center" prop="orderNum" />
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -66,8 +78,20 @@
         <el-form-item label="标签名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入标签名称" />
         </el-form-item>
+        <el-form-item label="标签类型" prop="type">
+          <el-select v-model="form.type" placeholder="请选择标签类型">
+            <el-option label="系列标签" value="series" />
+            <el-option label="文章标签" value="article" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="排序" prop="orderNum">
           <el-input v-model="form.orderNum" placeholder="请输入排序" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />

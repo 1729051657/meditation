@@ -27,12 +27,7 @@
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="封面" prop="cover">
-              <el-input v-model="queryParams.cover" placeholder="请输入封面" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="音频文件" prop="audio">
-              <el-input v-model="queryParams.audio" placeholder="请输入音频文件" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
+
             <el-form-item label="时长" prop="durationSec">
               <el-input v-model="queryParams.durationSec" placeholder="请输入时长" clearable @keyup.enter="handleQuery" />
             </el-form-item>
@@ -43,7 +38,10 @@
               <el-input v-model="queryParams.orderIndex" placeholder="请输入在系列内排序" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="是否免费" prop="isFree">
-              <el-input v-model="queryParams.isFree" placeholder="请输入是否免费" clearable @keyup.enter="handleQuery" />
+              <el-select v-model="queryParams.isFree" placeholder="请选择" clearable>
+                <el-option label="免费" :value="1" />
+                <el-option label="付费" :value="0" />
+              </el-select>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -87,13 +85,28 @@
           </template>
         </el-table-column>
         <el-table-column label="标题" align="center" prop="title" />
-        <el-table-column label="封面" align="center" prop="cover" />
-        <el-table-column label="音频文件" align="center" prop="audio" />
+        <el-table-column label="封面" align="center" prop="cover">
+          <template #default="scope">
+            <image-preview :src="scope.row.cover" :width="50" :height="50"/>
+          </template>
+        </el-table-column>
         <el-table-column label="时长" align="center" prop="durationSec" />
-        <el-table-column label="简介" align="center" prop="intro" />
+        <el-table-column label="简介" align="center" prop="intro" :show-overflow-tooltip="true" />
         <el-table-column label="在系列内排序" align="center" prop="orderIndex" />
-        <el-table-column label="是否免费" align="center" prop="isFree" />
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="是否免费" align="center" prop="isFree">
+          <template #default="scope">
+            <el-tag :type="scope.row.isFree === 1 ? 'success' : 'warning'">
+              {{ scope.row.isFree === 1 ? '免费' : '付费' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
@@ -110,7 +123,7 @@
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </el-card>
     <!-- 添加或修改冥想单集对话框 -->
-    <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
+    <el-dialog :title="dialog.title" v-model="dialog.visible" width="600px" append-to-body>
       <el-form ref="trackFormRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="所属系列" prop="seriesId">
           <el-select v-model="form.seriesId" placeholder="请选择系列">
@@ -151,7 +164,19 @@
           <el-input v-model="form.orderIndex" placeholder="请输入在系列内排序" />
         </el-form-item>
         <el-form-item label="是否免费" prop="isFree">
-          <el-input v-model="form.isFree" placeholder="请输入是否免费" />
+          <el-switch
+            v-model="form.isFree"
+            :active-value="1"
+            :inactive-value="0"
+            active-text="免费"
+            inactive-text="付费"
+          />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />

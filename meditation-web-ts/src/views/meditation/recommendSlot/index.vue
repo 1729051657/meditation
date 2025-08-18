@@ -11,7 +11,12 @@
               <el-input v-model="queryParams.name" placeholder="请输入推荐位名称" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="所属页面" prop="page">
-              <el-input v-model="queryParams.page" placeholder="请输入所属页面" clearable @keyup.enter="handleQuery" />
+              <el-select v-model="queryParams.page" placeholder="请选择页面" clearable>
+                <el-option label="首页" value="home" />
+                <el-option label="发现页" value="discover" />
+                <el-option label="分类页" value="category" />
+                <el-option label="我的页" value="mine" />
+              </el-select>
             </el-form-item>
             <el-form-item label="显示顺序" prop="orderNum">
               <el-input v-model="queryParams.orderNum" placeholder="请输入显示顺序" clearable @keyup.enter="handleQuery" />
@@ -49,8 +54,22 @@
         <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="推荐位编码" align="center" prop="code" />
         <el-table-column label="推荐位名称" align="center" prop="name" />
-        <el-table-column label="所属页面" align="center" prop="page" />
-        <el-table-column label="状态" align="center" prop="status" />
+        <el-table-column label="所属页面" align="center" prop="page">
+          <template #default="scope">
+            <el-tag v-if="scope.row.page === 'home'" type="primary">首页</el-tag>
+            <el-tag v-else-if="scope.row.page === 'discover'" type="success">发现页</el-tag>
+            <el-tag v-else-if="scope.row.page === 'category'" type="warning">分类页</el-tag>
+            <el-tag v-else-if="scope.row.page === 'mine'" type="info">我的页</el-tag>
+            <el-tag v-else>{{ scope.row.page }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" align="center" prop="status">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
+              {{ scope.row.status === '0' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -77,10 +96,21 @@
           <el-input v-model="form.name" placeholder="请输入推荐位名称" />
         </el-form-item>
         <el-form-item label="所属页面" prop="page">
-          <el-input v-model="form.page" placeholder="请输入所属页面" />
+          <el-select v-model="form.page" placeholder="请选择页面">
+            <el-option label="首页" value="home" />
+            <el-option label="发现页" value="discover" />
+            <el-option label="分类页" value="category" />
+            <el-option label="我的页" value="mine" />
+          </el-select>
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
           <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio value="0">启用</el-radio>
+            <el-radio value="1">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
