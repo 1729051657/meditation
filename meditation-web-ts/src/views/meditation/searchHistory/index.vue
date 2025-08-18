@@ -51,7 +51,7 @@
 
       <el-table v-loading="loading" border :data="searchHistoryList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="用户ID" align="center" prop="userId" />
         <el-table-column label="搜索关键字" align="center" prop="keyword" />
         <el-table-column label="搜索次数" align="center" prop="times" />

@@ -40,7 +40,7 @@
 
       <el-table v-loading="loading" border :data="contentTagList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="内容类型" align="center" prop="contentType" />
         <el-table-column label="内容ID" align="center" prop="contentId" />
         <el-table-column label="标签ID" align="center" prop="tagId" />

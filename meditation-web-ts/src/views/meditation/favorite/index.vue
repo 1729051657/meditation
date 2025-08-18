@@ -40,7 +40,7 @@
 
       <el-table v-loading="loading" border :data="favoriteList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="用户ID" align="center" prop="userId" />
         <el-table-column label="目标类型" align="center" prop="targetType" />
         <el-table-column label="目标ID" align="center" prop="targetId" />
