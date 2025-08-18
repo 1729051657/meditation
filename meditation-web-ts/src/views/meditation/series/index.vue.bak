@@ -5,14 +5,7 @@
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
             <el-form-item label="分类" prop="categoryId">
-              <el-select v-model="queryParams.categoryId" placeholder="请选择分类" clearable>
-                <el-option
-                  v-for="category in categoryList"
-                  :key="category.id"
-                  :label="category.name"
-                  :value="category.id"
-                />
-              </el-select>
+              <el-input v-model="queryParams.categoryId" placeholder="请输入分类" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
@@ -80,11 +73,7 @@
       <el-table v-loading="loading" border :data="seriesList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="主键" align="center" prop="id" v-if="false" />
-        <el-table-column label="分类" align="center" prop="categoryId">
-          <template #default="scope">
-            <span>{{ categoryList.find(c => c.id == scope.row.categoryId)?.name || scope.row.categoryId }}</span>
-          </template>
-        </el-table-column>
+        <el-table-column label="分类" align="center" prop="categoryId" />
         <el-table-column label="标题" align="center" prop="title" />
         <el-table-column label="副标题" align="center" prop="subtitle" />
         <el-table-column label="封面" align="center" prop="cover" />
@@ -119,14 +108,7 @@
     <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
       <el-form ref="seriesFormRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择分类">
-            <el-option
-              v-for="category in categoryList"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
-          </el-select>
+          <el-input v-model="form.categoryId" placeholder="请输入分类" />
         </el-form-item>
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
@@ -186,7 +168,6 @@ import { SeriesVO, SeriesQuery, SeriesForm } from '@/api/meditation/series/types
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
 const seriesList = ref<SeriesVO[]>([]);
-const categoryList = ref<CategoryVO[]>([]);
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -290,12 +271,6 @@ const getList = async () => {
   loading.value = false;
 }
 
-/** 获取分类列表 */
-const getCategoryList = async () => {
-  const res = await listCategory();
-  categoryList.value = res.data;
-}
-
 /** 取消按钮 */
 const cancel = () => {
   reset();
@@ -379,6 +354,5 @@ const handleExport = () => {
 
 onMounted(() => {
   getList();
-  getCategoryList();
 });
 </script>

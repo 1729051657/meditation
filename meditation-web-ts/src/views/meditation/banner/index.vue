@@ -59,9 +59,9 @@
 
       <el-table v-loading="loading" border :data="bannerList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="所属页面" align="center" prop="page" />
-        <el-table-column label="图片文件id" align="center" prop="imageUrl" width="100">
+        <el-table-column label="图片" align="center" prop="imageUrl" width="100">
           <template #default="scope">
             <image-preview :src="scope.row.imageUrl" :width="50" :height="50"/>
           </template>
@@ -100,7 +100,7 @@
         <el-form-item label="所属页面" prop="page">
           <el-input v-model="form.page" placeholder="请输入所属页面" />
         </el-form-item>
-        <el-form-item label="图片文件id" prop="image">
+        <el-form-item label="图片" prop="image">
           <image-upload v-model="form.image"/>
         </el-form-item>
         <el-form-item label="链接目标" prop="linkTarget">

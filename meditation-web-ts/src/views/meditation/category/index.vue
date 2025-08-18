@@ -4,8 +4,8 @@
       <div v-show="showSearch" class="mb-[10px]">
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-            <el-form-item label="父分类id" prop="parentId">
-              <el-input v-model="queryParams.parentId" placeholder="请输入父分类id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="父分类" prop="parentId">
+              <el-input v-model="queryParams.parentId" placeholder="请输入父分类" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="分类名称" prop="name">
               <el-input v-model="queryParams.name" placeholder="请输入分类名称" clearable @keyup.enter="handleQuery" />
@@ -13,8 +13,8 @@
             <el-form-item label="分类编码" prop="code">
               <el-input v-model="queryParams.code" placeholder="请输入分类编码" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="图标文件id" prop="icon">
-              <el-input v-model="queryParams.icon" placeholder="请输入图标文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="图标" prop="icon">
+              <el-input v-model="queryParams.icon" placeholder="请输入图标" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="简介" prop="description">
               <el-input v-model="queryParams.description" placeholder="请输入简介" clearable @keyup.enter="handleQuery" />
@@ -52,10 +52,10 @@
         :default-expand-all="isExpandAll"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
-        <el-table-column label="父分类id" align="center" prop="parentId" />
+        <el-table-column label="父分类" align="center" prop="parentId" />
         <el-table-column label="分类名称" align="center" prop="name" />
         <el-table-column label="分类编码" align="center" prop="code" />
-        <el-table-column label="图标文件id" align="center" prop="icon" />
+        <el-table-column label="图标" align="center" prop="icon" />
         <el-table-column label="简介" align="center" prop="description" />
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
         <el-table-column label="状态" align="center" prop="status" />
@@ -78,13 +78,13 @@
     <!-- 添加或修改冥想分类对话框 -->
     <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
       <el-form ref="categoryFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="父分类id" prop="parentId">
+        <el-form-item label="父分类" prop="parentId">
           <el-tree-select
             v-model="form.parentId"
             :data="categoryOptions"
             :props="{ value: 'id', label: 'name', children: 'children' }"
             value-key="id"
-            placeholder="请选择父分类id"
+            placeholder="请选择父分类"
             check-strictly
           />
         </el-form-item>
@@ -94,8 +94,8 @@
         <el-form-item label="分类编码" prop="code">
           <el-input v-model="form.code" placeholder="请输入分类编码" />
         </el-form-item>
-        <el-form-item label="图标文件id" prop="icon">
-          <el-input v-model="form.icon" placeholder="请输入图标文件id" />
+        <el-form-item label="图标" prop="icon">
+          <image-upload v-model="form.icon" :limit="1" />
         </el-form-item>
         <el-form-item label="简介" prop="description">
           <el-input v-model="form.description" placeholder="请输入简介" />
@@ -174,13 +174,13 @@ const data = reactive<PageData<CategoryForm, CategoryQuery>>({
   },
   rules: {
     parentId: [
-      { required: true, message: "父分类id不能为空", trigger: "blur" }
+      { required: true, message: "父分类不能为空", trigger: "blur" }
     ],
     code: [
       { required: true, message: "分类编码不能为空", trigger: "blur" }
     ],
     icon: [
-      { required: true, message: "图标文件id不能为空", trigger: "blur" }
+      { required: true, message: "图标不能为空", trigger: "blur" }
     ],
     description: [
       { required: true, message: "简介不能为空", trigger: "blur" }

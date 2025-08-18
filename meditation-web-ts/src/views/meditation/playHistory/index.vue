@@ -57,7 +57,7 @@
 
       <el-table v-loading="loading" border :data="playHistoryList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="用户ID" align="center" prop="userId" />
         <el-table-column label="单集ID" align="center" prop="trackId" />
         <el-table-column label="已播放时长" align="center" prop="progressSec" />

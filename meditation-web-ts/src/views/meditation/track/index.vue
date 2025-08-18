@@ -4,20 +4,34 @@
       <div v-show="showSearch" class="mb-[10px]">
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-            <el-form-item label="所属系列id" prop="seriesId">
-              <el-input v-model="queryParams.seriesId" placeholder="请输入所属系列id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="所属系列" prop="seriesId">
+              <el-select v-model="queryParams.seriesId" placeholder="请选择系列" clearable>
+                <el-option
+                  v-for="series in seriesList"
+                  :key="series.id"
+                  :label="series.title"
+                  :value="series.id"
+                />
+              </el-select>
             </el-form-item>
-            <el-form-item label="分类id" prop="categoryId">
-              <el-input v-model="queryParams.categoryId" placeholder="请输入分类id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="分类" prop="categoryId">
+              <el-select v-model="queryParams.categoryId" placeholder="请选择分类" clearable>
+                <el-option
+                  v-for="category in categoryList"
+                  :key="category.id"
+                  :label="category.name"
+                  :value="category.id"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="封面文件id" prop="cover">
-              <el-input v-model="queryParams.cover" placeholder="请输入封面文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="封面" prop="cover">
+              <el-input v-model="queryParams.cover" placeholder="请输入封面" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="音频文件id" prop="audio">
-              <el-input v-model="queryParams.audio" placeholder="请输入音频文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="音频文件" prop="audio">
+              <el-input v-model="queryParams.audio" placeholder="请输入音频文件" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="时长" prop="durationSec">
               <el-input v-model="queryParams.durationSec" placeholder="请输入时长" clearable @keyup.enter="handleQuery" />
@@ -61,12 +75,20 @@
 
       <el-table v-loading="loading" border :data="trackList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
-        <el-table-column label="所属系列id" align="center" prop="seriesId" />
-        <el-table-column label="分类id" align="center" prop="categoryId" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
+        <el-table-column label="所属系列" align="center" prop="seriesId">
+          <template #default="scope">
+            <span>{{ seriesList.find(s => s.id == scope.row.seriesId)?.title || scope.row.seriesId }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="分类" align="center" prop="categoryId">
+          <template #default="scope">
+            <span>{{ categoryList.find(c => c.id == scope.row.categoryId)?.name || scope.row.categoryId }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="标题" align="center" prop="title" />
-        <el-table-column label="封面文件id" align="center" prop="cover" />
-        <el-table-column label="音频文件id" align="center" prop="audio" />
+        <el-table-column label="封面" align="center" prop="cover" />
+        <el-table-column label="音频文件" align="center" prop="audio" />
         <el-table-column label="时长" align="center" prop="durationSec" />
         <el-table-column label="简介" align="center" prop="intro" />
         <el-table-column label="在系列内排序" align="center" prop="orderIndex" />
@@ -90,20 +112,34 @@
     <!-- 添加或修改冥想单集对话框 -->
     <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
       <el-form ref="trackFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="所属系列id" prop="seriesId">
-          <el-input v-model="form.seriesId" placeholder="请输入所属系列id" />
+        <el-form-item label="所属系列" prop="seriesId">
+          <el-select v-model="form.seriesId" placeholder="请选择系列">
+            <el-option
+              v-for="series in seriesList"
+              :key="series.id"
+              :label="series.title"
+              :value="series.id"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="分类id" prop="categoryId">
-          <el-input v-model="form.categoryId" placeholder="请输入分类id" />
+        <el-form-item label="分类" prop="categoryId">
+          <el-select v-model="form.categoryId" placeholder="请选择分类">
+            <el-option
+              v-for="category in categoryList"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
         </el-form-item>
-        <el-form-item label="封面文件id" prop="cover">
-          <el-input v-model="form.cover" placeholder="请输入封面文件id" />
+        <el-form-item label="封面" prop="cover">
+          <image-upload v-model="form.cover" :limit="1" />
         </el-form-item>
-        <el-form-item label="音频文件id" prop="audio">
-          <el-input v-model="form.audio" placeholder="请输入音频文件id" />
+        <el-form-item label="音频文件" prop="audio">
+          <file-upload v-model="form.audio" :limit="1" />
         </el-form-item>
         <el-form-item label="时长" prop="durationSec">
           <el-input v-model="form.durationSec" placeholder="请输入时长" />
@@ -134,10 +170,16 @@
 <script setup name="Track" lang="ts">
 import { listTrack, getTrack, delTrack, addTrack, updateTrack } from '@/api/meditation/track';
 import { TrackVO, TrackQuery, TrackForm } from '@/api/meditation/track/types';
+import { listSeries } from '@/api/meditation/series';
+import { SeriesVO } from '@/api/meditation/series/types';
+import { listCategory } from '@/api/meditation/category';
+import { CategoryVO } from '@/api/meditation/category/types';
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
 const trackList = ref<TrackVO[]>([]);
+const seriesList = ref<SeriesVO[]>([]);
+const categoryList = ref<CategoryVO[]>([]);
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -188,13 +230,13 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
   },
   rules: {
     seriesId: [
-      { required: true, message: "所属系列id不能为空", trigger: "blur" }
+      { required: true, message: "所属系列不能为空", trigger: "blur" }
     ],
     categoryId: [
-      { required: true, message: "分类id不能为空", trigger: "blur" }
+      { required: true, message: "分类不能为空", trigger: "blur" }
     ],
     cover: [
-      { required: true, message: "封面文件id不能为空", trigger: "blur" }
+      { required: true, message: "封面不能为空", trigger: "blur" }
     ],
     durationSec: [
       { required: true, message: "时长不能为空", trigger: "blur" }
@@ -309,7 +351,21 @@ const handleExport = () => {
   }, `track_${new Date().getTime()}.xlsx`)
 }
 
+/** 获取系列列表 */
+const getSeriesList = async () => {
+  const res = await listSeries({ pageNum: 1, pageSize: 100 });
+  seriesList.value = res.rows;
+}
+
+/** 获取分类列表 */
+const getCategoryList = async () => {
+  const res = await listCategory();
+  categoryList.value = res.data;
+}
+
 onMounted(() => {
   getList();
+  getSeriesList();
+  getCategoryList();
 });
 </script>
