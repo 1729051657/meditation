@@ -1,28 +1,79 @@
 package org.dromara.common.core.domain.model;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * 三方登录对象
- *
- * @author Lion Li
- */
+import javax.validation.constraints.NotBlank;
+import java.io.Serializable;
 
+/**
+ * 小程序用户登录对象
+ *
+ * @author meditation
+ */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class XcxLoginBody extends LoginBody {
+@EqualsAndHashCode(callSuper = false)
+public class XcxLoginBody implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 小程序id(多个小程序时使用)
+     * 用户名（账号密码登录时使用）
+     */
+    private String username;
+
+    /**
+     * 用户密码（账号密码登录时使用）
+     */
+    private String password;
+
+    /**
+     * 小程序code（微信登录时使用）
+     */
+    private String xcxCode;
+
+    /**
+     * 小程序appid
      */
     private String appid;
 
     /**
-     * 小程序code
+     * 客户端id
      */
-    @NotBlank(message = "{xcx.code.not.blank}")
-    private String xcxCode;
+    private String clientId;
 
+    /**
+     * 授权类型（xcx: 小程序登录, password: 密码登录）
+     */
+    private String grantType;
+
+    /**
+     * 租户ID
+     */
+    private String tenantId;
+
+    /**
+     * 部门ID
+     */
+    private Long deptId;
+
+    /**
+     * 加密数据（获取手机号时使用）
+     */
+    private String encryptedData;
+
+    /**
+     * 加密算法的初始向量（获取手机号时使用）
+     */
+    private String iv;
+
+    /**
+     * 验证码
+     */
+    private String code;
+
+    /**
+     * 唯一标识
+     */
+    private String uuid;
 }

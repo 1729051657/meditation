@@ -1,6 +1,6 @@
 <template>
 	<view class="login-page">
-		<!-- 自定义导航栏，处理顶部安全区域 -->
+		<!-- 自定义导航栏 -->
 		<tn-nav-bar
 			:isBack="false"
 			:bottomShadow="false"
@@ -8,7 +8,7 @@
 			:fixed="true"
 		>
 			<view class="nav-title">
-				<text class="nav-title-text">校园安全巡检</text>
+				<text class="nav-title-text">冥想空间</text>
 			</view>
 		</tn-nav-bar>
 		
@@ -18,11 +18,8 @@
 			<view class="bg-decoration">
 				<view class="wave wave-1"></view>
 				<view class="wave wave-2"></view>
-				<view class="wave wave-3"></view>
 				<view class="circle circle-1"></view>
 				<view class="circle circle-2"></view>
-				<view class="circle circle-3"></view>
-				<view class="circle circle-4"></view>
 			</view>
 		</view>
 
@@ -31,12 +28,12 @@
 			<!-- Logo区域 -->
 			<view class="logo-container">
 				<view class="logo-wrapper">
-					<image class="logo-image" src="/static/images/logo.png" mode="aspectFit"></image>
+					<image class="logo-image" src="/static/images/meditation-logo.png" mode="aspectFit"></image>
 					<view class="logo-shadow"></view>
 				</view>
 				<view class="app-info">
-					<text class="app-title">校园安全巡检系统</text>
-					<text class="app-subtitle">守护校园每一刻</text>
+					<text class="app-title">冥想空间</text>
+					<text class="app-subtitle">让心灵回归宁静</text>
 				</view>
 			</view>
 
@@ -47,693 +44,694 @@
 					<view class="header-decoration"></view>
 				</view>
 				
-				<!-- 学校选择 -->
-				<view class="school-section">
-					<view class="section-title">
-						<text class="title-text">选择学校</text>
-						<view class="title-decoration"></view>
-					</view>
-					<view class="school-selector" @click="selectSchool">
-						<view class="selector-content">
-							<view class="selector-icon">
-								<text class="tn-icon-location"></text>
-							</view>
-							<view class="selector-text">
-								<text class="school-name">{{ currentDeptName || '请选择您的学校' }}</text>
-								<text class="school-hint" v-if="!currentDeptName">点击选择学校后进行登录</text>
-							</view>
-						</view>
-						<view class="selector-arrow">
-							<text class="tn-icon-right"></text>
-						</view>
-					</view>
-				</view>
-
-				<!-- 分割线 -->
-				<view class="divider-section">
-					<view class="divider-line"></view>
-					<text class="divider-text">快速登录</text>
-					<view class="divider-line"></view>
-				</view>
-
-				<!-- 微信登录按钮 -->
-				<view class="login-section">
-                    <tn-button 
-                        @click="wxLoginSimple" 
-                        :loading="wechatLoginLoading" 
-						backgroundColor="tn-bg-green-light" 
-						fontColor="tn-color-white"
-						width="100%" 
-						height="88rpx" 
-						fontSize="30" 
-						shape="round" 
-						:shadow="true"
-						:customStyle="{
-							background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
-							boxShadow: '0 8rpx 32rpx rgba(82, 196, 26, 0.3)'
-						}"
+				<!-- 登录方式选择 -->
+				<view class="login-tabs">
+					<view 
+						class="tab-item" 
+						:class="{ active: loginType === 'wechat' }"
+						@click="loginType = 'wechat'"
 					>
-						<view class="button-content">
-							<text class="tn-icon-wechat-fill button-icon"></text>
-                            <text class="button-text">微信一键登录</text>
-						</view>
-					</tn-button>
-					
-					<!-- 登录提示 -->
-					<view class="login-tips">
-						<view class="tips-item">
-							<text class="tn-icon-safe-fill tips-icon"></text>
-							<text class="tips-text">安全加密，保护您的隐私</text>
-						</view>
+						<text>微信登录</text>
+					</view>
+					<view 
+						class="tab-item" 
+						:class="{ active: loginType === 'account' }"
+						@click="loginType = 'account'"
+					>
+						<text>账号登录</text>
 					</view>
 				</view>
 
-				<!-- 协议说明 -->
-				<view class="agreement-section">
-					<text class="agreement-text">登录即表示同意</text>
-					<text class="agreement-link">《用户协议》</text>
-					<text class="agreement-text">和</text>
-					<text class="agreement-link">《隐私政策》</text>
+				<!-- 微信登录 -->
+				<view class="login-section" v-if="loginType === 'wechat'">
+					<button 
+						class="wechat-login-btn"
+						open-type="getPhoneNumber"
+						@getphonenumber="getPhoneNumber"
+						v-if="canIUseGetUserProfile"
+					>
+						<view class="btn-content">
+							<view class="btn-icon">
+								<text class="tn-icon-wechat-fill"></text>
+							</view>
+							<text class="btn-text">微信快速登录</text>
+						</view>
+					</button>
+					
+					<button 
+						class="wechat-login-btn"
+						@click="wxLogin"
+						v-else
+					>
+						<view class="btn-content">
+							<view class="btn-icon">
+								<text class="tn-icon-wechat-fill"></text>
+							</view>
+							<text class="btn-text">微信登录</text>
+						</view>
+					</button>
 				</view>
-			</view>
-		</view>
 
-		<!-- 底部版权信息 -->
-		<view class="footer-section">
-			<view class="footer-content">
-				<text class="version-text">Version {{ version }}</text>
-				<text class="copyright-text">© 2024 河南校园监管 All Rights Reserved</text>
+				<!-- 账号密码登录 -->
+				<view class="login-section" v-else>
+					<view class="form-item">
+						<view class="form-icon">
+							<text class="tn-icon-my-fill"></text>
+						</view>
+						<input 
+							class="form-input" 
+							type="text" 
+							placeholder="请输入用户名/手机号"
+							v-model="loginForm.username"
+							placeholder-class="placeholder"
+						/>
+					</view>
+					
+					<view class="form-item">
+						<view class="form-icon">
+							<text class="tn-icon-lock-fill"></text>
+						</view>
+						<input 
+							class="form-input" 
+							type="password" 
+							placeholder="请输入密码"
+							v-model="loginForm.password"
+							placeholder-class="placeholder"
+						/>
+					</view>
+					
+					<button class="login-btn" @click="handleLogin">
+						<text class="btn-text">登录</text>
+					</button>
+					
+					<view class="extra-options">
+						<text class="option-text" @click="goRegister">注册账号</text>
+						<text class="option-text" @click="goForget">忘记密码？</text>
+					</view>
+				</view>
+
+				<!-- 用户协议 -->
+				<view class="agreement-section">
+					<view class="agreement-checkbox" @click="toggleAgreement">
+						<view class="checkbox" :class="{ checked: isAgree }">
+							<text class="tn-icon-success" v-if="isAgree"></text>
+						</view>
+						<text class="agreement-text">
+							我已阅读并同意
+							<text class="link" @click.stop="openAgreement('user')">《用户协议》</text>
+							和
+							<text class="link" @click.stop="openAgreement('privacy')">《隐私政策》</text>
+						</text>
+					</view>
+				</view>
 			</view>
 		</view>
 	</view>
 </template>
 
 <script>
-	import {
-		inspectionWechatLogin
-	} from '@/api/auth'
-	import {
-		setToken,
-		setUserInfo,
-		isLoggedIn,
-		getTenantId,
-		setTenantId,
-		getDeptId,
-		setDeptId
-	} from '@/utils/auth'
-	import {
-		appConfig
-	} from '@/common/config'
-	import {
-		getUserInfo as fetchUserInfo
-	} from '@/api/user'
+import { login, inspectionWechatLogin } from '@/api/auth'
+import { setToken, setUserInfo } from '@/utils/auth'
+import { appConfig } from '@/common/config'
 
-	export default {
-		name: 'Login',
-		data() {
-			return {
-				currentDeptName: '', // 当前选择的学校名称
-				wechatLoginLoading: false,
-				version: appConfig.version,
-				// 微信登录相关数据
-				wechatCode: '',
-				phoneEncryptedData: null
+export default {
+	data() {
+		return {
+			loginType: 'wechat', // wechat or account
+			loginForm: {
+				username: '',
+				password: ''
+			},
+			isAgree: false,
+			canIUseGetUserProfile: false,
+			loading: false
+		}
+	},
+	
+	onLoad() {
+		// 检查是否支持getUserProfile
+		if (uni.getUserProfile) {
+			this.canIUseGetUserProfile = true
+		}
+	},
+	
+	methods: {
+		// 切换协议勾选
+		toggleAgreement() {
+			this.isAgree = !this.isAgree
+		},
+		
+		// 打开协议
+		openAgreement(type) {
+			uni.navigateTo({
+				url: `/subPages/agreement/index?type=${type}`
+			})
+		},
+		
+		// 微信登录
+		async wxLogin() {
+			if (!this.isAgree) {
+				uni.showToast({
+					title: '请先同意用户协议',
+					icon: 'none'
+				})
+				return
+			}
+			
+			uni.showLoading({ title: '登录中...' })
+			
+			try {
+				// 获取code
+				const loginRes = await uni.login({
+					provider: 'weixin'
+				})
+				
+				if (loginRes.code) {
+					// 调用后端接口
+					const res = await inspectionWechatLogin({
+						code: loginRes.code,
+						appid: appConfig.wechatAppId
+					})
+					
+					if (res.code === 200) {
+						// 保存token和用户信息
+						setToken(res.data.access_token)
+						setUserInfo(res.data.user)
+						
+						uni.showToast({
+							title: '登录成功',
+							icon: 'success'
+						})
+						
+						setTimeout(() => {
+							uni.switchTab({
+								url: '/pages/home/index'
+							})
+						}, 1500)
+					}
+				}
+			} catch (error) {
+				console.error('登录失败', error)
+				uni.showToast({
+					title: error.message || '登录失败',
+					icon: 'none'
+				})
+			} finally {
+				uni.hideLoading()
 			}
 		},
-
-		onLoad() {
-			this.initPage()
-		},
-
-		onShow() {
-			// 从租户选择页面返回时，重新初始化租户ID
-			this.initTenantId()
-		},
-
-		methods: {
-			// 初始化页面
-			initPage() {
-				// 检查是否已登录
-				if (isLoggedIn()) {
-					this.redirectToHome()
-					return
+		
+		// 获取手机号登录
+		async getPhoneNumber(e) {
+			if (!this.isAgree) {
+				uni.showToast({
+					title: '请先同意用户协议',
+					icon: 'none'
+				})
+				return
+			}
+			
+			if (e.detail.errMsg === 'getPhoneNumber:ok') {
+				uni.showLoading({ title: '登录中...' })
+				
+				try {
+					// 获取code
+					const loginRes = await uni.login({
+						provider: 'weixin'
+					})
+					
+					if (loginRes.code) {
+						// 调用后端接口，传递code和加密的手机号信息
+						const res = await inspectionWechatLogin({
+							code: loginRes.code,
+							appid: appConfig.wechatAppId,
+							encryptedData: e.detail.encryptedData,
+							iv: e.detail.iv
+						})
+						
+						if (res.code === 200) {
+							// 保存token和用户信息
+							setToken(res.data.access_token)
+							setUserInfo(res.data.user)
+							
+							uni.showToast({
+								title: '登录成功',
+								icon: 'success'
+							})
+							
+							setTimeout(() => {
+								uni.switchTab({
+									url: '/pages/home/index'
+								})
+							}, 1500)
+						}
+					}
+				} catch (error) {
+					console.error('登录失败', error)
+					uni.showToast({
+						title: error.message || '登录失败',
+						icon: 'none'
+					})
+				} finally {
+					uni.hideLoading()
 				}
-
-				// 初始化租户ID
-				this.initTenantId()
-			},
-
-			// 初始化租户ID
-			initTenantId() {
-				const savedTenantId = getTenantId()
-				const savedDeptId = getDeptId()
-				if (savedTenantId && savedDeptId) {
-					// 从本地存储获取学校名称
-					const savedDeptName = uni.getStorageSync('edu_dept_name')
-					this.currentDeptName = savedDeptName || '已选择学校'
-				} else {
-					this.currentDeptName = ''
+			}
+		},
+		
+		// 账号密码登录
+		async handleLogin() {
+			if (!this.isAgree) {
+				uni.showToast({
+					title: '请先同意用户协议',
+					icon: 'none'
+				})
+				return
+			}
+			
+			if (!this.loginForm.username) {
+				uni.showToast({
+					title: '请输入用户名',
+					icon: 'none'
+				})
+				return
+			}
+			
+			if (!this.loginForm.password) {
+				uni.showToast({
+					title: '请输入密码',
+					icon: 'none'
+				})
+				return
+			}
+			
+			uni.showLoading({ title: '登录中...' })
+			
+			try {
+				const res = await login(this.loginForm)
+				
+				if (res.code === 200) {
+					// 保存token和用户信息
+					setToken(res.data.access_token)
+					setUserInfo(res.data.user)
+					
+					uni.showToast({
+						title: '登录成功',
+						icon: 'success'
+					})
+					
+					setTimeout(() => {
+						uni.switchTab({
+							url: '/pages/home/index'
+						})
+					}, 1500)
 				}
-			},
-
-            // 选择学校（冥想版无需选择，提示默认租户）
-            selectSchool() {
-                uni.showToast({ title: '已使用默认租户', icon: 'none' })
-            },
-
-			// 跳转到首页
-            redirectToHome() {
-                uni.switchTab({ url: '/pages/home/index' })
-            },
-
-            // 精简版微信登录：仅使用 code，不要手机号
-            async wxLoginSimple() {
-                try {
-                    this.wechatLoginLoading = true
-                    const loginRes = await uni.login({ provider: 'weixin' })
-                    if (loginRes[1].errMsg !== 'login:ok') throw new Error(loginRes[1].errMsg)
-                    const code = loginRes[1].code
-                    const result = await inspectionWechatLogin({ code, appid: appConfig.wechatAppId || '', tenantId: getTenantId(), deptId: getDeptId() })
-                    if (result.code !== 200) throw new Error(result.msg || '登录失败')
-                    const { access_token, user } = result.data
-                    setToken(access_token); setUserInfo(user)
-                    uni.showToast({ title:'登录成功', icon:'success' })
-                    setTimeout(()=> this.redirectToHome(), 500)
-                } catch (e) {
-                    uni.showToast({ title: e.message || '登录失败', icon:'none' })
-                } finally {
-                    this.wechatLoginLoading = false
-                }
-            }
+			} catch (error) {
+				console.error('登录失败', error)
+				uni.showToast({
+					title: error.message || '登录失败',
+					icon: 'none'
+				})
+			} finally {
+				uni.hideLoading()
+			}
+		},
+		
+		// 注册
+		goRegister() {
+			uni.navigateTo({
+				url: '/subPages/register/index'
+			})
+		},
+		
+		// 忘记密码
+		goForget() {
+			uni.navigateTo({
+				url: '/subPages/forget/index'
+			})
 		}
 	}
+}
 </script>
 
 <style lang="scss" scoped>
-	/* 页面容器 */
-	.login-page {
-		position: relative;
-		width: 100vw;
-		height: 100vh;
-		overflow: hidden;
-		background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
-	}
+.login-page {
+	min-height: 100vh;
+	position: relative;
+	overflow: hidden;
+}
 
-	/* 导航栏标题 */
-	.nav-title {
-		width: 100%;
+.nav-title {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	
+	.nav-title-text {
+		font-size: 36rpx;
+		color: #fff;
+		font-weight: 600;
+	}
+}
+
+// 背景容器
+.bg-container {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	z-index: -1;
+}
+
+.bg-decoration {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	
+	.wave {
+		position: absolute;
+		width: 200%;
+		height: 200%;
+		border-radius: 45%;
+		opacity: 0.1;
+		animation: wave 15s linear infinite;
+		
+		&.wave-1 {
+			background: rgba(255, 255, 255, 0.3);
+			top: -100%;
+			left: -50%;
+			animation-duration: 20s;
+		}
+		
+		&.wave-2 {
+			background: rgba(255, 255, 255, 0.2);
+			bottom: -100%;
+			right: -50%;
+			animation-duration: 25s;
+			animation-direction: reverse;
+		}
+	}
+	
+	.circle {
+		position: absolute;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.1);
+		
+		&.circle-1 {
+			width: 200rpx;
+			height: 200rpx;
+			top: 10%;
+			right: 10%;
+			animation: float 8s ease-in-out infinite;
+		}
+		
+		&.circle-2 {
+			width: 150rpx;
+			height: 150rpx;
+			bottom: 20%;
+			left: 5%;
+			animation: float 10s ease-in-out infinite;
+			animation-delay: 2s;
+		}
+	}
+}
+
+@keyframes wave {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-30rpx); }
+}
+
+// 主内容
+.main-content {
+	position: relative;
+	z-index: 1;
+	padding-top: 120rpx;
+	padding-bottom: 40rpx;
+}
+
+// Logo区域
+.logo-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-bottom: 60rpx;
+	
+	.logo-wrapper {
+		position: relative;
+		width: 160rpx;
+		height: 160rpx;
+		margin-bottom: 30rpx;
+		
+		.logo-image {
+			width: 100%;
+			height: 100%;
+			border-radius: 30rpx;
+			background: rgba(255, 255, 255, 0.9);
+		}
+		
+		.logo-shadow {
+			position: absolute;
+			bottom: -10rpx;
+			left: 10%;
+			right: 10%;
+			height: 20rpx;
+			background: rgba(0, 0, 0, 0.2);
+			border-radius: 50%;
+			filter: blur(10rpx);
+		}
+	}
+	
+	.app-info {
 		text-align: center;
 		
-		.nav-title-text {
-			color: #ffffff;
+		.app-title {
+			display: block;
+			font-size: 42rpx;
+			color: #fff;
+			font-weight: 600;
+			margin-bottom: 10rpx;
+		}
+		
+		.app-subtitle {
+			display: block;
+			font-size: 28rpx;
+			color: rgba(255, 255, 255, 0.8);
+		}
+	}
+}
+
+// 登录卡片
+.login-card {
+	margin: 0 40rpx;
+	background: rgba(255, 255, 255, 0.95);
+	border-radius: 30rpx;
+	padding: 40rpx;
+	backdrop-filter: blur(20rpx);
+	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.1);
+	
+	.card-header {
+		position: relative;
+		height: 8rpx;
+		margin: -40rpx -40rpx 40rpx;
+		
+		.header-decoration {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 100%;
+			background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+			border-radius: 30rpx 30rpx 0 0;
+		}
+	}
+}
+
+// 登录方式切换
+.login-tabs {
+	display: flex;
+	margin-bottom: 40rpx;
+	background: #f3f4f6;
+	border-radius: 20rpx;
+	padding: 8rpx;
+	
+	.tab-item {
+		flex: 1;
+		padding: 20rpx;
+		text-align: center;
+		border-radius: 16rpx;
+		transition: all 0.3s;
+		
+		text {
+			font-size: 30rpx;
+			color: #6b7280;
+		}
+		
+		&.active {
+			background: #fff;
+			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+			
+			text {
+				color: #667eea;
+				font-weight: 500;
+			}
+		}
+	}
+}
+
+// 登录区域
+.login-section {
+	margin-bottom: 40rpx;
+}
+
+// 微信登录按钮
+.wechat-login-btn {
+	width: 100%;
+	height: 100rpx;
+	background: linear-gradient(135deg, #11c37c 0%, #0ea968 100%);
+	border-radius: 50rpx;
+	border: none;
+	margin-bottom: 30rpx;
+	transition: all 0.3s;
+	
+	&:active {
+		transform: scale(0.98);
+	}
+	
+	.btn-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		
+		.btn-icon {
+			margin-right: 15rpx;
+			
+			text {
+				font-size: 44rpx;
+				color: #fff;
+			}
+		}
+		
+		.btn-text {
 			font-size: 32rpx;
+			color: #fff;
 			font-weight: 500;
-			opacity: 0.9;
 		}
 	}
+}
 
-	/* 背景容器 */
-	.bg-container {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 1;
+// 表单项
+.form-item {
+	display: flex;
+	align-items: center;
+	height: 100rpx;
+	background: #f9fafb;
+	border-radius: 20rpx;
+	padding: 0 30rpx;
+	margin-bottom: 30rpx;
+	
+	.form-icon {
+		margin-right: 20rpx;
+		
+		text {
+			font-size: 36rpx;
+			color: #9ca3af;
+		}
 	}
-
-	/* 背景装饰 */
-	.bg-decoration {
-		position: relative;
-		width: 100%;
+	
+	.form-input {
+		flex: 1;
 		height: 100%;
-		
-		/* 波浪动画 */
-		.wave {
-			position: absolute;
-			width: 200%;
-			height: 200%;
-			border-radius: 45%;
-			background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-			animation: wave 20s linear infinite;
-			
-			&.wave-1 {
-				bottom: -150%;
-				left: -50%;
-				animation-duration: 18s;
-			}
-			
-			&.wave-2 {
-				bottom: -160%;
-				right: -50%;
-				animation-duration: 22s;
-				animation-delay: -5s;
-			}
-			
-			&.wave-3 {
-				bottom: -170%;
-				left: -25%;
-				animation-duration: 25s;
-				animation-delay: -10s;
-			}
-		}
-		
-		/* 圆形装饰 */
-		.circle {
-			position: absolute;
-			border-radius: 50%;
-			background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
-			
-			&.circle-1 {
-				width: 300rpx;
-				height: 300rpx;
-				top: 10%;
-				right: -100rpx;
-				animation: float 8s ease-in-out infinite;
-			}
-			
-			&.circle-2 {
-				width: 200rpx;
-				height: 200rpx;
-				top: 30%;
-				left: -50rpx;
-				animation: float 10s ease-in-out infinite reverse;
-			}
-			
-			&.circle-3 {
-				width: 150rpx;
-				height: 150rpx;
-				bottom: 30%;
-				right: 10%;
-				animation: float 12s ease-in-out infinite;
-			}
-			
-			&.circle-4 {
-				width: 100rpx;
-				height: 100rpx;
-				top: 50%;
-				left: 50%;
-				animation: float 15s ease-in-out infinite reverse;
-			}
-		}
+		font-size: 30rpx;
+		color: #1f2937;
 	}
-
-	/* 波浪动画 */
-	@keyframes wave {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
+	
+	.placeholder {
+		color: #9ca3af;
 	}
+}
 
-	/* 浮动动画 */
-	@keyframes float {
-		0%, 100% {
-			transform: translateY(0) translateX(0);
-		}
-		25% {
-			transform: translateY(-20rpx) translateX(10rpx);
-		}
-		50% {
-			transform: translateY(10rpx) translateX(-10rpx);
-		}
-		75% {
-			transform: translateY(-10rpx) translateX(20rpx);
-		}
+// 登录按钮
+.login-btn {
+	width: 100%;
+	height: 100rpx;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 50rpx;
+	border: none;
+	margin-bottom: 30rpx;
+	transition: all 0.3s;
+	
+	&:active {
+		transform: scale(0.98);
 	}
+	
+	.btn-text {
+		font-size: 32rpx;
+		color: #fff;
+		font-weight: 500;
+	}
+}
 
-	/* 主内容区域 */
-	.main-content {
-		position: relative;
-		z-index: 10;
-		width: 100%;
-		height: 100%;
+// 额外选项
+.extra-options {
+	display: flex;
+	justify-content: space-between;
+	
+	.option-text {
+		font-size: 28rpx;
+		color: #667eea;
+	}
+}
+
+// 协议区域
+.agreement-section {
+	margin-top: 40rpx;
+	padding-top: 40rpx;
+	border-top: 1rpx solid #e5e7eb;
+	
+	.agreement-checkbox {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding-top: calc(var(--status-bar-height) + 88rpx);
-		padding-bottom: 40rpx;
-		box-sizing: border-box;
-	}
-
-	/* Logo容器 */
-	.logo-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		margin-bottom: 60rpx;
-		animation: fadeInDown 0.8s ease-out;
+		align-items: flex-start;
 		
-		.logo-wrapper {
-			position: relative;
-			width: 160rpx;
-			height: 160rpx;
-			margin-bottom: 30rpx;
-			
-			.logo-image {
-				width: 100%;
-				height: 100%;
-				border-radius: 30rpx;
-				background: rgba(255, 255, 255, 0.9);
-				padding: 20rpx;
-				box-sizing: border-box;
-				box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
-			}
-			
-			.logo-shadow {
-				position: absolute;
-				bottom: -20rpx;
-				left: 50%;
-				transform: translateX(-50%);
-				width: 120rpx;
-				height: 20rpx;
-				background: radial-gradient(ellipse, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
-				filter: blur(10rpx);
-			}
-		}
-		
-		.app-info {
-			text-align: center;
-			
-			.app-title {
-				display: block;
-				font-size: 38rpx;
-				font-weight: bold;
-				color: #ffffff;
-				margin-bottom: 10rpx;
-				text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.2);
-			}
-			
-			.app-subtitle {
-				display: block;
-				font-size: 26rpx;
-				color: rgba(255, 255, 255, 0.8);
-				font-weight: 300;
-			}
-		}
-	}
-
-	/* 登录卡片 */
-	.login-card {
-		position: relative;
-		width: calc(100% - 60rpx);
-		max-width: 680rpx;
-		background: rgba(255, 255, 255, 0.98);
-		border-radius: 30rpx;
-		padding: 0 40rpx 40rpx;
-		box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
-		backdrop-filter: blur(20rpx);
-		animation: fadeInUp 0.8s ease-out;
-		
-		/* 卡片头部装饰 */
-		.card-header {
-			position: relative;
-			height: 60rpx;
-			margin-bottom: 40rpx;
-			
-			.header-decoration {
-				position: absolute;
-				top: 0;
-				left: 50%;
-				transform: translateX(-50%);
-				width: 120rpx;
-				height: 6rpx;
-				background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
-				border-radius: 3rpx;
-			}
-		}
-		
-		/* 学校选择区域 */
-		.school-section {
-			margin-bottom: 40rpx;
-			
-			.section-title {
-				position: relative;
-				margin-bottom: 20rpx;
-				
-				.title-text {
-					font-size: 28rpx;
-					color: #333;
-					font-weight: 500;
-				}
-				
-				.title-decoration {
-					position: absolute;
-					bottom: -8rpx;
-					left: 0;
-					width: 40rpx;
-					height: 4rpx;
-					background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%);
-					border-radius: 2rpx;
-				}
-			}
-			
-			.school-selector {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				padding: 24rpx;
-				background: linear-gradient(135deg, #F8F9FF 0%, #F3F4FF 100%);
-				border-radius: 16rpx;
-				border: 2rpx solid #E8E9FF;
-				transition: all 0.3s ease;
-				
-				&:active {
-					transform: scale(0.98);
-					background: linear-gradient(135deg, #F3F4FF 0%, #E8E9FF 100%);
-				}
-				
-				.selector-content {
-					display: flex;
-					align-items: center;
-					flex: 1;
-					
-					.selector-icon {
-						width: 56rpx;
-						height: 56rpx;
-						background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-						border-radius: 14rpx;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						margin-right: 20rpx;
-						
-						text {
-							color: #ffffff;
-							font-size: 28rpx;
-						}
-					}
-					
-					.selector-text {
-						flex: 1;
-						
-						.school-name {
-							display: block;
-							font-size: 30rpx;
-							color: #333;
-							font-weight: 500;
-							margin-bottom: 4rpx;
-						}
-						
-						.school-hint {
-							display: block;
-							font-size: 24rpx;
-							color: #999;
-						}
-					}
-				}
-				
-				.selector-arrow {
-					text {
-						font-size: 28rpx;
-						color: #C0C4CC;
-					}
-				}
-			}
-		}
-		
-		/* 分割线 */
-		.divider-section {
+		.checkbox {
+			width: 32rpx;
+			height: 32rpx;
+			border: 2rpx solid #d1d5db;
+			border-radius: 8rpx;
+			margin-right: 15rpx;
+			margin-top: 4rpx;
 			display: flex;
 			align-items: center;
-			margin: 40rpx 0;
+			justify-content: center;
+			transition: all 0.3s;
 			
-			.divider-line {
-				flex: 1;
-				height: 1rpx;
-				background: linear-gradient(90deg, transparent 0%, #E5E7EB 50%, transparent 100%);
-			}
-			
-			.divider-text {
-				padding: 0 24rpx;
-				font-size: 24rpx;
-				color: #9CA3AF;
-			}
-		}
-		
-		/* 登录区域 */
-		.login-section {
-			.button-content {
-				display: flex;
-				align-items: center;
-				justify-content: center;
+			&.checked {
+				background: #667eea;
+				border-color: #667eea;
 				
-				.button-icon {
-					font-size: 36rpx;
-					margin-right: 12rpx;
-				}
-				
-				.button-text {
-					font-size: 30rpx;
-					font-weight: 500;
-				}
-			}
-			
-			.login-tips {
-				margin-top: 24rpx;
-				
-				.tips-item {
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					
-					.tips-icon {
-						font-size: 24rpx;
-						color: #52C41A;
-						margin-right: 8rpx;
-					}
-					
-					.tips-text {
-						font-size: 24rpx;
-						color: #999;
-					}
-				}
-			}
-		}
-		
-		/* 协议说明 */
-		.agreement-section {
-			margin-top: 40rpx;
-			text-align: center;
-			
-			.agreement-text {
-				font-size: 24rpx;
-				color: #999;
-			}
-			
-			.agreement-link {
-				font-size: 24rpx;
-				color: #6366F1;
-				margin: 0 8rpx;
-			}
-		}
-	}
-
-	/* 底部版权 */
-	.footer-section {
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		padding: 30rpx 0;
-		padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
-		padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-		z-index: 10;
-		
-		.footer-content {
-			text-align: center;
-			
-			.version-text,
-			.copyright-text {
-				display: block;
-				font-size: 22rpx;
-				color: rgba(255, 255, 255, 0.7);
-				line-height: 1.8;
-			}
-		}
-	}
-
-	/* 淡入下降动画 */
-	@keyframes fadeInDown {
-		from {
-			opacity: 0;
-			transform: translateY(-30rpx);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* 淡入上升动画 */
-	@keyframes fadeInUp {
-		from {
-			opacity: 0;
-			transform: translateY(30rpx);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* 适配不同屏幕尺寸 */
-	@media screen and (max-height: 667px) {
-		.logo-container {
-			margin-bottom: 40rpx;
-			
-			.logo-wrapper {
-				width: 140rpx;
-				height: 140rpx;
-			}
-		}
-		
-		.login-card {
-			padding: 0 30rpx 30rpx;
-		}
-	}
-
-	/* 适配更小的屏幕 */
-	@media screen and (max-height: 568px) {
-		.logo-container {
-			margin-bottom: 30rpx;
-			
-			.logo-wrapper {
-				width: 120rpx;
-				height: 120rpx;
-				margin-bottom: 20rpx;
-			}
-			
-			.app-info {
-				.app-title {
-					font-size: 34rpx;
-				}
-				
-				.app-subtitle {
+				text {
 					font-size: 24rpx;
+					color: #fff;
 				}
 			}
 		}
 		
-		.login-card {
-			.card-header {
-				height: 40rpx;
-				margin-bottom: 30rpx;
-			}
+		.agreement-text {
+			flex: 1;
+			font-size: 26rpx;
+			color: #6b7280;
+			line-height: 40rpx;
 			
-			.school-section {
-				margin-bottom: 30rpx;
-			}
-			
-			.divider-section {
-				margin: 30rpx 0;
-			}
-			
-			.agreement-section {
-				margin-top: 30rpx;
+			.link {
+				color: #667eea;
 			}
 		}
 	}
+}
 </style>
