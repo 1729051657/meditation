@@ -6,17 +6,17 @@
 const envConfig = {
   // 开发环境
   development: {
-    baseUrl: 'http://localhost:8080/meditation',
+    baseUrl: 'http://localhost:8080',
     debug: true
   },
   // 测试环境
   test: {
-    baseUrl: 'https://test-api.example.com/meditation',
+    baseUrl: 'https://test-api.example.com',
     debug: true
   },
   // 生产环境
   production: {
-    baseUrl: 'https://api.example.com/meditation',
+    baseUrl: 'https://api.example.com',
     debug: false
   }
 }

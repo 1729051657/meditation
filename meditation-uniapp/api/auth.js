@@ -7,7 +7,7 @@ import { appConfig } from '@/common/config'
 
 // 普通用户名密码登录
 export const login = (data) => {
-  return post('/api/auth/login', data, '登录中...')
+  return post('/xcx/auth/login', data, '登录中...')
 }
 
 // 小程序登录（不需要手机号，仅 code）
@@ -22,12 +22,12 @@ export const inspectionWechatLogin = (data) => {
     encryptedData: data.encryptedData,
     iv: data.iv
   }
-  return post('/api/auth/wxLogin', loginData, '验证登录中...')
+  return post('/xcx/auth/login', loginData, '验证登录中...')
 }
 
 // 登出
 export const logout = () => {
-  return post('/api/auth/logout', {}, '退出中...')
+  return post('/xcx/auth/logout', {}, '退出中...')
 }
 
 // 获取验证码图片
