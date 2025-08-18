@@ -95,7 +95,7 @@
           <el-input v-model="form.code" placeholder="请输入分类编码" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
-          <el-input v-model="form.icon" placeholder="请输入图标" />
+          <image-upload v-model="form.icon" :limit="1" />
         </el-form-item>
         <el-form-item label="简介" prop="description">
           <el-input v-model="form.description" placeholder="请输入简介" />

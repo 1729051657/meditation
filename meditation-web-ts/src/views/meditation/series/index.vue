@@ -117,10 +117,10 @@
           <el-input v-model="form.subtitle" placeholder="请输入副标题" />
         </el-form-item>
         <el-form-item label="封面" prop="cover">
-          <el-input v-model="form.cover" placeholder="请输入封面" />
+          <image-upload v-model="form.cover" :limit="1" />
         </el-form-item>
         <el-form-item label="横幅图" prop="banner">
-          <el-input v-model="form.banner" placeholder="请输入横幅图" />
+          <image-upload v-model="form.banner" :limit="1" />
         </el-form-item>
         <el-form-item label="简介" prop="intro">
             <el-input v-model="form.intro" type="textarea" placeholder="请输入内容" />

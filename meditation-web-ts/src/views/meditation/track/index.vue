@@ -100,10 +100,10 @@
           <el-input v-model="form.title" placeholder="请输入标题" />
         </el-form-item>
         <el-form-item label="封面" prop="cover">
-          <el-input v-model="form.cover" placeholder="请输入封面" />
+          <image-upload v-model="form.cover" :limit="1" />
         </el-form-item>
         <el-form-item label="音频文件" prop="audio">
-          <el-input v-model="form.audio" placeholder="请输入音频文件" />
+          <file-upload v-model="form.audio" :limit="1" />
         </el-form-item>
         <el-form-item label="时长" prop="durationSec">
           <el-input v-model="form.durationSec" placeholder="请输入时长" />
