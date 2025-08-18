@@ -14,7 +14,14 @@
               <el-input v-model="queryParams.summary" placeholder="请输入摘要" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="作者" prop="authorId">
-              <el-input v-model="queryParams.authorId" placeholder="请输入作者" clearable @keyup.enter="handleQuery" />
+              <el-select v-model="queryParams.authorId" placeholder="请选择作者" clearable>
+                <el-option
+                  v-for="user in userList"
+                  :key="user.userId"
+                  :label="user.nickName"
+                  :value="user.userId"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item label="发布时间" prop="publishTime">
               <el-date-picker clearable
@@ -66,7 +73,11 @@
         </el-table-column>
         <el-table-column label="摘要" align="center" prop="summary" />
         <el-table-column label="内容" align="center" prop="content" :show-overflow-tooltip="true" />
-        <el-table-column label="作者" align="center" prop="authorId" />
+        <el-table-column label="作者" align="center" prop="authorId">
+          <template #default="scope">
+            <span>{{ userList.find(u => u.userId == scope.row.authorId)?.nickName || scope.row.authorId }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" align="center" prop="status" />
         <el-table-column label="发布时间" align="center" prop="publishTime" width="180">
           <template #default="scope">
@@ -105,7 +116,14 @@
           <editor v-model="form.content" :min-height="192"/>
         </el-form-item>
         <el-form-item label="作者" prop="authorId">
-          <el-input v-model="form.authorId" placeholder="请输入作者" />
+          <el-select v-model="form.authorId" placeholder="请选择作者">
+            <el-option
+              v-for="user in userList"
+              :key="user.userId"
+              :label="user.nickName"
+              :value="user.userId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="发布时间" prop="publishTime">
           <el-date-picker clearable
@@ -135,10 +153,13 @@
 <script setup name="Article" lang="ts">
 import { listArticle, getArticle, delArticle, addArticle, updateArticle } from '@/api/meditation/article';
 import { ArticleVO, ArticleQuery, ArticleForm } from '@/api/meditation/article/types';
+import { listUser } from '@/api/system/user';
+import { UserVO } from '@/api/system/user/types';
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
 const articleList = ref<ArticleVO[]>([]);
+const userList = ref<UserVO[]>([]);
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -303,7 +324,14 @@ const handleExport = () => {
   }, `article_${new Date().getTime()}.xlsx`)
 }
 
+/** 获取用户列表 */
+const getUserList = async () => {
+  const res = await listUser({ pageNum: 1, pageSize: 100 });
+  userList.value = res.rows;
+}
+
 onMounted(() => {
   getList();
+  getUserList();
 });
 </script>
