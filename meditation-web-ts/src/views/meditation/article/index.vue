@@ -7,14 +7,14 @@
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="封面文件id" prop="cover">
-              <el-input v-model="queryParams.cover" placeholder="请输入封面文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="封面" prop="cover">
+              <el-input v-model="queryParams.cover" placeholder="请输入封面" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="摘要" prop="summary">
               <el-input v-model="queryParams.summary" placeholder="请输入摘要" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="作者用户id" prop="authorId">
-              <el-input v-model="queryParams.authorId" placeholder="请输入作者用户id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="作者" prop="authorId">
+              <el-input v-model="queryParams.authorId" placeholder="请输入作者" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="发布时间" prop="publishTime">
               <el-date-picker clearable
@@ -57,12 +57,16 @@
 
       <el-table v-loading="loading" border :data="articleList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="标题" align="center" prop="title" />
-        <el-table-column label="封面文件id" align="center" prop="cover" />
+        <el-table-column label="封面" align="center" prop="cover">
+          <template #default="scope">
+            <image-preview :src="scope.row.cover" :width="50" :height="50"/>
+          </template>
+        </el-table-column>
         <el-table-column label="摘要" align="center" prop="summary" />
-        <el-table-column label="内容" align="center" prop="content" />
-        <el-table-column label="作者用户id" align="center" prop="authorId" />
+        <el-table-column label="内容" align="center" prop="content" :show-overflow-tooltip="true" />
+        <el-table-column label="作者" align="center" prop="authorId" />
         <el-table-column label="状态" align="center" prop="status" />
         <el-table-column label="发布时间" align="center" prop="publishTime" width="180">
           <template #default="scope">
@@ -91,8 +95,8 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
         </el-form-item>
-        <el-form-item label="封面文件id" prop="cover">
-          <el-input v-model="form.cover" placeholder="请输入封面文件id" />
+        <el-form-item label="封面" prop="cover">
+          <image-upload v-model="form.cover" :limit="1" />
         </el-form-item>
         <el-form-item label="摘要" prop="summary">
             <el-input v-model="form.summary" type="textarea" placeholder="请输入内容" />
@@ -100,8 +104,8 @@
         <el-form-item label="内容">
           <editor v-model="form.content" :min-height="192"/>
         </el-form-item>
-        <el-form-item label="作者用户id" prop="authorId">
-          <el-input v-model="form.authorId" placeholder="请输入作者用户id" />
+        <el-form-item label="作者" prop="authorId">
+          <el-input v-model="form.authorId" placeholder="请输入作者" />
         </el-form-item>
         <el-form-item label="发布时间" prop="publishTime">
           <el-date-picker clearable
@@ -181,7 +185,7 @@ const data = reactive<PageData<ArticleForm, ArticleQuery>>({
   },
   rules: {
     cover: [
-      { required: true, message: "封面文件id不能为空", trigger: "blur" }
+      { required: true, message: "封面不能为空", trigger: "blur" }
     ],
     summary: [
       { required: true, message: "摘要不能为空", trigger: "blur" }
@@ -190,7 +194,7 @@ const data = reactive<PageData<ArticleForm, ArticleQuery>>({
       { required: true, message: "内容不能为空", trigger: "blur" }
     ],
     authorId: [
-      { required: true, message: "作者用户id不能为空", trigger: "blur" }
+      { required: true, message: "作者不能为空", trigger: "blur" }
     ],
     status: [
       { required: true, message: "状态不能为空", trigger: "change" }

@@ -4,8 +4,8 @@
       <div v-show="showSearch" class="mb-[10px]">
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-            <el-form-item label="分类id" prop="categoryId">
-              <el-input v-model="queryParams.categoryId" placeholder="请输入分类id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="分类" prop="categoryId">
+              <el-input v-model="queryParams.categoryId" placeholder="请输入分类" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
@@ -13,11 +13,11 @@
             <el-form-item label="副标题" prop="subtitle">
               <el-input v-model="queryParams.subtitle" placeholder="请输入副标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="封面文件id" prop="cover">
-              <el-input v-model="queryParams.cover" placeholder="请输入封面文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="封面" prop="cover">
+              <el-input v-model="queryParams.cover" placeholder="请输入封面" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="横幅图文件id" prop="banner">
-              <el-input v-model="queryParams.banner" placeholder="请输入横幅图文件id" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="横幅图" prop="banner">
+              <el-input v-model="queryParams.banner" placeholder="请输入横幅图" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="简介" prop="intro">
               <el-input v-model="queryParams.intro" placeholder="请输入简介" clearable @keyup.enter="handleQuery" />
@@ -72,12 +72,12 @@
 
       <el-table v-loading="loading" border :data="seriesList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
-        <el-table-column label="分类id" align="center" prop="categoryId" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
+        <el-table-column label="分类" align="center" prop="categoryId" />
         <el-table-column label="标题" align="center" prop="title" />
         <el-table-column label="副标题" align="center" prop="subtitle" />
-        <el-table-column label="封面文件id" align="center" prop="cover" />
-        <el-table-column label="横幅图文件id" align="center" prop="banner" />
+        <el-table-column label="封面" align="center" prop="cover" />
+        <el-table-column label="横幅图" align="center" prop="banner" />
         <el-table-column label="简介" align="center" prop="intro" />
         <el-table-column label="小节数" align="center" prop="episodeCount" />
         <el-table-column label="建议时长" align="center" prop="recommendDuration" />
@@ -107,8 +107,8 @@
     <!-- 添加或修改冥想系列对话框 -->
     <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
       <el-form ref="seriesFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="分类id" prop="categoryId">
-          <el-input v-model="form.categoryId" placeholder="请输入分类id" />
+        <el-form-item label="分类" prop="categoryId">
+          <el-input v-model="form.categoryId" placeholder="请输入分类" />
         </el-form-item>
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
@@ -116,11 +116,11 @@
         <el-form-item label="副标题" prop="subtitle">
           <el-input v-model="form.subtitle" placeholder="请输入副标题" />
         </el-form-item>
-        <el-form-item label="封面文件id" prop="cover">
-          <el-input v-model="form.cover" placeholder="请输入封面文件id" />
+        <el-form-item label="封面" prop="cover">
+          <el-input v-model="form.cover" placeholder="请输入封面" />
         </el-form-item>
-        <el-form-item label="横幅图文件id" prop="banner">
-          <el-input v-model="form.banner" placeholder="请输入横幅图文件id" />
+        <el-form-item label="横幅图" prop="banner">
+          <el-input v-model="form.banner" placeholder="请输入横幅图" />
         </el-form-item>
         <el-form-item label="简介" prop="intro">
             <el-input v-model="form.intro" type="textarea" placeholder="请输入内容" />
@@ -220,16 +220,16 @@ const data = reactive<PageData<SeriesForm, SeriesQuery>>({
   },
   rules: {
     categoryId: [
-      { required: true, message: "分类id不能为空", trigger: "blur" }
+      { required: true, message: "分类不能为空", trigger: "blur" }
     ],
     subtitle: [
       { required: true, message: "副标题不能为空", trigger: "blur" }
     ],
     cover: [
-      { required: true, message: "封面文件id不能为空", trigger: "blur" }
+      { required: true, message: "封面不能为空", trigger: "blur" }
     ],
     banner: [
-      { required: true, message: "横幅图文件id不能为空", trigger: "blur" }
+      { required: true, message: "横幅图不能为空", trigger: "blur" }
     ],
     intro: [
       { required: true, message: "简介不能为空", trigger: "blur" }

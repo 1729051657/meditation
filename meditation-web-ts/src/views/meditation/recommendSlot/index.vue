@@ -46,7 +46,7 @@
 
       <el-table v-loading="loading" border :data="recommendSlotList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="主键" align="center" prop="id" v-if="true" />
+        <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="推荐位编码" align="center" prop="code" />
         <el-table-column label="推荐位名称" align="center" prop="name" />
         <el-table-column label="所属页面" align="center" prop="page" />
