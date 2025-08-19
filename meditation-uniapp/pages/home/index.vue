@@ -1,91 +1,123 @@
 <template>
   <view class="home-page">
-    <!-- 自定义导航栏 -->
-    <tn-nav-bar
-      :isBack="false"
-      :bottomShadow="false"
-      backgroundColor="#7C3AED"
-      :fixed="true"
-    >
-	1
-    </tn-nav-bar>
-
-    <!-- 用户登录状态 -->
-    <view class="user-status" v-if="isLogin">
-      <text class="welcome">欢迎，{{ getUserDisplayName() }}</text>
-      <text class="user-type">{{ scope === 'xcx_user' ? '小程序用户' : '用户' }}</text>
-    </view>
-    
-    <!-- 登录状态提示 -->
-    <view v-if="!isLogin" class="login-tip">
-      <view class="loading-spinner"></view>
-      <text class="loading-text">正在登录中...</text>
-    </view>
-
-    <!-- 主要内容 -->
-    <view v-else class="main-content">
-      <!-- 轮播图 -->
-      <view class="banner-section" v-if="bannerList.length > 0">
-        <swiper class="banner-swiper" :indicator-dots="true" :autoplay="true" :interval="3000" :duration="500">
-          <swiper-item v-for="banner in bannerList" :key="banner.id" @click="handleBannerClick(banner)">
-            <image :src="oss(banner.image)" class="banner-image" mode="aspectFill" />
-          </swiper-item>
-        </swiper>
+    <!-- 顶部区域 -->
+    <view class="header-section">
+      <!-- 问候语 -->
+      <view class="greeting">上午好</view>
+      
+      <!-- 搜索框 -->
+      <view class="search-box" @click="goToSearch">
+        <uni-icons type="search" size="20" color="#999"></uni-icons>
+        <text class="search-placeholder">搜索</text>
       </view>
+    </view>
 
-      <!-- 分类导航 -->
-      <view class="category-section" v-if="categoryList.length > 0">
-        <view class="section-title">分类导航</view>
-        <view class="category-grid">
+    <!-- 功能按钮区域 -->
+    <view class="feature-section">
+      <view class="feature-item" @click="goToCategory('relax')">
+        <view class="feature-icon-wrapper">
+          <image src="/static/home/放松减压@2x.png" class="feature-icon" mode="aspectFit"></image>
+        </view>
+        <text class="feature-text">放松减压</text>
+      </view>
+      
+      <view class="feature-item" @click="goToCategory('sleep')">
+        <view class="feature-icon-wrapper">
+          <image src="/static/home/改善睡眠@2x.png" class="feature-icon" mode="aspectFit"></image>
+        </view>
+        <text class="feature-text">改善睡眠</text>
+      </view>
+      
+      <view class="feature-item" @click="goToCategory('focus')">
+        <view class="feature-icon-wrapper">
+          <image src="/static/home/提升专注@2x.png" class="feature-icon" mode="aspectFit"></image>
+        </view>
+        <text class="feature-text">提升专注</text>
+      </view>
+      
+      <view class="feature-item" @click="goToCategory('emotion')">
+        <view class="feature-icon-wrapper">
+          <image src="/static/home/情绪调节@2x.png" class="feature-icon" mode="aspectFit"></image>
+        </view>
+        <text class="feature-text">情绪调节</text>
+      </view>
+    </view>
+
+    <!-- 冥想练习区域 -->
+    <view class="meditation-section" v-if="meditationSlots.length > 0">
+      <view class="section-header">
+        <text class="section-title">冥想练习</text>
+        <view class="section-more" @click="goToMore('meditation')">
+          <uni-icons type="right" size="16" color="#999"></uni-icons>
+        </view>
+      </view>
+      
+      <scroll-view class="meditation-cards" scroll-x>
+        <view class="meditation-card-list">
           <view 
-            class="category-item" 
-            v-for="category in categoryList" 
-            :key="category.id"
-            @click="goToCategory(category.id)"
+            v-for="(item, index) in meditationSlots" 
+            :key="item.id"
+            class="meditation-card"
+            :class="index === 0 ? 'card-basic' : 'card-advanced'"
+            @click="goToMeditation(item)"
           >
-            <image :src="oss(category.icon)" class="category-icon" mode="aspectFill" />
-            <text class="category-name">{{ category.name }}</text>
+            <view class="card-content">
+              <text class="card-title">{{ item.title }}</text>
+              <view class="card-duration">
+                <uni-icons type="time" size="14" color="#fff"></uni-icons>
+                <text class="duration-text">{{ item.duration || '10' }}分钟</text>
+              </view>
+            </view>
+            <view class="card-play">
+              <image src="/static/home/播放@3x.png" class="play-icon" mode="aspectFit"></image>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 冥想推荐区域 -->
+    <view class="recommend-section" v-if="recommendItems.length > 0">
+      <view class="section-header">
+        <text class="section-title">冥想推荐</text>
+      </view>
+      
+      <view class="recommend-list">
+        <view 
+          v-for="item in recommendItems.slice(0, 3)" 
+          :key="item.id"
+          class="recommend-item"
+          @click="goToRecommend(item)"
+        >
+          <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
+          <view class="recommend-info">
+            <text class="recommend-title">{{ item.title }}</text>
+            <text class="recommend-duration">{{ item.duration || '10' }}分钟</text>
           </view>
         </view>
       </view>
+    </view>
 
-      <!-- 推荐系列 -->
-      <view class="series-section" v-if="seriesList.length > 0">
-        <view class="section-title">为你推荐</view>
-        <scroll-view class="series-scroll" scroll-x>
-          <view class="series-list">
-            <view 
-              class="series-item" 
-              v-for="series in seriesList" 
-              :key="series.id"
-              @click="goToSeries(series.id)"
-            >
-              <image :src="oss(series.cover)" class="series-cover" mode="aspectFill" />
-              <view class="series-info">
-                <text class="series-title">{{ series.title }}</text>
-                <text class="series-subtitle">{{ series.subtitle }}</text>
-                <text class="series-episodes">{{ series.episodeCount }}集</text>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
+    <!-- 冥想知识区域 -->
+    <view class="knowledge-section" v-if="knowledgeItems.length > 0">
+      <view class="section-header">
+        <text class="section-title">冥想知识</text>
+        <view class="section-more" @click="goToMore('knowledge')">
+          <uni-icons type="right" size="16" color="#999"></uni-icons>
+        </view>
       </view>
-
-      <!-- 热门文章 -->
-      <view class="article-section" v-if="articleList.length > 0">
-        <view class="section-title">热门文章</view>
-        <view class="article-list">
-          <view 
-            class="article-item" 
-            v-for="article in articleList" 
-            :key="article.id"
-            @click="goToArticle(article.id)"
-          >
-            <image :src="oss(article.cover)" class="article-cover" mode="aspectFill" />
-            <view class="article-info">
-              <text class="article-title">{{ article.title }}</text>
-              <text class="article-summary">{{ article.summary }}</text>
-            </view>
+      
+      <view class="knowledge-list">
+        <view 
+          v-for="item in knowledgeItems.slice(0, 3)" 
+          :key="item.id"
+          class="knowledge-item"
+          @click="goToKnowledge(item)"
+        >
+          <image :src="item.cover || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
+          <view class="knowledge-content">
+            <text class="knowledge-title">{{ item.title }}</text>
+            <text class="knowledge-desc" v-if="item.description">{{ item.description }}</text>
           </view>
         </view>
       </view>
@@ -94,130 +126,150 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
-import { listBanner } from '@/api/banner'
+import { listSlots, listSlotItems } from '@/api/recommend'
 
 export default {
   data() {
     return {
-      loginLoading: false,
-      categoryList: [],
-      seriesList: [],
-      articleList: [],
-      bannerList: []
+      meditationSlots: [], // 冥想练习推荐位
+      recommendItems: [], // 推荐内容
+      knowledgeItems: [], // 知识内容
+      defaultCover: '/static/images/default-cover.png',
+      defaultKnowledgeCover: '/static/images/default-knowledge.png'
     }
   },
   
-  computed: {
-    ...mapState('user', ['isLogin', 'token', 'userInfo', 'openid', 'scope'])
+  onLoad() {
+    this.loadHomeData()
   },
   
-  onLoad() {
-    // 页面加载时自动登录
-    this.autoLogin()
+  onPullDownRefresh() {
+    this.loadHomeData().finally(() => {
+      uni.stopPullDownRefresh()
+    })
   },
   
   methods: {
-    ...mapActions('user', ['wxLogin']),
-    
-    // 获取用户显示名称
-    getUserDisplayName() {
-      if (this.userInfo && this.userInfo.nickName) {
-        return this.userInfo.nickName
-      }
-      if (this.userInfo && this.userInfo.userName) {
-        return this.userInfo.userName
-      }
-      return '冥想用户'
-    },
-    
-    // 自动微信登录
-    async autoLogin() {
+    // 加载首页数据
+    async loadHomeData() {
       try {
-        this.loginLoading = true
+        // 并行加载推荐位和推荐内容
+        const [slotsRes, itemsRes] = await Promise.all([
+          listSlots({ status: 1, pageSize: 10 }),
+          listSlotItems({ status: 1, pageSize: 20 })
+        ])
         
-        // 检查是否已登录
-        if (this.token) {
-          console.log('已登录，直接加载数据')
-          this.loadData()
-          return
+        // 处理推荐位数据
+        if (slotsRes.code === 200 && slotsRes.rows) {
+          // 根据slotType分类处理
+          const slots = slotsRes.rows
+          
+          // 冥想练习 (type: meditation)
+          this.meditationSlots = slots.filter(item => 
+            item.slotType === 'meditation' || item.position === 'meditation'
+          ).slice(0, 2) // 只取前两个
+          
+          // 如果没有明确的分类，就按位置分配
+          if (this.meditationSlots.length === 0) {
+            this.meditationSlots = slots.slice(0, 2)
+          }
         }
         
-        // 调用store中的小程序登录方法
-        const result = await this.wxLogin({
-          tenantId: '000000'
-        })
-        
-        // 登录成功，加载数据
-        this.isLogin = true
-        this.loadData()
-        
+        // 处理推荐内容数据
+        if (itemsRes.code === 200 && itemsRes.rows) {
+          const items = itemsRes.rows
+          
+          // 根据itemType分类
+          this.recommendItems = items.filter(item => 
+            item.itemType === 'recommend' || item.itemType === 'meditation' || !item.itemType
+          ).slice(0, 3)
+          
+          this.knowledgeItems = items.filter(item => 
+            item.itemType === 'knowledge' || item.itemType === 'article'
+          ).slice(0, 3)
+          
+          // 如果没有明确分类，按顺序分配
+          if (this.recommendItems.length === 0) {
+            this.recommendItems = items.slice(0, 3)
+          }
+          if (this.knowledgeItems.length === 0) {
+            this.knowledgeItems = items.slice(3, 6)
+          }
+        }
       } catch (error) {
-        console.error('自动登录失败:', error)
-        
-        // 如果是开发环境，可能是因为不在微信环境
-        // #ifdef H5
-        console.log('H5环境，跳过微信登录')
-        this.loadData()
-        // #endif
-        
-        // #ifndef H5
+        console.error('加载首页数据失败:', error)
         uni.showToast({
-          title: error.message || '登录失败',
+          title: '加载失败',
           icon: 'none'
         })
-        // 登录失败时也尝试加载数据（可能有些接口不需要登录）
-        this.loadData()
-        // #endif
-      } finally {
-        this.loginLoading = false
       }
     },
     
-    // 加载页面数据
-    async loadData() {
-      
+    // 跳转到搜索页
+    goToSearch() {
+      uni.navigateTo({
+        url: '/pages/search/index'
+      })
     },
     
-    // OSS资源链接
-    oss(path) {
-      if (!path) return '/static/images/default-cover.png'
-      return this.$baseUrl + path
+    // 跳转到分类
+    goToCategory(type) {
+      uni.navigateTo({
+        url: `/pages/category/index?type=${type}`
+      })
     },
     
-    // 横幅点击
-    handleBannerClick(banner) {
-      if (banner.linkType === 'series') {
-        this.goToSeries(banner.linkTarget)
-      } else if (banner.linkType === 'article') {
-        this.goToArticle(banner.linkTarget)
-      } else if (banner.linkType === 'url' && banner.linkTarget) {
-        // 打开外部链接
+    // 跳转到冥想详情
+    goToMeditation(item) {
+      // 根据实际数据结构跳转
+      if (item.targetId) {
         uni.navigateTo({
-          url: `/subPages/webview/index?url=${encodeURIComponent(banner.linkTarget)}`
+          url: `/pages/player/index?id=${item.targetId}&type=${item.targetType || 'meditation'}`
+        })
+      } else if (item.link) {
+        uni.navigateTo({
+          url: item.link
         })
       }
     },
     
-    // 跳转到分类页
-    goToCategory(categoryId) {
-      uni.navigateTo({
-        url: `/pages/category/index?categoryId=${categoryId}`
-      })
+    // 跳转到推荐详情
+    goToRecommend(item) {
+      if (item.targetId) {
+        uni.navigateTo({
+          url: `/pages/player/index?id=${item.targetId}&type=${item.targetType || 'meditation'}`
+        })
+      } else if (item.link) {
+        uni.navigateTo({
+          url: item.link
+        })
+      }
     },
     
-    // 跳转到系列详情
-    goToSeries(seriesId) {
-      uni.navigateTo({
-        url: `/subPages/series/detail?seriesId=${seriesId}`
-      })
+    // 跳转到知识详情
+    goToKnowledge(item) {
+      if (item.targetId) {
+        uni.navigateTo({
+          url: `/pages/article/detail?id=${item.targetId}`
+        })
+      } else if (item.link) {
+        uni.navigateTo({
+          url: item.link
+        })
+      }
     },
     
-    // 跳转到文章详情
-    goToArticle(articleId) {
-      uni.navigateTo({
-        url: `/subPages/article/detail?articleId=${articleId}`
-      })
+    // 查看更多
+    goToMore(type) {
+      if (type === 'meditation') {
+        uni.navigateTo({
+          url: '/pages/series/index'
+        })
+      } else if (type === 'knowledge') {
+        uni.navigateTo({
+          url: '/pages/article/index'
+        })
+      }
     }
   }
 }
@@ -226,172 +278,160 @@ export default {
 <style lang="scss" scoped>
 .home-page {
   min-height: 100vh;
-  background: #f5f5f7;
+  background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
+  padding-bottom: 100rpx;
 }
 
-.nav-title {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .nav-title-text {
-    font-size: 32rpx;
-    color: #fff;
-    font-weight: 500;
-  }
+/* 顶部区域 */
+.header-section {
+  padding: 40rpx 30rpx 30rpx;
+  padding-top: calc(var(--status-bar-height) + 40rpx);
 }
 
-.user-status {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20rpx 0;
-  background-color: #7C3AED;
-  color: #fff;
-  font-size: 28rpx;
+.greeting {
+  font-size: 36rpx;
   font-weight: 500;
-
-  .welcome {
-    margin-right: 10rpx;
-  }
-
-  .user-type {
-    font-size: 24rpx;
-    color: #e0e0e0;
-  }
+  color: #333;
+  margin-bottom: 20rpx;
 }
 
-.login-tip {
+.search-box {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 200rpx 0;
+  background: #fff;
+  border-radius: 36rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
   
-  .loading-spinner {
-    width: 60rpx;
-    height: 60rpx;
-    border: 4rpx solid #e5e7eb;
-    border-top: 4rpx solid #7C3AED;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 20rpx;
-  }
-  
-  .loading-text {
-    color: #6b7280;
+  .search-placeholder {
+    margin-left: 12rpx;
+    color: #999;
     font-size: 28rpx;
   }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.main-content {
-  padding-top: 120rpx;
-}
-
-.banner-section {
-  margin: 20rpx;
+/* 功能按钮区域 */
+.feature-section {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx 30rpx 40rpx;
   
-  .banner-swiper {
-    height: 300rpx;
-    border-radius: 20rpx;
-    overflow: hidden;
+  .feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     
-    .banner-image {
-      width: 100%;
-      height: 100%;
-    }
-  }
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 40rpx 20rpx 20rpx;
-}
-
-.category-section {
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20rpx;
-    padding: 0 20rpx;
-    
-    .category-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20rpx;
+    .feature-icon-wrapper {
+      width: 120rpx;
+      height: 120rpx;
       background: #fff;
-      border-radius: 16rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-      
-      .category-icon {
-        width: 80rpx;
-        height: 80rpx;
-        margin-bottom: 16rpx;
-        border-radius: 50%;
-      }
-      
-      .category-name {
-        font-size: 24rpx;
-        color: #374151;
-        text-align: center;
-      }
+      border-radius: 24rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+      margin-bottom: 16rpx;
+    }
+    
+    .feature-icon {
+      width: 60rpx;
+      height: 60rpx;
+    }
+    
+    .feature-text {
+      font-size: 26rpx;
+      color: #333;
     }
   }
 }
 
-.series-section {
-  .series-scroll {
-    white-space: nowrap;
-    padding: 0 20rpx;
+/* 通用区块样式 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
+  
+  .section-title {
+    font-size: 32rpx;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .section-more {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* 冥想练习区域 */
+.meditation-section {
+  margin-bottom: 40rpx;
+  
+  .meditation-cards {
+    padding-left: 30rpx;
     
-    .series-list {
-      display: inline-flex;
+    .meditation-card-list {
+      display: flex;
       gap: 20rpx;
+      padding-right: 30rpx;
       
-      .series-item {
-        width: 300rpx;
-        background: #fff;
-        border-radius: 16rpx;
+      .meditation-card {
+        flex-shrink: 0;
+        width: 340rpx;
+        height: 200rpx;
+        border-radius: 20rpx;
+        padding: 30rpx;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        position: relative;
         overflow: hidden;
-        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
         
-        .series-cover {
-          width: 100%;
-          height: 200rpx;
+        &.card-basic {
+          background: linear-gradient(135deg, #A8D5E8 0%, #6BA3D0 100%);
         }
         
-        .series-info {
-          padding: 20rpx;
+        &.card-advanced {
+          background: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
+        }
+        
+        .card-content {
+          flex: 1;
           
-          .series-title {
-            font-size: 28rpx;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 8rpx;
-            display: block;
-          }
-          
-          .series-subtitle {
-            font-size: 24rpx;
-            color: #6b7280;
-            margin-bottom: 8rpx;
-            display: block;
-          }
-          
-          .series-episodes {
-            font-size: 22rpx;
-            color: #7C3AED;
+          .card-title {
+            font-size: 32rpx;
             font-weight: 500;
+            color: #fff;
             display: block;
+            margin-bottom: 16rpx;
+          }
+          
+          .card-duration {
+            display: flex;
+            align-items: center;
+            gap: 8rpx;
+            
+            .duration-text {
+              font-size: 24rpx;
+              color: rgba(255, 255, 255, 0.9);
+            }
+          }
+        }
+        
+        .card-play {
+          width: 60rpx;
+          height: 60rpx;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          .play-icon {
+            width: 24rpx;
+            height: 24rpx;
           }
         }
       }
@@ -399,54 +439,106 @@ export default {
   }
 }
 
-.article-section {
-  .article-list {
-    padding: 0 20rpx;
+/* 冥想推荐区域 */
+.recommend-section {
+  margin-bottom: 40rpx;
+  
+  .recommend-list {
+    padding: 0 30rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 20rpx;
     
-    .article-item {
+    .recommend-item {
       display: flex;
       background: #fff;
       border-radius: 16rpx;
       overflow: hidden;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-      margin-bottom: 20rpx;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
       
-      .article-cover {
+      .recommend-image {
         width: 200rpx;
         height: 150rpx;
         flex-shrink: 0;
       }
       
-      .article-info {
+      .recommend-info {
         flex: 1;
-        padding: 20rpx;
+        padding: 24rpx;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
         
-        .article-title {
-          font-size: 28rpx;
-          font-weight: 600;
-          color: #1f2937;
-          margin-bottom: 8rpx;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
+        .recommend-title {
+          font-size: 30rpx;
+          color: #333;
+          margin-bottom: 12rpx;
+          font-weight: 500;
         }
         
-        .article-summary {
+        .recommend-duration {
           font-size: 24rpx;
-          color: #6b7280;
+          color: #999;
+        }
+      }
+    }
+  }
+}
+
+/* 冥想知识区域 */
+.knowledge-section {
+  margin-bottom: 40rpx;
+  
+  .knowledge-list {
+    padding: 0 30rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 20rpx;
+    
+    .knowledge-item {
+      display: flex;
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 20rpx;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+      
+      .knowledge-image {
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: 12rpx;
+        flex-shrink: 0;
+        margin-right: 20rpx;
+      }
+      
+      .knowledge-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        
+        .knowledge-title {
+          font-size: 28rpx;
+          color: #333;
+          font-weight: 500;
+          margin-bottom: 12rpx;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .knowledge-desc {
+          font-size: 24rpx;
+          color: #999;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       }
     }
   }
 }
 </style>
-
-
