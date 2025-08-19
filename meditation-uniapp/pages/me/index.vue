@@ -51,7 +51,7 @@
     <!-- 功能菜单 -->
     <view class="menu-section">
       <view class="menu-group">
-        <view class="menu-item" @click="goTo('/subPages/favorites/index')">
+        <view class="menu-item" @click="goTo('/pages/favorites/index')">
           <view class="menu-left">
             <view class="menu-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">
               <text class="tn-icon-like-fill"></text>
@@ -61,7 +61,7 @@
           <text class="tn-icon-right menu-arrow"></text>
         </view>
         
-        <view class="menu-item" @click="goTo('/subPages/history/index')">
+        <view class="menu-item" @click="goTo('/pages/history/index')">
           <view class="menu-left">
             <view class="menu-icon" style="background: linear-gradient(135deg, #4ECDC4, #44A08D);">
               <text class="tn-icon-time-fill"></text>
@@ -71,7 +71,7 @@
           <text class="tn-icon-right menu-arrow"></text>
         </view>
         
-        <view class="menu-item" @click="goTo('/subPages/progress/index')">
+        <view class="menu-item" @click="goTo('/pages/progress/index')">
           <view class="menu-left">
             <view class="menu-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
               <text class="tn-icon-chart-bar"></text>
@@ -83,7 +83,7 @@
       </view>
       
       <view class="menu-group">
-        <view class="menu-item" @click="goTo('/subPages/settings/index')">
+        <view class="menu-item" @click="goTo('/pages/settings/index')">
           <view class="menu-left">
             <view class="menu-icon" style="background: linear-gradient(135deg, #6B7280, #374151);">
               <text class="tn-icon-set-fill"></text>
@@ -93,7 +93,7 @@
           <text class="tn-icon-right menu-arrow"></text>
         </view>
         
-        <view class="menu-item" @click="goTo('/subPages/about/index')">
+        <view class="menu-item" @click="goTo('/pages/about/index')">
           <view class="menu-left">
             <view class="menu-icon" style="background: linear-gradient(135deg, #3B82F6, #1E40AF);">
               <text class="tn-icon-info-circle-fill"></text>
@@ -174,7 +174,7 @@ export default {
     },
     
     goTo(url) {
-      if (!this.isLogin && url !== '/subPages/about/index') {
+      if (!this.isLogin && url !== '/pages/about/index') {
         uni.showToast({
           title: '请先登录',
           icon: 'none'
@@ -199,7 +199,7 @@ export default {
       }
       
       uni.navigateTo({
-        url: '/subPages/profile/edit'
+        url: '/pages/profile/edit'
       })
     },
     

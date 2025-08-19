@@ -566,6 +566,17 @@ public class SysUserServiceImpl implements ISysUserService, UserService {
         return baseMapper.selectVoList(lqw);
     }
 
+    @Override
+    public boolean updateUserWechatInfo(Long userId, String openid, String unionid) {
+        SysUser updateUser = new SysUser();
+        updateUser.setUserId(userId);
+        updateUser.setWechatOpenId(openid);
+        updateUser.setWechatUnionId(unionid);
+
+        int result = baseMapper.updateById(updateUser);
+        return result > 0;
+    }
+
     /**
      * 通过用户ID查询用户账户
      *

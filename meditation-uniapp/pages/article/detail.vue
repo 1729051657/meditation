@@ -1,8 +1,8 @@
 <template>
   <view class="article-detail">
-    <text class="title">{{ article?.title || '' }}</text>
-    <image class="cover" :src="oss(article?.cover)" mode="aspectFill" />
-    <rich-text :nodes="article?.content || ''"></rich-text>
+    <text class="title">{{ article && article.title ? article.title : '' }}</text>
+    <image class="cover" :src="oss(article && article.cover ? article.cover : '')" mode="aspectFill" />
+    <rich-text :nodes="article && article.content ? article.content : ''"></rich-text>
   </view>
 </template>
 

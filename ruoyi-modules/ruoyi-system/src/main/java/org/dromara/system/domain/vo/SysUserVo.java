@@ -39,6 +39,16 @@ public class SysUserVo implements Serializable {
     private String tenantId;
 
     /**
+     * 微信小程序OpenID
+     */
+    private String wechatOpenId;
+
+    /**
+     * 微信UnionID
+     */
+    private String wechatUnionId;
+
+    /**
      * 部门ID
      */
     private Long deptId;

@@ -1,5 +1,6 @@
 package org.dromara.meditation.service.impl;
 
+import org.apache.poi.sl.usermodel.Background;
 import org.dromara.common.core.utils.MapstructUtils;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -19,6 +20,7 @@ import org.dromara.meditation.service.ITagService;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * 内容标签Service业务层处理
@@ -131,5 +133,32 @@ public class TagServiceImpl implements ITagService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+
+    /**
+     * 批量查询标签信息
+     *
+     * @param ids 标签ID列表
+     * @return 标签信息列表
+     */
+    @Override
+    public List<TagVo> queryByIds(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return CollUtil.newArrayList();
+        }
+        return baseMapper.selectVoByIds(ids);
+    }
+
+    /**
+     * 查询所有可用标签
+     *
+     * @return 标签列表
+     */
+    @Override
+    public List<TagVo> queryAllAvailable() {
+        LambdaQueryWrapper<Tag> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(Tag::getStatus, "0")
+               .orderByAsc(Tag::getOrderNum);
+        return baseMapper.selectVoList(wrapper);
     }
 }

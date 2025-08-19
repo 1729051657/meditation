@@ -4,9 +4,6 @@
       <div v-show="showSearch" class="mb-[10px]">
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-            <el-form-item label="父分类" prop="parentId">
-              <el-input v-model="queryParams.parentId" placeholder="请输入父分类" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
             <el-form-item label="分类名称" prop="name">
               <el-input v-model="queryParams.name" placeholder="请输入分类名称" clearable @keyup.enter="handleQuery" />
             </el-form-item>
@@ -18,12 +15,6 @@
                 <el-option label="启用" value="0" />
                 <el-option label="停用" value="1" />
               </el-select>
-            </el-form-item>
-            <el-form-item label="简介" prop="description">
-              <el-input v-model="queryParams.description" placeholder="请输入简介" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="queryParams.orderNum" placeholder="请输入显示顺序" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -55,7 +46,6 @@
         :default-expand-all="isExpandAll"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
-        <el-table-column label="父分类" align="center" prop="parentId" />
         <el-table-column label="分类名称" align="center" prop="name" />
         <el-table-column label="分类编码" align="center" prop="code" />
         <el-table-column label="图标" align="center" prop="icon">
@@ -198,20 +188,8 @@ const data = reactive<PageData<CategoryForm, CategoryQuery>>({
     code: [
       { required: true, message: "分类编码不能为空", trigger: "blur" }
     ],
-    icon: [
-      { required: true, message: "图标不能为空", trigger: "blur" }
-    ],
-    description: [
-      { required: true, message: "简介不能为空", trigger: "blur" }
-    ],
-    orderNum: [
-      { required: true, message: "显示顺序不能为空", trigger: "blur" }
-    ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
-    ],
-    remark: [
-      { required: true, message: "备注不能为空", trigger: "blur" }
+    name: [
+      { required: true, message: "分类名称不能为空", trigger: "blur" }
     ]
   }
 });

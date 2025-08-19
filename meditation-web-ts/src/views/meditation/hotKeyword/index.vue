@@ -147,8 +147,8 @@ const initFormData: HotKeywordForm = {
   id: undefined,
   keyword: undefined,
   orderNum: undefined,
-  startTime: undefined,
-  endTime: undefined,
+  startTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
+  endTime: '9999-12-31 23:59:59',
   status: undefined,
 }
 const data = reactive<PageData<HotKeywordForm, HotKeywordQuery>>({

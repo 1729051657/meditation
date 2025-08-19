@@ -15,10 +15,13 @@ import org.dromara.meditation.domain.vo.SeriesVo;
 import org.dromara.meditation.domain.Series;
 import org.dromara.meditation.mapper.SeriesMapper;
 import org.dromara.meditation.service.ISeriesService;
+import org.dromara.meditation.service.IContentTagService;
+import org.dromara.meditation.service.ITagService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * 冥想系列Service业务层处理
@@ -32,6 +35,8 @@ import java.util.Collection;
 public class SeriesServiceImpl implements ISeriesService {
 
     private final SeriesMapper baseMapper;
+    private final IContentTagService contentTagService;
+    private final ITagService tagService;
 
     /**
      * 查询冥想系列
@@ -41,7 +46,16 @@ public class SeriesServiceImpl implements ISeriesService {
      */
     @Override
     public SeriesVo queryById(Long id){
-        return baseMapper.selectVoById(id);
+        SeriesVo vo = baseMapper.selectVoById(id);
+        if (vo != null) {
+            // 查询标签
+            List<Long> tagIds = contentTagService.getTagIdsByContent("series", id);
+            vo.setTagIds(tagIds);
+            if (CollUtil.isNotEmpty(tagIds)) {
+                vo.setTags(tagService.queryByIds(tagIds));
+            }
+        }
+        return vo;
     }
 
     /**
@@ -102,6 +116,10 @@ public class SeriesServiceImpl implements ISeriesService {
         boolean flag = baseMapper.insert(add) > 0;
         if (flag) {
             bo.setId(add.getId());
+            // 保存标签关联
+            if (CollUtil.isNotEmpty(bo.getTagIds())) {
+                contentTagService.updateContentTags("series", add.getId(), bo.getTagIds());
+            }
         }
         return flag;
     }
@@ -116,7 +134,12 @@ public class SeriesServiceImpl implements ISeriesService {
     public Boolean updateByBo(SeriesBo bo) {
         Series update = MapstructUtils.convert(bo, Series.class);
         validEntityBeforeSave(update);
-        return baseMapper.updateById(update) > 0;
+        boolean flag = baseMapper.updateById(update) > 0;
+        if (flag) {
+            // 更新标签关联
+            contentTagService.updateContentTags("series", bo.getId(), bo.getTagIds());
+        }
+        return flag;
     }
 
     /**
@@ -138,6 +161,11 @@ public class SeriesServiceImpl implements ISeriesService {
         if(isValid){
             //TODO 做一些业务上的校验,判断是否需要校验
         }
-        return baseMapper.deleteByIds(ids) > 0;
+        boolean flag = baseMapper.deleteByIds(ids) > 0;
+        if (flag) {
+            // 删除标签关联
+            contentTagService.deleteByContent("series", ids);
+        }
+        return flag;
     }
 }

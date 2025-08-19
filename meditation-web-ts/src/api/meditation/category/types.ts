@@ -22,7 +22,7 @@ export interface CategoryVO {
   /**
    * 图标文件id（sys_oss.oss_id）
    */
-  icon: number;
+  icon: string;
 
   /**
    * 简介
@@ -74,7 +74,7 @@ export interface CategoryForm extends BaseEntity {
   /**
    * 图标文件id（sys_oss.oss_id）
    */
-  icon?: number;
+  icon?: string;
 
   /**
    * 简介
@@ -118,7 +118,7 @@ export interface CategoryQuery {
   /**
    * 图标文件id（sys_oss.oss_id）
    */
-  icon?: number;
+  icon?: string;
 
   /**
    * 简介

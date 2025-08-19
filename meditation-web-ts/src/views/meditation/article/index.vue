@@ -93,6 +93,23 @@
           </template>
         </el-table-column>
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
+        <el-table-column label="标签" align="center" prop="tagIds" width="200">
+          <template #default="scope">
+            <div class="tag-list">
+              <el-tag 
+                v-for="tagId in scope.row.tagIds" 
+                :key="tagId"
+                size="small"
+                class="mx-1"
+              >
+                {{ tagList.find(t => t.id === tagId)?.name || tagId }}
+              </el-tag>
+              <span v-if="!scope.row.tagIds || scope.row.tagIds.length === 0" class="text-gray-400">
+                无标签
+              </span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
@@ -109,47 +126,101 @@
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </el-card>
     <!-- 添加或修改冥想知识文章对话框 -->
-    <el-dialog :title="dialog.title" v-model="dialog.visible" width="800px" append-to-body>
-      <el-form ref="articleFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
-        </el-form-item>
+    <el-dialog :title="dialog.title" v-model="dialog.visible" width="900px" append-to-body>
+      <el-form ref="articleFormRef" :model="form" :rules="rules" label-width="100px">
+        <!-- 第一行：标题和发布时间 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="标题" prop="title">
+              <el-input v-model="form.title" placeholder="请输入标题" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="发布时间" prop="publishTime">
+              <el-date-picker clearable
+                v-model="form.publishTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                placeholder="请选择发布时间"
+                style="width: 100%">
+              </el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第二行：作者和状态 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="作者" prop="authorId">
+              <el-select v-model="form.authorId" placeholder="请选择作者" style="width: 100%">
+                <el-option
+                  v-for="user in userList"
+                  :key="user.userId"
+                  :label="user.nickName"
+                  :value="user.userId"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio value="0">启用</el-radio>
+                <el-radio value="1">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第三行：显示顺序和标签 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="显示顺序" prop="orderNum">
+              <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="标签" prop="tagIds">
+              <el-select 
+                v-model="form.tagIds" 
+                multiple 
+                filterable 
+                placeholder="请选择标签"
+                style="width: 100%"
+                clearable
+              >
+                <el-option 
+                  v-for="tag in tagList" 
+                  :key="tag.id" 
+                  :label="tag.name" 
+                  :value="tag.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第四行：封面 -->
         <el-form-item label="封面" prop="cover">
           <image-upload v-model="form.cover" :limit="1" />
         </el-form-item>
+        
+        <!-- 第五行：摘要 -->
         <el-form-item label="摘要" prop="summary">
-            <el-input v-model="form.summary" type="textarea" placeholder="请输入内容" />
+          <el-input 
+            v-model="form.summary" 
+            type="textarea" 
+            placeholder="请输入摘要内容" 
+            :rows="3"
+            style="width: 100%" />
         </el-form-item>
-        <el-form-item label="内容">
-          <editor v-model="form.content" :min-height="192"/>
+        
+        <!-- 第六行：内容 -->
+        <el-form-item label="内容" prop="content">
+          <editor v-model="form.content" :min-height="300"/>
         </el-form-item>
-        <el-form-item label="作者" prop="authorId">
-          <el-select v-model="form.authorId" placeholder="请选择作者">
-            <el-option
-              v-for="user in userList"
-              :key="user.userId"
-              :label="user.nickName"
-              :value="user.userId"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="发布时间" prop="publishTime">
-          <el-date-picker clearable
-            v-model="form.publishTime"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="请选择发布时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="显示顺序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio value="0">启用</el-radio>
-            <el-radio value="1">停用</el-radio>
-          </el-radio-group>
-        </el-form-item>
+        
+        <!-- 第七行：备注 -->
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
         </el-form-item>
@@ -166,14 +237,17 @@
 
 <script setup name="Article" lang="ts">
 import { listArticle, getArticle, delArticle, addArticle, updateArticle } from '@/api/meditation/article';
-import { ArticleVO, ArticleQuery, ArticleForm } from '@/api/meditation/article/types';
 import { listUser } from '@/api/system/user';
+import { getAllAvailableTags } from '@/api/meditation/tag';
 import { UserVO } from '@/api/system/user/types';
+import { TagVO } from '@/api/meditation/tag/types';
+import { ArticleVO, ArticleQuery, ArticleForm } from '@/api/meditation/article/types';
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
 const articleList = ref<ArticleVO[]>([]);
 const userList = ref<UserVO[]>([]);
+const tagList = ref<TagVO[]>([]);
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -198,9 +272,10 @@ const initFormData: ArticleForm = {
   content: undefined,
   authorId: undefined,
   status: undefined,
-  publishTime: undefined,
+  publishTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
   orderNum: undefined,
-  remark: undefined
+  remark: undefined,
+  tagIds: []
 }
 const data = reactive<PageData<ArticleForm, ArticleQuery>>({
   form: {...initFormData},
@@ -219,6 +294,9 @@ const data = reactive<PageData<ArticleForm, ArticleQuery>>({
     }
   },
   rules: {
+    title: [
+      { required: true, message: "标题不能为空", trigger: "blur" }
+    ],
     cover: [
       { required: true, message: "封面不能为空", trigger: "blur" }
     ],
@@ -228,20 +306,8 @@ const data = reactive<PageData<ArticleForm, ArticleQuery>>({
     content: [
       { required: true, message: "内容不能为空", trigger: "blur" }
     ],
-    authorId: [
-      { required: true, message: "作者不能为空", trigger: "blur" }
-    ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
-    ],
     publishTime: [
       { required: true, message: "发布时间不能为空", trigger: "blur" }
-    ],
-    orderNum: [
-      { required: true, message: "显示顺序不能为空", trigger: "blur" }
-    ],
-    remark: [
-      { required: true, message: "备注不能为空", trigger: "blur" }
     ]
   }
 });
@@ -344,8 +410,37 @@ const getUserList = async () => {
   userList.value = res.rows;
 }
 
+/** 获取标签列表 */
+const getTagList = async () => {
+  const res = await getAllAvailableTags();
+  tagList.value = res.data;
+}
+
 onMounted(() => {
   getList();
   getUserList();
+  getTagList();
 });
 </script>
+
+<style lang="scss" scoped>
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  
+  .el-tag {
+    margin: 2px;
+  }
+  
+  .text-gray-400 {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+}
+
+.mx-1 {
+  margin: 0 4px;
+}
+</style>

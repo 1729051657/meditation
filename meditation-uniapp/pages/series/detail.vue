@@ -1,11 +1,11 @@
 <template>
   <view class="series-detail">
     <view class="header">
-      <text class="title">{{ series?.title || '' }}</text>
-      <text class="sub">系列 · {{ series?.episodeCount || 0 }}</text>
+      <text class="title">{{ series && series.title ? series.title : '' }}</text>
+      <text class="sub">系列 · {{ series && series.episodeCount ? series.episodeCount : 0 }}</text>
     </view>
-    <image class="banner" :src="oss(series?.banner || series?.cover)" mode="aspectFill" />
-    <view class="intro">{{ series?.intro }}</view>
+    <image class="banner" :src="oss(series && series.banner ? series.banner : (series && series.cover ? series.cover : ''))" mode="aspectFill" />
+    <view class="intro">{{ series && series.intro ? series.intro : '' }}</view>
     <view class="list">
       <view class="item" v-for="t in tracks" :key="t.id" @click="play(t.id)">
         <view class="left">

@@ -123,63 +123,109 @@
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </el-card>
     <!-- 添加或修改冥想单集对话框 -->
-    <el-dialog :title="dialog.title" v-model="dialog.visible" width="600px" append-to-body>
-      <el-form ref="trackFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="所属系列" prop="seriesId">
-          <el-select v-model="form.seriesId" placeholder="请选择系列">
-            <el-option
-              v-for="series in seriesList"
-              :key="series.id"
-              :label="series.title"
-              :value="series.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择分类">
-            <el-option
-              v-for="category in categoryList"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
-        </el-form-item>
-        <el-form-item label="封面" prop="cover">
-          <image-upload v-model="form.cover" :limit="1" />
-        </el-form-item>
-        <el-form-item label="音频文件" prop="audio">
-          <file-upload v-model="form.audio" :limit="1" />
-        </el-form-item>
-        <el-form-item label="时长" prop="durationSec">
-          <el-input v-model="form.durationSec" placeholder="请输入时长" />
-        </el-form-item>
+    <el-dialog :title="dialog.title" v-model="dialog.visible" width="800px" append-to-body>
+      <el-form ref="trackFormRef" :model="form" :rules="rules" label-width="100px">
+        <!-- 第一行：所属系列和分类 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="所属系列" prop="seriesId">
+              <el-select v-model="form.seriesId" placeholder="请选择系列" style="width: 100%">
+                <el-option
+                  v-for="series in seriesList"
+                  :key="series.id"
+                  :label="series.title"
+                  :value="series.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="分类" prop="categoryId">
+              <el-select v-model="form.categoryId" placeholder="请选择分类" style="width: 100%">
+                <el-option
+                  v-for="category in categoryList"
+                  :key="category.id"
+                  :label="category.name"
+                  :value="category.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第二行：标题和时长 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="标题" prop="title">
+              <el-input v-model="form.title" placeholder="请输入标题" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="时长(秒)" prop="durationSec">
+              <el-input v-model="form.durationSec" placeholder="请输入时长" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第三行：在系列内排序和是否免费 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="在系列内排序" prop="orderIndex">
+              <el-input v-model="form.orderIndex" placeholder="请输入在系列内排序" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="是否免费" prop="isFree">
+              <el-switch
+                v-model="form.isFree"
+                :active-value="1"
+                :inactive-value="0"
+                active-text="免费"
+                inactive-text="付费"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第四行：状态和备注 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio value="0">启用</el-radio>
+                <el-radio value="1">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="备注" prop="remark">
+              <el-input v-model="form.remark" placeholder="请输入备注" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第五行：封面和音频文件 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="封面" prop="cover">
+              <image-upload v-model="form.cover" :limit="1" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="音频文件" prop="audio">
+              <file-upload v-model="form.audio" :limit="1" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第六行：简介（跨列） -->
         <el-form-item label="简介" prop="intro">
-            <el-input v-model="form.intro" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="在系列内排序" prop="orderIndex">
-          <el-input v-model="form.orderIndex" placeholder="请输入在系列内排序" />
-        </el-form-item>
-        <el-form-item label="是否免费" prop="isFree">
-          <el-switch
-            v-model="form.isFree"
-            :active-value="1"
-            :inactive-value="0"
-            active-text="免费"
-            inactive-text="付费"
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio value="0">启用</el-radio>
-            <el-radio value="1">停用</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入备注" />
+          <el-input 
+            v-model="form.intro" 
+            type="textarea" 
+            placeholder="请输入简介内容" 
+            :rows="4"
+            style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>

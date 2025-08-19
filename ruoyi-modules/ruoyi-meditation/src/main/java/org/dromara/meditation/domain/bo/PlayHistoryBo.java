@@ -30,11 +30,13 @@ public class PlayHistoryBo extends BaseEntity {
     /**
      * 用户ID
      */
+    @NotNull(message = "用户ID不能为空", groups = { AddGroup.class, EditGroup.class })
     private Long userId;
 
     /**
      * 单集ID（mg_track.id）
      */
+    @NotNull(message = "单集ID不能为空", groups = { AddGroup.class, EditGroup.class })
     private Long trackId;
 
     /**

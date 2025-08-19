@@ -10,25 +10,6 @@
             <el-form-item label="链接目标" prop="linkTarget">
               <el-input v-model="queryParams.linkTarget" placeholder="请输入链接目标" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="queryParams.orderNum" placeholder="请输入显示顺序" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="生效时间" prop="startTime">
-              <el-date-picker clearable
-                v-model="queryParams.startTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择生效时间"
-              />
-            </el-form-item>
-            <el-form-item label="失效时间" prop="endTime">
-              <el-date-picker clearable
-                v-model="queryParams.endTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择失效时间"
-              />
-            </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
               <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -109,49 +90,78 @@
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </el-card>
     <!-- 添加或修改横幅配置对话框 -->
-    <el-dialog :title="dialog.title" v-model="dialog.visible" width="500px" append-to-body>
-      <el-form ref="bannerFormRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="所属页面" prop="page">
-          <el-input v-model="form.page" placeholder="请输入所属页面" />
-        </el-form-item>
+    <el-dialog :title="dialog.title" v-model="dialog.visible" width="800px" append-to-body>
+      <el-form ref="bannerFormRef" :model="form" :rules="rules" label-width="100px">
+        <!-- 第一行：所属页面和链接类型 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="所属页面" prop="page">
+              <el-input v-model="form.page" placeholder="请输入所属页面" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="链接类型" prop="linkType">
+              <el-select v-model="form.linkType" placeholder="请选择链接类型" style="width: 100%">
+                <el-option label="无链接" value="none" />
+                <el-option label="外部链接" value="url" />
+                <el-option label="系列详情" value="series" />
+                <el-option label="文章详情" value="article" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第二行：显示顺序和状态 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="显示顺序" prop="orderNum">
+              <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio value="0">启用</el-radio>
+                <el-radio value="1">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第三行：生效时间和失效时间 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="生效时间" prop="startTime">
+              <el-date-picker clearable
+                v-model="form.startTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                placeholder="请选择生效时间"
+                style="width: 100%">
+              </el-date-picker>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="失效时间" prop="endTime">
+              <el-date-picker clearable
+                v-model="form.endTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                placeholder="请选择失效时间"
+                style="width: 100%">
+              </el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 第四行：图片 -->
         <el-form-item label="图片" prop="image">
           <image-upload v-model="form.image" :limit="1"/>
         </el-form-item>
-        <el-form-item label="链接类型" prop="linkType">
-          <el-select v-model="form.linkType" placeholder="请选择链接类型">
-            <el-option label="无链接" value="none" />
-            <el-option label="外部链接" value="url" />
-            <el-option label="系列详情" value="series" />
-            <el-option label="文章详情" value="article" />
-          </el-select>
-        </el-form-item>
+        
+        <!-- 第五行：链接目标 -->
         <el-form-item label="链接目标" prop="linkTarget">
           <el-input v-model="form.linkTarget" placeholder="请输入链接目标" />
-        </el-form-item>
-        <el-form-item label="显示顺序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
-        </el-form-item>
-        <el-form-item label="生效时间" prop="startTime">
-          <el-date-picker clearable
-            v-model="form.startTime"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="请选择生效时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="失效时间" prop="endTime">
-          <el-date-picker clearable
-            v-model="form.endTime"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="请选择失效时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio value="0">启用</el-radio>
-            <el-radio value="1">停用</el-radio>
-          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -195,8 +205,8 @@ const initFormData: BannerForm = {
   linkTarget: undefined,
   orderNum: undefined,
   status: undefined,
-  startTime: undefined,
-  endTime: undefined,
+  startTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
+  endTime: '9999-12-31 23:59:59',
 }
 const data = reactive<PageData<BannerForm, BannerQuery>>({
   form: {...initFormData},
@@ -218,24 +228,15 @@ const data = reactive<PageData<BannerForm, BannerQuery>>({
     page: [
       { required: true, message: "所属页面不能为空", trigger: "blur" }
     ],
+    image: [
+      { required: true, message: "图片不能为空", trigger: "blur" }
+    ],
     linkType: [
       { required: true, message: "链接类型不能为空", trigger: "change" }
     ],
     linkTarget: [
       { required: true, message: "链接目标不能为空", trigger: "blur" }
-    ],
-    orderNum: [
-      { required: true, message: "显示顺序不能为空", trigger: "blur" }
-    ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
-    ],
-    startTime: [
-      { required: true, message: "生效时间不能为空", trigger: "blur" }
-    ],
-    endTime: [
-      { required: true, message: "失效时间不能为空", trigger: "blur" }
-    ],
+    ]
   }
 });
 

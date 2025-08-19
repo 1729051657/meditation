@@ -228,4 +228,14 @@ public interface ISysUserService {
      * @return 结果
      */
     List<SysUserVo> selectUserListByDept(Long deptId);
+
+    /**
+     * 更新用户微信信息
+     *
+     * @param userId 用户ID
+     * @param openid 微信OpenID
+     * @param unionid 微信UnionID
+     * @return 更新结果
+     */
+    boolean updateUserWechatInfo(Long userId, String openid, String unionid);
 }

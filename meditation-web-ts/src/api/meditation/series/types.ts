@@ -1,3 +1,5 @@
+import { TagVO } from '@/api/meditation/tag/types';
+
 export interface SeriesVO {
   /**
    * 主键
@@ -22,12 +24,12 @@ export interface SeriesVO {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover: number;
+  cover: string;
 
   /**
    * 横幅图文件id（sys_oss.oss_id）
    */
-  banner: number;
+  banner: string;
 
   /**
    * 简介
@@ -69,6 +71,15 @@ export interface SeriesVO {
    */
   remark: string;
 
+  /**
+   * 标签列表
+   */
+  tags?: TagVO[];
+
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface SeriesForm extends BaseEntity {
@@ -95,12 +106,12 @@ export interface SeriesForm extends BaseEntity {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 横幅图文件id（sys_oss.oss_id）
    */
-  banner?: number;
+  banner?: string;
 
   /**
    * 简介
@@ -142,6 +153,10 @@ export interface SeriesForm extends BaseEntity {
    */
   remark?: string;
 
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface SeriesQuery extends PageQuery {
@@ -164,12 +179,12 @@ export interface SeriesQuery extends PageQuery {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 横幅图文件id（sys_oss.oss_id）
    */
-  banner?: number;
+  banner?: string;
 
   /**
    * 简介

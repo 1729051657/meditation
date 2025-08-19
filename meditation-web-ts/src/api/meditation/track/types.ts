@@ -22,12 +22,12 @@ export interface TrackVO {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover: number;
+  cover: string;
 
   /**
    * 音频文件id（sys_oss.oss_id）
    */
-  audio: number;
+  audio: string;
 
   /**
    * 时长（秒）
@@ -85,12 +85,12 @@ export interface TrackForm extends BaseEntity {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 音频文件id（sys_oss.oss_id）
    */
-  audio?: number;
+  audio?: string;
 
   /**
    * 时长（秒）
@@ -144,12 +144,12 @@ export interface TrackQuery extends PageQuery {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 音频文件id（sys_oss.oss_id）
    */
-  audio?: number;
+  audio?: string;
 
   /**
    * 时长（秒）

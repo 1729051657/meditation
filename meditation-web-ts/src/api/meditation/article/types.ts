@@ -1,3 +1,5 @@
+import { TagVO } from '@/api/meditation/tag/types';
+
 export interface ArticleVO {
   /**
    * 主键
@@ -12,7 +14,7 @@ export interface ArticleVO {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover: number;
+  cover: string;
 
   /**
    * 摘要
@@ -49,6 +51,15 @@ export interface ArticleVO {
    */
   remark: string;
 
+  /**
+   * 标签列表
+   */
+  tags?: TagVO[];
+
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface ArticleForm extends BaseEntity {
@@ -65,7 +76,7 @@ export interface ArticleForm extends BaseEntity {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 摘要
@@ -102,6 +113,10 @@ export interface ArticleForm extends BaseEntity {
    */
   remark?: string;
 
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface ArticleQuery extends PageQuery {
@@ -114,7 +129,7 @@ export interface ArticleQuery extends PageQuery {
   /**
    * 封面文件id（sys_oss.oss_id）
    */
-  cover?: number;
+  cover?: string;
 
   /**
    * 摘要

@@ -21,9 +21,10 @@ import org.dromara.meditation.domain.vo.ContentTagVo;
 import org.dromara.meditation.domain.bo.ContentTagBo;
 import org.dromara.meditation.service.IContentTagService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
+import lombok.Data;
 
 /**
- * 内容-标签关联
+ * 内容标签关联管理
  *
  * @author kdc
  * @date 2025-08-14
@@ -35,6 +36,45 @@ import org.dromara.common.mybatis.core.page.TableDataInfo;
 public class ContentTagController extends BaseController {
 
     private final IContentTagService contentTagService;
+
+    /**
+     * 批量更新内容的标签
+     */
+    @Data
+    public static class UpdateContentTagsRequest {
+        @NotBlank(message = "内容类型不能为空")
+        private String contentType;
+        
+        @NotNull(message = "内容ID不能为空")
+        private Long contentId;
+        
+        private List<Long> tagIds;
+    }
+
+    /**
+     * 更新内容标签
+     */
+    @SaCheckPermission("meditation:contentTag:edit")
+    @Log(title = "内容标签关联", businessType = BusinessType.UPDATE)
+    @RepeatSubmit()
+    @PostMapping("/updateTags")
+    public R<Void> updateContentTags(@Validated @RequestBody UpdateContentTagsRequest request) {
+        return toAjax(contentTagService.updateContentTags(
+            request.getContentType(), 
+            request.getContentId(), 
+            request.getTagIds()
+        ));
+    }
+
+    /**
+     * 获取内容的标签ID列表
+     */
+    @GetMapping("/getTagIds")
+    public R<List<Long>> getTagIdsByContent(
+            @RequestParam String contentType,
+            @RequestParam Long contentId) {
+        return R.ok(contentTagService.getTagIdsByContent(contentType, contentId));
+    }
 
     /**
      * 查询内容-标签关联列表
