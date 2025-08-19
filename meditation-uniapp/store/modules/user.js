@@ -15,7 +15,11 @@ const user = {
 		// 登录状态
 		isLogin: false,
 		// 当前门店信息
-		tenantInfo: null
+		tenantInfo: null,
+		// 微信openid
+		openid: '',
+		// 用户scope
+		scope: ''
 	},
 
 	mutations: {
@@ -67,6 +71,26 @@ const user = {
 			}
 		},
 
+		// 设置微信openid
+		SET_OPENID(state, openid) {
+			state.openid = openid
+			if (openid) {
+				uni.setStorageSync('openid', openid)
+			} else {
+				uni.removeStorageSync('openid')
+			}
+		},
+
+		// 设置用户scope
+		SET_SCOPE(state, scope) {
+			state.scope = scope
+			if (scope) {
+				uni.setStorageSync('scope', scope)
+			} else {
+				uni.removeStorageSync('scope')
+			}
+		},
+
 		// 清除用户信息
 		CLEAR_USER_INFO(state) {
 			state.token = ''
@@ -75,11 +99,15 @@ const user = {
 			state.roles = []
 			state.isLogin = false
 			state.tenantInfo = null
+			state.openid = ''
+			state.scope = ''
 
 			// 清除本地存储 - 修复：使用merchant_前缀保持一致
 			uni.removeStorageSync('edu_token')
 			uni.removeStorageSync('edu_user_info')
 			uni.removeStorageSync('edu_tenant_id')
+			uni.removeStorageSync('openid')
+			uni.removeStorageSync('scope')
 		}
 	},
 
@@ -174,12 +202,17 @@ const user = {
 						const permissions = data.permissions || []
 						const roles = data.roles || []
 						const tenantInfo = data.tenantInfo || null
+						const openid = data.openid || ''
+						const scope = data.scope || ''
 
+						// 保存到store
 						commit('SET_TOKEN', token)
 						commit('SET_USER_INFO', userInfo)
 						commit('SET_PERMISSIONS', permissions)
 						commit('SET_ROLES', roles)
 						commit('SET_TENANT_INFO', tenantInfo)
+						commit('SET_OPENID', openid)
+						commit('SET_SCOPE', scope)
 
 						resolve(result)
 					} else {
@@ -225,6 +258,16 @@ const user = {
 				return false
 			}
 			return state.roles.includes(role)
+		},
+
+		// 获取微信openid
+		getOpenid() {
+			return uni.getStorageSync('openid') || ''
+		},
+
+		// 获取用户scope
+		getScope() {
+			return uni.getStorageSync('scope') || ''
 		}
 	}
 }

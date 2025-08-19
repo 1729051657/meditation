@@ -99,6 +99,11 @@ public class XcxAuthStrategy implements IAuthStrategy {
             loginVo.setAccessToken(StpUtil.getTokenValue());
             loginVo.setExpireIn(StpUtil.getTokenTimeout());
             loginVo.setClientId(client.getClientId());
+            // 添加小程序用户相关信息
+            loginVo.setOpenid(openid);
+            loginVo.setScope("xcx_user");
+            // 设置用户信息
+            loginVo.setUser(loginUser);
             return loginVo;
 
         } catch (Exception e) {
