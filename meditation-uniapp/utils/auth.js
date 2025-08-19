@@ -2,12 +2,12 @@
  * 认证相关工具函数
  */
 
-import { appConfig } from '@/common/config.js'
+import { appConfig, STORAGE_KEYS } from '@/common/config.js'
 
-const TOKEN_KEY = 'edu_token'
-const USER_INFO_KEY = 'edu_user_info'
-const TENANT_ID_KEY = 'edu_tenant_id'
-const DEPT_ID_KEY = 'edu_dept_id'
+const TOKEN_KEY = STORAGE_KEYS.TOKEN
+const USER_INFO_KEY = STORAGE_KEYS.USER_INFO
+const TENANT_ID_KEY = STORAGE_KEYS.TENANT_ID
+const DEPT_ID_KEY = STORAGE_KEYS.DEPT_ID
 
 /**
  * 获取token

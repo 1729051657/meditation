@@ -1,4 +1,5 @@
 import { get, post } from '@/utils/request'
+import { STORAGE_KEYS, appConfig } from '@/common/config.js'
 
 const user = {
 	namespaced: true,
@@ -28,11 +29,11 @@ const user = {
 			state.token = token
 			state.isLogin = !!token
 
-			// 存储到本地 - 修复：使用merchant_前缀保持一致
+			// 存储到本地 - 修复：使用meditation_前缀保持一致
 			if (token) {
-				uni.setStorageSync('edu_token', token)
+				uni.setStorageSync(STORAGE_KEYS.TOKEN, token)
 			} else {
-				uni.removeStorageSync('edu_token')
+				uni.removeStorageSync(STORAGE_KEYS.TOKEN)
 			}
 		},
 
@@ -41,11 +42,11 @@ const user = {
 			state.userInfo = userInfo
 
 			// 存储到本地
-			// 存储到本地 - 修复：使用merchant_前缀保持一致
+			// 存储到本地 - 修复：使用meditation_前缀保持一致
 			if (userInfo) {
-				uni.setStorageSync('edu_user_info', userInfo)
+				uni.setStorageSync(STORAGE_KEYS.USER_INFO, userInfo)
 			} else {
-				uni.removeStorageSync('edu_user_info')
+				uni.removeStorageSync(STORAGE_KEYS.USER_INFO)
 			}
 		},
 
@@ -63,11 +64,11 @@ const user = {
 		SET_TENANT_INFO(state, tenantInfo) {
 			state.tenantInfo = tenantInfo
 
-			// 存储到本地 - 修复：使用merchant_前缀保持一致
+			// 存储到本地 - 修复：使用meditation_前缀保持一致
 			if (tenantInfo) {
-				uni.setStorageSync('edu_tenant_id', tenantInfo.id || tenantInfo.tenantId)
+				uni.setStorageSync(STORAGE_KEYS.TENANT_ID, tenantInfo.id || tenantInfo.tenantId)
 			} else {
-				uni.removeStorageSync('edu_tenant_id')
+				uni.removeStorageSync(STORAGE_KEYS.TENANT_ID)
 			}
 		},
 
@@ -75,9 +76,9 @@ const user = {
 		SET_OPENID(state, openid) {
 			state.openid = openid
 			if (openid) {
-				uni.setStorageSync('openid', openid)
+				uni.setStorageSync(STORAGE_KEYS.OPENID, openid)
 			} else {
-				uni.removeStorageSync('openid')
+				uni.removeStorageSync(STORAGE_KEYS.OPENID)
 			}
 		},
 
@@ -85,9 +86,9 @@ const user = {
 		SET_SCOPE(state, scope) {
 			state.scope = scope
 			if (scope) {
-				uni.setStorageSync('scope', scope)
+				uni.setStorageSync(STORAGE_KEYS.SCOPE, scope)
 			} else {
-				uni.removeStorageSync('scope')
+				uni.removeStorageSync(STORAGE_KEYS.SCOPE)
 			}
 		},
 
@@ -102,72 +103,52 @@ const user = {
 			state.openid = ''
 			state.scope = ''
 
-			// 清除本地存储 - 修复：使用merchant_前缀保持一致
-			uni.removeStorageSync('edu_token')
-			uni.removeStorageSync('edu_user_info')
-			uni.removeStorageSync('edu_tenant_id')
-			uni.removeStorageSync('openid')
-			uni.removeStorageSync('scope')
+			// 清除本地存储 - 修复：使用meditation_前缀保持一致
+			uni.removeStorageSync(STORAGE_KEYS.TOKEN)
+			uni.removeStorageSync(STORAGE_KEYS.USER_INFO)
+			uni.removeStorageSync(STORAGE_KEYS.TENANT_ID)
+			uni.removeStorageSync(STORAGE_KEYS.OPENID)
+			uni.removeStorageSync(STORAGE_KEYS.SCOPE)
+		}
+	},
+
+	getters: {
+		// 获取登录状态
+		isLogin: state => state.isLogin,
+		
+		// 获取用户token
+		token: state => state.token,
+		
+		// 获取用户信息
+		userInfo: state => state.userInfo,
+		
+		// 获取用户权限
+		permissions: state => state.permissions,
+		
+		// 获取用户角色
+		roles: state => state.roles,
+		
+		// 获取租户信息
+		tenantInfo: state => state.tenantInfo,
+		
+		// 获取微信openid
+		openid: state => state.openid,
+		
+		// 获取用户scope
+		scope: state => state.scope,
+		
+		// 检查是否有特定权限
+		hasPermission: state => permission => {
+			return state.permissions && state.permissions.includes(permission)
+		},
+		
+		// 检查是否有特定角色
+		hasRole: state => role => {
+			return state.roles && state.roles.includes(role)
 		}
 	},
 
 	actions: {
-		// 用户登录
-		login({
-			commit
-		}, loginForm) {
-			return new Promise((resolve, reject) => {
-				post('/xcx/auth/login', loginForm, '登录中...')
-					.then((data) => {
-						if (data.code === 200) {
-							// 处理登录返回数据
-							const loginData = data.data || {}
-							const token = loginData.access_token || loginData.token
-							const userInfo = loginData.user || loginData.userInfo || {}
-							const permissions = loginData.permissions || []
-							const roles = loginData.roles || []
-							const tenantInfo = loginData.tenantInfo || null
-							
-							commit('SET_TOKEN', token)
-							commit('SET_USER_INFO', userInfo)
-							commit('SET_PERMISSIONS', permissions)
-							commit('SET_ROLES', roles)
-							commit('SET_TENANT_INFO', tenantInfo)
-							resolve(data)
-						} else {
-							reject(data)
-						}
-					})
-					.catch((error) => reject(error))
-			})
-		},
-
-		// 获取用户信息
-		getUserInfo({
-			commit,
-			state
-		}) {
-			return new Promise((resolve, reject) => {
-				if (!state.token) {
-					reject('未登录')
-					return
-				}
-				get('/system/user/getInfo')
-					.then((data) => {
-						if (data.code === 200) {
-							const { userInfo, permissions, roles } = data.data
-							commit('SET_USER_INFO', userInfo)
-							commit('SET_PERMISSIONS', permissions)
-							commit('SET_ROLES', roles)
-							resolve(data)
-						} else {
-							reject(data)
-						}
-					})
-					.catch((error) => reject(error))
-			})
-		},
-
 		// 小程序登录
 		wxLogin({
 			commit
@@ -182,13 +163,13 @@ const user = {
 
 					const code = loginRes.code
 
-					// 构建登录参数
+					// 构建登录参数 - 使用全局配置参数
 					const loginData = {
 						xcxCode: code,
-						appid: params.appid || 'wx03df4b0ec47009cd',
-						clientId: params.clientId || 'wx03df4b0ec47009cd',
+						appid: params.appid || appConfig.wechatAppId,
+						clientId: params.clientId || appConfig.clientId,
 						grantType: 'xcx',
-						tenantId: params.tenantId || '000000'
+						tenantId: params.tenantId || appConfig.defaultTenantId
 					}
 
 					// 调用后端登录接口
@@ -260,14 +241,28 @@ const user = {
 			return state.roles.includes(role)
 		},
 
+		// 获取用户信息
+		getUserInfo({
+			state
+		}) {
+			return state.userInfo
+		},
+
+		// 获取用户token
+		getToken({
+			state
+		}) {
+			return state.token
+		},
+
 		// 获取微信openid
 		getOpenid() {
-			return uni.getStorageSync('openid') || ''
+			return uni.getStorageSync(STORAGE_KEYS.OPENID) || ''
 		},
 
 		// 获取用户scope
 		getScope() {
-			return uni.getStorageSync('scope') || ''
+			return uni.getStorageSync(STORAGE_KEYS.SCOPE) || ''
 		}
 	}
 }

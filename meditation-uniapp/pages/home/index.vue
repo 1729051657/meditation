@@ -7,9 +7,7 @@
       backgroundColor="#7C3AED"
       :fixed="true"
     >
-      <view class="nav-title">
-        <text class="nav-title-text">冥想</text>
-      </view>
+	1
     </tn-nav-bar>
 
     <!-- 用户登录状态 -->
@@ -97,9 +95,6 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
-import { listCategory } from '@/api/category'
-import { listSeries } from '@/api/series'
-import { listArticle } from '@/api/article'
 import { listBanner } from '@/api/banner'
 
 export default {
@@ -181,34 +176,7 @@ export default {
     
     // 加载页面数据
     async loadData() {
-      try {
-        // 并发加载数据
-        const [categoryRes, seriesRes, articleRes, bannerRes] = await Promise.all([
-          listCategory(),
-          listSeries({ pageNum: 1, pageSize: 10 }),
-          listArticle({ pageNum: 1, pageSize: 5 }),
-          listBanner({ pageNum: 1, pageSize: 5 })
-        ])
-        
-        if (categoryRes.code === 200) {
-          this.categoryList = categoryRes.data || []
-        }
-        
-        if (seriesRes.code === 200) {
-          this.seriesList = seriesRes.rows || []
-        }
-        
-        if (articleRes.code === 200) {
-          this.articleList = articleRes.rows || []
-        }
-        
-        if (bannerRes.code === 200) {
-          this.bannerList = bannerRes.rows || []
-        }
-        
-      } catch (error) {
-        console.error('加载数据失败:', error)
-      }
+      
     },
     
     // OSS资源链接
