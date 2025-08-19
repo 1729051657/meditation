@@ -120,16 +120,18 @@
 </template>
 
 <script>
-import { getUserInfo, getToken, clearAuth } from '@/utils/auth'
+import { mapState, mapActions } from 'vuex'
 import { getUserProfile, getUserStats } from '@/api/user'
 
 export default {
   data() {
     return {
-      userInfo: {},
-      stats: {},
-      isLogin: false
+      stats: {}
     }
+  },
+  
+  computed: {
+    ...mapState('user', ['isLogin', 'token', 'userInfo'])
   },
   
   onShow() {
@@ -137,18 +139,13 @@ export default {
   },
   
   methods: {
+    ...mapActions('user', ['logout', 'getUserInfo']),
+    
     async loadUserInfo() {
-      const token = getToken()
-      if (token) {
-        this.isLogin = true
-        this.userInfo = getUserInfo() || {}
-        
+      if (this.token) {
         // 获取最新用户信息
         try {
-          const res = await getUserProfile()
-          if (res.code === 200) {
-            this.userInfo = res.data
-          }
+          await this.getUserInfo()
         } catch (error) {
           console.error('获取用户信息失败', error)
         }
@@ -156,8 +153,6 @@ export default {
         // 获取统计信息
         this.loadStats()
       } else {
-        this.isLogin = false
-        this.userInfo = {}
         this.stats = {}
       }
     },
@@ -227,23 +222,16 @@ export default {
       uni.showModal({
         title: '提示',
         content: '确定要退出登录吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            clearAuth()
-            this.isLogin = false
-            this.userInfo = {}
+            // 调用store中的登出方法
+            await this.logout()
             this.stats = {}
             
             uni.showToast({
               title: '已退出登录',
               icon: 'success'
             })
-            
-            setTimeout(() => {
-              uni.reLaunch({
-                url: '/pages/login/login'
-              })
-            }, 1500)
           }
         }
       })

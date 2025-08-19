@@ -92,7 +92,14 @@ const user = {
 				post('/xcx/auth/login', loginForm, '登录中...')
 					.then((data) => {
 						if (data.code === 200) {
-							const { token, userInfo, permissions, roles, tenantInfo } = data.data
+							// 处理登录返回数据
+							const loginData = data.data || {}
+							const token = loginData.access_token || loginData.token
+							const userInfo = loginData.user || loginData.userInfo || {}
+							const permissions = loginData.permissions || []
+							const roles = loginData.roles || []
+							const tenantInfo = loginData.tenantInfo || null
+							
 							commit('SET_TOKEN', token)
 							commit('SET_USER_INFO', userInfo)
 							commit('SET_PERMISSIONS', permissions)
@@ -133,6 +140,57 @@ const user = {
 			})
 		},
 
+		// 小程序登录
+		wxLogin({
+			commit
+		}, params = {}) {
+			return new Promise(async (resolve, reject) => {
+				try {
+					// 获取微信登录凭证
+					const [error, loginRes] = await uni.login({ provider: 'weixin' })
+					if (error || loginRes.errMsg !== 'login:ok') {
+						throw new Error('微信登录失败')
+					}
+
+					const code = loginRes.code
+
+					// 构建登录参数
+					const loginData = {
+						xcxCode: code,
+						appid: params.appid || 'wx03df4b0ec47009cd',
+						clientId: params.clientId || 'wx03df4b0ec47009cd',
+						grantType: 'xcx',
+						tenantId: params.tenantId || '000000'
+					}
+
+					// 调用后端登录接口
+					const result = await post('/xcx/auth/login', loginData, '登录中...')
+
+					if (result.code === 200) {
+						// 处理登录返回数据
+						const data = result.data || {}
+						const token = data.access_token || data.accessToken || data.token
+						const userInfo = data.user || data.userInfo || {}
+						const permissions = data.permissions || []
+						const roles = data.roles || []
+						const tenantInfo = data.tenantInfo || null
+
+						commit('SET_TOKEN', token)
+						commit('SET_USER_INFO', userInfo)
+						commit('SET_PERMISSIONS', permissions)
+						commit('SET_ROLES', roles)
+						commit('SET_TENANT_INFO', tenantInfo)
+
+						resolve(result)
+					} else {
+						throw new Error(result.msg || '登录失败')
+					}
+				} catch (error) {
+					reject(error)
+				}
+			})
+		},
+
 		// 用户登出
 		logout({
 			commit
@@ -140,9 +198,9 @@ const user = {
 			return new Promise((resolve) => {
 				commit('CLEAR_USER_INFO')
 
-				// 跳转到登录页
+				// 跳转到首页（小程序一般不需要登录页）
 				uni.reLaunch({
-					url: '/pages/login/login'
+					url: '/pages/home/index'
 				})
 
 				resolve()

@@ -15,9 +15,10 @@ export const login = (data) => {
 export const inspectionWechatLogin = (data) => {
   const loginData = {
     xcxCode: data.code,
-    appid: data.appid,
-    clientId: appConfig.wechatAppId,
-    tenantId: data.tenantId || '000000'
+    appid: data.appid || appConfig.wechatAppId,
+    clientId: data.clientId || appConfig.clientId,
+    grantType: 'xcx', // 授权类型
+    tenantId: data.tenantId || appConfig.defaultTenantId || '000000'
   }
   return post('/xcx/auth/login', loginData, '验证登录中...')
 }

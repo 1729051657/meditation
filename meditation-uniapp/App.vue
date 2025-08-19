@@ -29,6 +29,8 @@
 			 * 应用初始化主方法
 			 */
 			initApplication() {
+				// 1. 检查登录状态
+				this.checkLoginStatus()
 				
 				// 2. 初始化系统信息
 				this.initSystemInfo()

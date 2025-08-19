@@ -57,7 +57,11 @@ export const appConfig = {
   imageTypes: ['jpg', 'jpeg', 'png', 'gif'],
   
   // 微信小程序AppID
-  wechatAppId: 'wx_meditation_app', // 请替换为实际的冥想小程序AppID
+  wechatAppId: 'wx03df4b0ec47009cd', // 冥想小程序AppID
+  
+  // 客户端配置
+  clientId: 'wx03df4b0ec47009cd', // 对应sys_client表中的client_id
+  clientKey: 'user_xcx', // 对应sys_client表中的client_key
   
   // 微信小程序Secret（仅在后端配置，前端不需要）
   // wechatAppSecret: 'your_app_secret'
