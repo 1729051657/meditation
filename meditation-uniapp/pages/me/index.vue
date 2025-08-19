@@ -2,7 +2,7 @@
   <view class="me-page">
     <!-- 顶部背景 -->
     <view class="header-bg">
-      <image src="/static/me/背景图@3x.png" mode="aspectFill" class="bg-image"></image>
+      <image src="/static/me/background@3x.png" mode="aspectFill" class="bg-image"></image>
     </view>
     
     <!-- 用户信息区域 -->
@@ -22,12 +22,12 @@
       <!-- 第一行卡片 -->
       <view class="card-row">
         <view class="card-item" @click="goToFavorites">
-          <image src="/static/me/我的收藏@3x.png" class="card-icon"></image>
+          <image src="/static/me/favorites@3x.png" class="card-icon"></image>
           <text class="card-text">我的收藏</text>
         </view>
         
         <view class="card-item" @click="goToRecent">
-          <image src="/static/me/最近播放@3x.png" class="card-icon"></image>
+          <image src="/static/me/recent@3x.png" class="card-icon"></image>
           <text class="card-text">最近播放</text>
         </view>
       </view>
@@ -38,19 +38,19 @@
       <!-- 常见问题 -->
       <view class="menu-item" @click="goToFAQ">
         <view class="menu-left">
-          <image src="/static/me/常见问题备份@3x.png" class="menu-icon"></image>
+          <image src="/static/me/faq@3x.png" class="menu-icon"></image>
           <text class="menu-text">常见问题</text>
         </view>
-        <image src="/static/me/箭头@3x.png" class="menu-arrow"></image>
+        <image src="/static/me/arrow@3x.png" class="menu-arrow"></image>
       </view>
       
       <!-- 退出登录 -->
       <view class="menu-item" @click="goToLogout">
         <view class="menu-left">
-          <image src="/static/me/退出登录@3x.png" class="menu-icon"></image>
+          <image src="/static/me/logout@3x.png" class="menu-icon"></image>
           <text class="menu-text">退出登录</text>
         </view>
-        <image src="/static/me/箭头@3x.png" class="menu-arrow"></image>
+        <image src="/static/me/arrow@3x.png" class="menu-arrow"></image>
       </view>
     </view>
   </view>
