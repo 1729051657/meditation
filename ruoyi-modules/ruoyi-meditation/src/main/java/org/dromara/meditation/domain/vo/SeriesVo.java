@@ -13,6 +13,8 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import com.baomidou.mybatisplus.annotation.TableField;
 
 
 
@@ -120,5 +122,16 @@ public class SeriesVo implements Serializable {
     @ExcelProperty(value = "备注")
     private String remark;
 
+    /**
+     * 标签列表
+     */
+    @TableField(exist = false)
+    private List<TagVo> tags;
+
+    /**
+     * 标签ID列表
+     */
+    @TableField(exist = false)
+    private List<Long> tagIds;
 
 }

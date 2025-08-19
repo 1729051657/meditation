@@ -10,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import jakarta.validation.constraints.*;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import java.util.List;
+import com.baomidou.mybatisplus.annotation.TableField;
 
 /**
  * 冥想系列业务对象 mg_series
@@ -103,5 +105,10 @@ public class SeriesBo extends BaseEntity {
     @NotBlank(message = "备注不能为空", groups = { AddGroup.class, EditGroup.class })
     private String remark;
 
+    /**
+     * 标签ID列表
+     */
+    @TableField(exist = false)
+    private List<Long> tagIds;
 
 }

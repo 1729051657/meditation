@@ -1,3 +1,5 @@
+import { TagVO } from '@/api/meditation/tag/types';
+
 export interface ArticleVO {
   /**
    * 主键
@@ -49,6 +51,15 @@ export interface ArticleVO {
    */
   remark: string;
 
+  /**
+   * 标签列表
+   */
+  tags?: TagVO[];
+
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface ArticleForm extends BaseEntity {
@@ -102,6 +113,10 @@ export interface ArticleForm extends BaseEntity {
    */
   remark?: string;
 
+  /**
+   * 标签ID列表
+   */
+  tagIds?: number[];
 }
 
 export interface ArticleQuery extends PageQuery {

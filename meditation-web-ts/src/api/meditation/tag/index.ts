@@ -61,3 +61,14 @@ export const delTag = (id: string | number | Array<string | number>) => {
     method: 'delete'
   });
 };
+
+/**
+ * 获取所有可用标签
+ * @returns {*}
+ */
+export const getAllAvailableTags = (): AxiosPromise<TagVO[]> => {
+  return request({
+    url: '/meditation/tag/all',
+    method: 'get'
+  });
+};
