@@ -12,6 +12,12 @@
       </view>
     </tn-nav-bar>
 
+    <!-- 用户登录状态 -->
+    <view class="user-status" v-if="isLogin">
+      <text class="welcome">欢迎，{{ getUserDisplayName() }}</text>
+      <text class="user-type">{{ scope === 'xcx_user' ? '小程序用户' : '用户' }}</text>
+    </view>
+    
     <!-- 登录状态提示 -->
     <view v-if="!isLogin" class="login-tip">
       <view class="loading-spinner"></view>
@@ -108,7 +114,7 @@ export default {
   },
   
   computed: {
-    ...mapState('user', ['isLogin', 'token', 'userInfo'])
+    ...mapState('user', ['isLogin', 'token', 'userInfo', 'openid', 'scope'])
   },
   
   onLoad() {
@@ -118,6 +124,17 @@ export default {
   
   methods: {
     ...mapActions('user', ['wxLogin']),
+    
+    // 获取用户显示名称
+    getUserDisplayName() {
+      if (this.userInfo && this.userInfo.nickName) {
+        return this.userInfo.nickName
+      }
+      if (this.userInfo && this.userInfo.userName) {
+        return this.userInfo.userName
+      }
+      return '冥想用户'
+    },
     
     // 自动微信登录
     async autoLogin() {
@@ -132,13 +149,12 @@ export default {
         }
         
         // 调用store中的小程序登录方法
-        await this.wxLogin({
+        const result = await this.wxLogin({
           tenantId: '000000'
         })
         
-        console.log('登录成功，用户信息：', this.userInfo)
-        
         // 登录成功，加载数据
+        this.isLogin = true
         this.loadData()
         
       } catch (error) {
@@ -258,6 +274,26 @@ export default {
   }
 }
 
+.user-status {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20rpx 0;
+  background-color: #7C3AED;
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 500;
+
+  .welcome {
+    margin-right: 10rpx;
+  }
+
+  .user-type {
+    font-size: 24rpx;
+    color: #e0e0e0;
+  }
+}
+
 .login-tip {
   display: flex;
   flex-direction: column;
@@ -309,7 +345,7 @@ export default {
   font-size: 32rpx;
   font-weight: 600;
   color: #1f2937;
-  margin: 40rpx 30rpx 20rpx;
+  margin: 40rpx 20rpx 20rpx;
 }
 
 .category-section {
@@ -317,7 +353,7 @@ export default {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20rpx;
-    padding: 0 30rpx;
+    padding: 0 20rpx;
     
     .category-item {
       display: flex;
@@ -326,12 +362,13 @@ export default {
       padding: 20rpx;
       background: #fff;
       border-radius: 16rpx;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
       
       .category-icon {
         width: 80rpx;
         height: 80rpx;
-        border-radius: 16rpx;
-        margin-bottom: 12rpx;
+        margin-bottom: 16rpx;
+        border-radius: 50%;
       }
       
       .category-name {
@@ -346,53 +383,47 @@ export default {
 .series-section {
   .series-scroll {
     white-space: nowrap;
-    padding: 0 30rpx;
+    padding: 0 20rpx;
     
     .series-list {
       display: inline-flex;
       gap: 20rpx;
       
       .series-item {
-        width: 280rpx;
+        width: 300rpx;
         background: #fff;
         border-radius: 16rpx;
         overflow: hidden;
+        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
         
         .series-cover {
           width: 100%;
-          height: 180rpx;
+          height: 200rpx;
         }
         
         .series-info {
           padding: 20rpx;
           
           .series-title {
-            display: block;
             font-size: 28rpx;
-            font-weight: 500;
+            font-weight: 600;
             color: #1f2937;
             margin-bottom: 8rpx;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: block;
           }
           
           .series-subtitle {
-            display: block;
             font-size: 24rpx;
             color: #6b7280;
             margin-bottom: 8rpx;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: block;
           }
           
           .series-episodes {
             font-size: 22rpx;
             color: #7C3AED;
-            background: rgba(124, 58, 237, 0.1);
-            padding: 4rpx 12rpx;
-            border-radius: 12rpx;
+            font-weight: 500;
+            display: block;
           }
         }
       }
@@ -402,38 +433,43 @@ export default {
 
 .article-section {
   .article-list {
-    padding: 0 30rpx;
+    padding: 0 20rpx;
     
     .article-item {
       display: flex;
       background: #fff;
       border-radius: 16rpx;
-      padding: 20rpx;
+      overflow: hidden;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
       margin-bottom: 20rpx;
       
       .article-cover {
-        width: 120rpx;
-        height: 120rpx;
-        border-radius: 12rpx;
-        margin-right: 20rpx;
+        width: 200rpx;
+        height: 150rpx;
+        flex-shrink: 0;
       }
       
       .article-info {
         flex: 1;
+        padding: 20rpx;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         
         .article-title {
-          display: block;
           font-size: 28rpx;
-          font-weight: 500;
+          font-weight: 600;
           color: #1f2937;
-          margin-bottom: 12rpx;
-          line-height: 1.4;
+          margin-bottom: 8rpx;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
         
         .article-summary {
           font-size: 24rpx;
           color: #6b7280;
-          line-height: 1.5;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
