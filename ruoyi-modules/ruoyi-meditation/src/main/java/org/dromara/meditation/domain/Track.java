@@ -68,11 +68,6 @@ public class Track extends TenantEntity {
     private Integer orderIndex;
 
     /**
-     * 是否免费（Y是 N否）
-     */
-    private String isFree;
-
-    /**
      * 状态（0正常 1停用）
      */
     private String status;
