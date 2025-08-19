@@ -117,7 +117,7 @@ const user = {
 					reject('未登录')
 					return
 				}
-				get('/api/user/info')
+				get('/system/user/getInfo')
 					.then((data) => {
 						if (data.code === 200) {
 							const { userInfo, permissions, roles } = data.data

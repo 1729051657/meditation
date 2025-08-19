@@ -29,8 +29,6 @@
 			 * 应用初始化主方法
 			 */
 			initApplication() {
-				// 1. 检查登录状态并进行路由跳转
-				this.checkLoginAndNavigate()
 				
 				// 2. 初始化系统信息
 				this.initSystemInfo()
@@ -40,64 +38,6 @@
 				
 				// 4. 初始化微信小程序更新检测
 				this.initWechatUpdate()
-			},
-
-			/**
-			 * 检查登录状态并进行路由跳转  
-			 */
-			checkLoginAndNavigate() {
-				try {
-					const isLogin = isLoggedIn()
-					const tenantId = getTenantId()
-					
-					// 获取当前页面栈
-					const pages = getCurrentPages()
-					const currentPage = pages[pages.length - 1]
-					const currentRoute = currentPage ? currentPage.route : ''
-					
-					console.log('当前登录状态:', isLogin)
-					console.log('当前租户ID:', tenantId)
-					console.log('当前页面:', currentRoute)
-					
-					// 如果已登录且有租户ID
-					if (isLogin && tenantId) {
-						// 如果当前在登录页面或租户选择页面，跳转到首页
-						if (currentRoute === 'pages/login/login' || 
-						            currentRoute === 'pages/school/select' ||
-						    !currentRoute) {
-							setTimeout(() => {
-								uni.switchTab({
-									url: '/pages/index/index'
-								})
-							}, 100)
-						}
-					} else {
-						// 未登录或无租户ID
-						        if (!tenantId && currentRoute !== 'pages/school/select') {
-							// 没有租户ID，跳转到学校选择页
-							setTimeout(() => {
-								uni.reLaunch({
-									url: '/pages/school/select'
-								})
-							}, 100)
-						} else if (!isLogin && currentRoute !== 'pages/login/login') {
-							// 未登录，跳转到登录页
-							setTimeout(() => {
-								uni.reLaunch({
-									url: '/pages/login/login'
-								})
-							}, 100)
-						}
-					}
-				} catch (error) {
-					console.error('检查登录状态失败:', error)
-					// 出错时跳转到学校选择页
-					setTimeout(() => {
-						uni.reLaunch({
-							url: '/pages/school/select'
-						})
-					}, 100)
-				}
 			},
 
 			/**
