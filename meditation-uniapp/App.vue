@@ -6,6 +6,7 @@
 	import store from './store/index.js'
 	import updateCustomBarInfo from './tuniao-ui/libs/function/updateCustomBarInfo.js'
 	import { isLoggedIn, getTenantId } from './utils/auth.js'
+	import { STORAGE_KEYS } from './common/config.js'
 
 	export default {
 		name: 'App',
@@ -154,13 +155,23 @@
 			 * 检查登录状态
 			 */
 			checkLoginStatus() {
-				const token = uni.getStorageSync('edu_token')
-				const userInfo = uni.getStorageSync('edu_user_info')
+				const token = uni.getStorageSync(STORAGE_KEYS.TOKEN)
+				const userInfo = uni.getStorageSync(STORAGE_KEYS.USER_INFO)
 
 				if (token && userInfo) {
 					this.$store.commit('user/SET_TOKEN', token)
 					this.$store.commit('user/SET_USER_INFO', userInfo)
 				}
+			},
+
+			// 获取微信openid
+			getOpenid() {
+				return uni.getStorageSync(STORAGE_KEYS.OPENID) || ''
+			},
+
+			// 获取用户scope
+			getScope() {
+				return uni.getStorageSync(STORAGE_KEYS.SCOPE) || ''
 			}
 		}
 	}

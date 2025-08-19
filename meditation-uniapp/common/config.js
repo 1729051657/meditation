@@ -2,6 +2,9 @@
  * 小程序配置文件
  */
 
+// 引入全局常量
+import { STORAGE_KEYS, DEFAULT_VALUES } from './constants.js'
+
 // 根据环境设置不同的baseUrl
 const envConfig = {
   // 开发环境
@@ -33,6 +36,9 @@ export const baseUrl = config.baseUrl
 // 导出调试开关
 export const debug = config.debug
 
+// 导出存储键名常量
+export { STORAGE_KEYS, DEFAULT_VALUES }
+
 // 其他配置
 export const appConfig = {
   // 应用名称
@@ -45,13 +51,13 @@ export const appConfig = {
   defaultTenantId: '000000',
   
   // 超时时间（毫秒）
-  timeout: 30000,
+  timeout: DEFAULT_VALUES.REQUEST_TIMEOUT,
   
   // 分页默认大小
-  pageSize: 10,
+  pageSize: DEFAULT_VALUES.PAGE_SIZE,
   
   // 图片上传大小限制（字节）
-  maxImageSize: 5 * 1024 * 1024, // 5MB
+  maxImageSize: DEFAULT_VALUES.MAX_IMAGE_SIZE,
   
   // 支持的图片格式
   imageTypes: ['jpg', 'jpeg', 'png', 'gif'],
@@ -81,6 +87,8 @@ export const errorCodes = {
 export default {
   baseUrl,
   debug,
+  STORAGE_KEYS,
+  DEFAULT_VALUES,
   appConfig,
   errorCodes
 }
