@@ -88,12 +88,7 @@ public class TrackVo implements Serializable {
     @ExcelDictFormat(readConverterExp = "从=小到大")
     private Integer orderIndex;
 
-    /**
-     * 是否免费（Y是 N否）
-     */
-    @ExcelProperty(value = "是否免费", converter = ExcelDictConvert.class)
-    @ExcelDictFormat(readConverterExp = "Y=是,N=否")
-    private String isFree;
+
 
     /**
      * 状态（0正常 1停用）

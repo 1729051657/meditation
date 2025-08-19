@@ -72,11 +72,7 @@ public class TrackBo extends BaseEntity {
     @NotNull(message = "在系列内排序（从小到大）不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer orderIndex;
 
-    /**
-     * 是否免费（Y是 N否）
-     */
-    @NotBlank(message = "是否免费（Y是 N否）不能为空", groups = { AddGroup.class, EditGroup.class })
-    private String isFree;
+
 
     /**
      * 状态（0正常 1停用）

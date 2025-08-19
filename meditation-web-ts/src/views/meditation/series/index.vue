@@ -20,12 +20,6 @@
             <el-form-item label="副标题" prop="subtitle">
               <el-input v-model="queryParams.subtitle" placeholder="请输入副标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="是否免费" prop="isFree">
-              <el-select v-model="queryParams.isFree" placeholder="请选择" clearable>
-                <el-option label="免费" :value="1" />
-                <el-option label="付费" :value="0" />
-              </el-select>
-            </el-form-item>
             <el-form-item label="发布时间" prop="publishTime">
               <el-date-picker clearable
                 v-model="queryParams.publishTime"
@@ -86,13 +80,6 @@
         <el-table-column label="简介" align="center" prop="intro" :show-overflow-tooltip="true" />
         <el-table-column label="小节数" align="center" prop="episodeCount" />
         <el-table-column label="建议时长" align="center" prop="recommendDuration" />
-        <el-table-column label="是否免费" align="center" prop="isFree">
-          <template #default="scope">
-            <el-tag :type="scope.row.isFree === 1 ? 'success' : 'warning'">
-              {{ scope.row.isFree === 1 ? '免费' : '付费' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="显示顺序" align="center" prop="orderNum" />
         <el-table-column label="状态" align="center" prop="status">
           <template #default="scope">
@@ -162,23 +149,13 @@
           </el-col>
         </el-row>
         
-        <!-- 第二行：副标题和是否免费 -->
+        <!-- 第二行：副标题 -->
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="副标题" prop="subtitle">
               <el-input v-model="form.subtitle" placeholder="请输入副标题" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="是否免费" prop="isFree">
-              <el-switch
-                v-model="form.isFree"
-                :active-value="1"
-                :inactive-value="0"
-                active-text="免费"
-                inactive-text="付费"
-              />
-            </el-form-item>
           </el-col>
         </el-row>
         
@@ -325,7 +302,6 @@ const initFormData: SeriesForm = {
   intro: undefined,
   episodeCount: undefined,
   recommendDuration: undefined,
-  isFree: undefined,
   orderNum: undefined,
   status: undefined,
   publishTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -345,7 +321,6 @@ const data = reactive<PageData<SeriesForm, SeriesQuery>>({
     intro: undefined,
     episodeCount: undefined,
     recommendDuration: undefined,
-    isFree: undefined,
     orderNum: undefined,
     status: undefined,
     publishTime: undefined,
@@ -373,9 +348,6 @@ const data = reactive<PageData<SeriesForm, SeriesQuery>>({
     ],
     recommendDuration: [
       { required: true, message: "建议时长不能为空", trigger: "blur" }
-    ],
-    isFree: [
-      { required: true, message: "是否免费不能为空", trigger: "blur" }
     ]
   }
 });

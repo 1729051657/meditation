@@ -37,12 +37,6 @@
             <el-form-item label="在系列内排序" prop="orderIndex">
               <el-input v-model="queryParams.orderIndex" placeholder="请输入在系列内排序" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-            <el-form-item label="是否免费" prop="isFree">
-              <el-select v-model="queryParams.isFree" placeholder="请选择" clearable>
-                <el-option label="免费" :value="1" />
-                <el-option label="付费" :value="0" />
-              </el-select>
-            </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
               <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -93,13 +87,6 @@
         <el-table-column label="时长" align="center" prop="durationSec" />
         <el-table-column label="简介" align="center" prop="intro" :show-overflow-tooltip="true" />
         <el-table-column label="在系列内排序" align="center" prop="orderIndex" />
-        <el-table-column label="是否免费" align="center" prop="isFree">
-          <template #default="scope">
-            <el-tag :type="scope.row.isFree === 1 ? 'success' : 'warning'">
-              {{ scope.row.isFree === 1 ? '免费' : '付费' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="状态" align="center" prop="status">
           <template #default="scope">
             <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
@@ -167,23 +154,13 @@
           </el-col>
         </el-row>
         
-        <!-- 第三行：在系列内排序和是否免费 -->
+        <!-- 第三行：在系列内排序 -->
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="在系列内排序" prop="orderIndex">
               <el-input v-model="form.orderIndex" placeholder="请输入在系列内排序" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="是否免费" prop="isFree">
-              <el-switch
-                v-model="form.isFree"
-                :active-value="1"
-                :inactive-value="0"
-                active-text="免费"
-                inactive-text="付费"
-              />
-            </el-form-item>
           </el-col>
         </el-row>
         
@@ -277,7 +254,6 @@ const initFormData: TrackForm = {
   durationSec: undefined,
   intro: undefined,
   orderIndex: undefined,
-  isFree: undefined,
   status: undefined,
   remark: undefined
 }
@@ -294,7 +270,6 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
     durationSec: undefined,
     intro: undefined,
     orderIndex: undefined,
-    isFree: undefined,
     status: undefined,
     params: {
     }
@@ -317,10 +292,7 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
     ],
     orderIndex: [
       { required: true, message: "在系列内排序不能为空", trigger: "blur" }
-    ],
-    isFree: [
-      { required: true, message: "是否免费不能为空", trigger: "blur" }
-    ],
+    ]
     status: [
       { required: true, message: "状态不能为空", trigger: "change" }
     ],
