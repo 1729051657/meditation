@@ -1,5 +1,8 @@
 <template>
   <view class="home-page">
+    <!-- 背景图 -->
+    <image src="/static/home/background@3x.png" class="background-image" mode="widthFix"></image>
+    
     <!-- 顶部区域 -->
     <view class="header-section">
       <!-- 问候语 -->
@@ -7,7 +10,7 @@
       
       <!-- 搜索框 -->
       <view class="search-box" @click="goToSearch">
-        <uni-icons type="search" size="20" color="#999"></uni-icons>
+        <image src="/static/home/search@3x.png" class="search-icon" mode="aspectFit"></image>
         <text class="search-placeholder">搜索</text>
       </view>
     </view>
@@ -16,28 +19,28 @@
     <view class="feature-section">
       <view class="feature-item" @click="goToCategory('relax')">
         <view class="feature-icon-wrapper">
-          <image src="/static/home/放松减压@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <image src="/static/home/relax-stress@2x.png" class="feature-icon" mode="aspectFit"></image>
         </view>
         <text class="feature-text">放松减压</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('sleep')">
         <view class="feature-icon-wrapper">
-          <image src="/static/home/改善睡眠@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <image src="/static/home/improve-sleep@2x.png" class="feature-icon" mode="aspectFit"></image>
         </view>
         <text class="feature-text">改善睡眠</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('focus')">
         <view class="feature-icon-wrapper">
-          <image src="/static/home/提升专注@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <image src="/static/home/improve-focus@2x.png" class="feature-icon" mode="aspectFit"></image>
         </view>
         <text class="feature-text">提升专注</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('emotion')">
         <view class="feature-icon-wrapper">
-          <image src="/static/home/情绪调节@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <image src="/static/home/emotion-regulation@2x.png" class="feature-icon" mode="aspectFit"></image>
         </view>
         <text class="feature-text">情绪调节</text>
       </view>
@@ -69,7 +72,7 @@
               </view>
             </view>
             <view class="card-play">
-              <image src="/static/home/播放@3x.png" class="play-icon" mode="aspectFit"></image>
+              <image src="/static/home/play@3x.png" class="play-icon" mode="aspectFit"></image>
             </view>
           </view>
         </view>
@@ -280,12 +283,25 @@ export default {
   min-height: 100vh;
   background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
   padding-bottom: 100rpx;
+  position: relative;
+}
+
+/* 背景图 */
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  opacity: 0.6;
 }
 
 /* 顶部区域 */
 .header-section {
   padding: 40rpx 30rpx 30rpx;
   padding-top: calc(var(--status-bar-height) + 40rpx);
+  position: relative;
+  z-index: 1;
 }
 
 .greeting {
@@ -303,6 +319,11 @@ export default {
   padding: 16rpx 24rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
   
+  .search-icon {
+    width: 36rpx;
+    height: 36rpx;
+  }
+  
   .search-placeholder {
     margin-left: 12rpx;
     color: #999;
@@ -315,6 +336,8 @@ export default {
   display: flex;
   justify-content: space-around;
   padding: 20rpx 30rpx 40rpx;
+  position: relative;
+  z-index: 1;
   
   .feature-item {
     display: flex;
@@ -368,6 +391,8 @@ export default {
 /* 冥想练习区域 */
 .meditation-section {
   margin-bottom: 40rpx;
+  position: relative;
+  z-index: 1;
   
   .meditation-cards {
     padding-left: 30rpx;
@@ -442,6 +467,8 @@ export default {
 /* 冥想推荐区域 */
 .recommend-section {
   margin-bottom: 40rpx;
+  position: relative;
+  z-index: 1;
   
   .recommend-list {
     padding: 0 30rpx;
@@ -488,6 +515,8 @@ export default {
 /* 冥想知识区域 */
 .knowledge-section {
   margin-bottom: 40rpx;
+  position: relative;
+  z-index: 1;
   
   .knowledge-list {
     padding: 0 30rpx;
