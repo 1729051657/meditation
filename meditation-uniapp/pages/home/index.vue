@@ -90,19 +90,15 @@
 </template>
 
 <script>
+import { mapState, mapActions } from 'vuex'
 import { listCategory } from '@/api/category'
 import { listSeries } from '@/api/series'
 import { listArticle } from '@/api/article'
 import { listBanner } from '@/api/banner'
-import { inspectionWechatLogin } from '@/api/auth'
-import { setToken, setUserInfo, getToken } from '@/utils/auth'
-import { getTenantId, getDeptId } from '@/utils/auth'
-import appConfig from '@/common/config'
 
 export default {
   data() {
     return {
-      isLogin: false,
       loginLoading: false,
       categoryList: [],
       seriesList: [],
@@ -111,62 +107,57 @@ export default {
     }
   },
   
+  computed: {
+    ...mapState('user', ['isLogin', 'token', 'userInfo'])
+  },
+  
   onLoad() {
     // 页面加载时自动登录
     this.autoLogin()
   },
   
   methods: {
+    ...mapActions('user', ['wxLogin']),
+    
     // 自动微信登录
     async autoLogin() {
       try {
         this.loginLoading = true
         
         // 检查是否已登录
-        const token = getToken()
-        if (token) {
-          this.isLogin = true
+        if (this.token) {
+          console.log('已登录，直接加载数据')
           this.loadData()
           return
         }
         
-        // 获取微信登录凭证
-        const loginRes = await uni.login({ provider: 'weixin' })
-        if (loginRes[1].errMsg !== 'login:ok') {
-          throw new Error('微信登录失败')
-        }
-        
-        const code = loginRes[1].code
-        
-        // 调用后端登录接口
-        const result = await inspectionWechatLogin({ 
-          code, 
-          appid: appConfig.wechatAppId || '', 
-          tenantId: getTenantId(), 
-          deptId: getDeptId() 
+        // 调用store中的小程序登录方法
+        await this.wxLogin({
+          tenantId: '000000'
         })
         
-        if (result.code !== 200) {
-          throw new Error(result.msg || '登录失败')
-        }
-        
-        // 保存登录信息
-        const { access_token, user } = result.data
-        setToken(access_token)
-        setUserInfo(user)
+        console.log('登录成功，用户信息：', this.userInfo)
         
         // 登录成功，加载数据
-        this.isLogin = true
         this.loadData()
         
       } catch (error) {
         console.error('自动登录失败:', error)
+        
+        // 如果是开发环境，可能是因为不在微信环境
+        // #ifdef H5
+        console.log('H5环境，跳过微信登录')
+        this.loadData()
+        // #endif
+        
+        // #ifndef H5
         uni.showToast({
           title: error.message || '登录失败',
           icon: 'none'
         })
         // 登录失败时也尝试加载数据（可能有些接口不需要登录）
         this.loadData()
+        // #endif
       } finally {
         this.loginLoading = false
       }
