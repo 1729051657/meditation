@@ -238,4 +238,21 @@ public interface ISysUserService {
      * @return 更新结果
      */
     boolean updateUserWechatInfo(Long userId, String openid, String unionid);
+
+    /**
+     * 通过微信OpenID查询用户
+     *
+     * @param openid 微信OpenID
+     * @return 用户对象信息
+     */
+    SysUserVo selectUserByWechatOpenId(String openid);
+
+    /**
+     * 创建冥想小程序用户
+     *
+     * @param openid 微信OpenID
+     * @param unionid 微信UnionID
+     * @return 用户对象信息
+     */
+    SysUserVo createMeditationUser(String openid, String unionid);
 }

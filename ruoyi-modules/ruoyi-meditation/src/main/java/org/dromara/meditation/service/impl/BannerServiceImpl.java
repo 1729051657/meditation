@@ -73,7 +73,6 @@ public class BannerServiceImpl implements IBannerService {
     private LambdaQueryWrapper<Banner> buildQueryWrapper(BannerBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<Banner> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(Banner::getId);
         lqw.eq(StringUtils.isNotBlank(bo.getPage()), Banner::getPage, bo.getPage());
         lqw.eq(bo.getImage() != null, Banner::getImage, bo.getImage());
         lqw.eq(StringUtils.isNotBlank(bo.getLinkType()), Banner::getLinkType, bo.getLinkType());
@@ -82,6 +81,8 @@ public class BannerServiceImpl implements IBannerService {
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Banner::getStatus, bo.getStatus());
         lqw.eq(bo.getStartTime() != null, Banner::getStartTime, bo.getStartTime());
         lqw.eq(bo.getEndTime() != null, Banner::getEndTime, bo.getEndTime());
+        lqw.eq(Banner::getDelFlag, "0");
+        lqw.orderByDesc(Banner::getOrderNum);
         return lqw;
     }
 

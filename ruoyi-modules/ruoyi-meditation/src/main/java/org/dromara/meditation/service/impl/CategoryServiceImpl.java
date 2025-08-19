@@ -57,7 +57,6 @@ public class CategoryServiceImpl implements ICategoryService {
     private LambdaQueryWrapper<Category> buildQueryWrapper(CategoryBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<Category> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(Category::getId);
         lqw.eq(bo.getParentId() != null, Category::getParentId, bo.getParentId());
         lqw.like(StringUtils.isNotBlank(bo.getName()), Category::getName, bo.getName());
         lqw.eq(StringUtils.isNotBlank(bo.getCode()), Category::getCode, bo.getCode());
@@ -65,6 +64,8 @@ public class CategoryServiceImpl implements ICategoryService {
         lqw.eq(StringUtils.isNotBlank(bo.getDescription()), Category::getDescription, bo.getDescription());
         lqw.eq(bo.getOrderNum() != null, Category::getOrderNum, bo.getOrderNum());
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Category::getStatus, bo.getStatus());
+        lqw.eq(Category::getDelFlag, "0");
+        lqw.orderByDesc(Category::getOrderNum);
         return lqw;
     }
 

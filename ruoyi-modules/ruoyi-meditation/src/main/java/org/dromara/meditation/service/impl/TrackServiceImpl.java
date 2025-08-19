@@ -73,7 +73,6 @@ public class TrackServiceImpl implements ITrackService {
     private LambdaQueryWrapper<Track> buildQueryWrapper(TrackBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<Track> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(Track::getId);
         lqw.eq(bo.getSeriesId() != null, Track::getSeriesId, bo.getSeriesId());
         lqw.eq(bo.getCategoryId() != null, Track::getCategoryId, bo.getCategoryId());
         lqw.eq(StringUtils.isNotBlank(bo.getTitle()), Track::getTitle, bo.getTitle());
@@ -84,6 +83,8 @@ public class TrackServiceImpl implements ITrackService {
         lqw.eq(bo.getOrderIndex() != null, Track::getOrderIndex, bo.getOrderIndex());
         lqw.eq(StringUtils.isNotBlank(bo.getIsFree()), Track::getIsFree, bo.getIsFree());
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Track::getStatus, bo.getStatus());
+        lqw.eq(Track::getDelFlag, "0");
+        lqw.orderByAsc(Track::getOrderIndex);
         return lqw;
     }
 

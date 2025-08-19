@@ -1,8 +1,10 @@
 <template>
   <div class="p-2">
+    <!-- 搜索区域：用于筛选推荐位内容列表 -->
     <transition :enter-active-class="proxy?.animate.searchAnimate.enter" :leave-active-class="proxy?.animate.searchAnimate.leave">
       <div v-show="showSearch" class="mb-[10px]">
         <el-card shadow="hover">
+          <!-- 查询表单：支持多条件筛选，内容ID需要先选择内容类型 -->
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
             <el-form-item label="推荐位" prop="slotId">
               <el-select v-model="queryParams.slotId" placeholder="请选择推荐位" clearable style="width: 200px">
@@ -15,34 +17,36 @@
               </el-select>
             </el-form-item>
             <el-form-item label="内容类型" prop="contentType">
-              <el-select v-model="queryParams.contentType" placeholder="请选择内容类型" clearable style="width: 150px">
+              <!-- 内容类型选择：必须先选择类型，才能选择内容 -->
+              <el-select 
+                v-model="queryParams.contentType" 
+                placeholder="请选择内容类型" 
+                clearable 
+                style="width: 150px" 
+                @change="handleQueryContentTypeChange">
                 <el-option label="系列" value="series" />
                 <el-option label="文章" value="article" />
                 <el-option label="音频" value="track" />
               </el-select>
             </el-form-item>
-            <el-form-item label="内容ID" prop="contentId">
-              <el-input v-model="queryParams.contentId" placeholder="请输入内容ID" clearable @keyup.enter="handleQuery" />
+            <el-form-item label="内容选择" prop="contentId">
+              <!-- 内容选择框：只有在选择内容类型后才能选择，避免无效查询 -->
+              <el-select 
+                v-model="queryParams.contentId" 
+                placeholder="请选择内容" 
+                clearable 
+                filterable
+                :disabled="!queryParams.contentType"
+                style="width: 200px">
+                <el-option 
+                  v-for="item in queryContentOptions" 
+                  :key="item.id" 
+                  :label="getContentDisplayName(item)" 
+                  :value="item.id"
+                />
+              </el-select>
             </el-form-item>
-            <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="queryParams.orderNum" placeholder="请输入显示顺序" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="生效时间" prop="startTime">
-              <el-date-picker clearable
-                v-model="queryParams.startTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择生效时间"
-              />
-            </el-form-item>
-            <el-form-item label="失效时间" prop="endTime">
-              <el-date-picker clearable
-                v-model="queryParams.endTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择失效时间"
-              />
-            </el-form-item>
+            
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
               <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -87,11 +91,17 @@
             <el-tag v-else>{{ scope.row.contentType }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="内容信息" align="center" prop="contentId">
+        <el-table-column label="内容信息" align="center" prop="contentId" width="300">
           <template #default="scope">
             <div class="content-info">
               <div class="content-title">{{ getContentTitle(scope.row) }}</div>
               <div class="content-subtitle">{{ getContentSubtitle(scope.row) }}</div>
+              <div class="content-meta">
+                <el-tag size="small" type="info" class="content-type-tag">
+                  {{ getContentTypeLabel(scope.row.contentType) }}
+                </el-tag>
+                <span class="content-id">ID: {{ scope.row.contentId }}</span>
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -193,16 +203,35 @@
         
         <!-- 选中内容预览 -->
         <el-form-item label="内容预览" v-if="selectedContent">
-          <el-card shadow="hover" class="content-preview">
+          <el-card shadow="hover" class="content-preview compact" body-class="no-margin">
             <div class="preview-header">
-              <el-tag :type="getContentTypeTag(form.contentType)" size="small">
+              <el-tag :type="getContentTypeTag(form.contentType)" size="small" class="preview-type-tag">
                 {{ getContentTypeLabel(form.contentType) }}
               </el-tag>
+              <span class="preview-id">ID: {{ selectedContent.id }}</span>
             </div>
             <div class="preview-content">
               <div class="preview-title">{{ selectedContent.title || selectedContent.name }}</div>
               <div class="preview-subtitle" v-if="selectedContent.subtitle">{{ selectedContent.subtitle }}</div>
               <div class="preview-info" v-if="selectedContent.intro">{{ selectedContent.intro }}</div>
+              <div class="preview-meta" v-if="getContentMeta(selectedContent)">
+                <span class="meta-item" v-if="selectedContent.episodeCount">
+                  <el-icon><VideoPlay /></el-icon>
+                  {{ selectedContent.episodeCount }} 小节
+                </span>
+                <span class="meta-item" v-if="selectedContent.recommendDuration">
+                  <el-icon><Clock /></el-icon>
+                  {{ formatDuration(selectedContent.recommendDuration) }}
+                </span>
+                <span class="meta-item" v-if="selectedContent.authorId">
+                  <el-icon><User /></el-icon>
+                  {{ selectedContent.authorName || '未知作者' }}
+                </span>
+                <span class="meta-item" v-if="selectedContent.publishTime">
+                  <el-icon><Calendar /></el-icon>
+                  {{ formatDate(selectedContent.publishTime) }}
+                </span>
+              </div>
             </div>
           </el-card>
         </el-form-item>
@@ -272,6 +301,7 @@ const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 const recommendItemList = ref<RecommendItemVO[]>([]);
 const slotList = ref<RecommendSlotVO[]>([]);
 const contentOptions = ref<any[]>([]);
+const queryContentOptions = ref<any[]>([]); // 查询用的内容选项
 const selectedContent = ref<any>(null);
 const contentSearch = ref('');
 const buttonLoading = ref(false);
@@ -381,24 +411,83 @@ const getContentSubtitle = (row: RecommendItemVO) => {
          row.contentType === 'track' ? '音频' : '';
 }
 
+/** 获取内容显示名称 - 用于查询筛选中的内容选择框 */
+const getContentDisplayName = (item: any): string => {
+  if (!item) return '';
+  
+  // 优先显示标题，如果没有则显示名称
+  const title = item.title || item.name || '';
+  const subtitle = item.subtitle || item.intro || '';
+  
+  if (subtitle) {
+    return `${title} - ${subtitle}`;
+  }
+  return title;
+}
+
 /** 内容类型变化处理 */
-const handleContentTypeChange = () => {
+const handleContentTypeChange = async () => {
+  // 重置内容相关数据
   form.value.contentId = undefined;
   selectedContent.value = null;
   contentOptions.value = [];
   contentSearch.value = '';
+  
+  // 如果选择了内容类型，自动加载对应类型的内容选项
+  // 这样用户就不需要手动搜索，可以直接从下拉框中选择内容
+  if (form.value.contentType) {
+    await loadContentOptions();
+  }
 }
 
-/** 内容搜索处理 */
+/** 加载内容选项 - 自动初始化内容选择下拉框 */
+const loadContentOptions = async () => {
+  if (!form.value.contentType) return;
+  
+  try {
+    let res;
+    const searchParams = { 
+      status: '0',        // 只加载启用状态的内容
+      pageNum: 1,         // 第一页
+      pageSize: 100       // 最多加载100条，足够选择使用
+    };
+    
+    // 根据内容类型调用对应的API
+    switch (form.value.contentType) {
+      case 'series':
+        res = await listSeries(searchParams);
+        break;
+      case 'article':
+        res = await listArticle(searchParams);
+        break;
+      case 'track':
+        res = await listTrack(searchParams);
+        break;
+      default:
+        return;
+    }
+    
+    // 更新内容选项列表，供下拉框使用
+    contentOptions.value = res.rows || res.data || [];
+  } catch (error) {
+    console.error('加载内容选项失败:', error);
+    proxy?.$modal.msgError('加载内容选项失败');
+  }
+}
+
+/** 内容搜索处理 - 支持实时搜索和显示所有内容 */
 const handleContentSearch = () => {
   if (contentSearch.value && form.value.contentType) {
     searchContent();
   }
 }
 
-/** 搜索内容 */
+/** 搜索内容 - 智能搜索：有关键词时搜索，无关键词时显示所有 */
 const searchContent = async () => {
   if (!form.value.contentType || !contentSearch.value.trim()) {
+    // 如果没有搜索关键词，显示所有内容
+    // 这样用户可以先浏览所有可用内容，再进行精确搜索
+    await loadContentOptions();
     return;
   }
   
@@ -408,9 +497,10 @@ const searchContent = async () => {
       title: contentSearch.value.trim(), 
       status: '0',
       pageNum: 1,
-      pageSize: 20 
+      pageSize: 20        // 搜索结果限制20条，提高性能
     };
     
+    // 根据内容类型调用对应的搜索API
     switch (form.value.contentType) {
       case 'series':
         res = await listSeries(searchParams);
@@ -461,19 +551,115 @@ const getContentTypeLabel = (type: string) => {
   }
 }
 
+/** 获取内容元数据 - 判断是否显示元数据区域 */
+const getContentMeta = (content: any): boolean => {
+  return !!(content.episodeCount || content.recommendDuration || content.authorId || content.publishTime);
+}
+
+/** 格式化时长 - 将秒数转换为可读格式 */
+const formatDuration = (seconds: number): string => {
+  if (!seconds) return '';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}小时${minutes}分钟`;
+  } else if (minutes > 0) {
+    return `${minutes}分钟${remainingSeconds}秒`;
+  } else {
+    return `${remainingSeconds}秒`;
+  }
+}
+
+/** 格式化日期 - 将日期格式化为可读格式 */
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  } catch (error) {
+    return dateString;
+  }
+}
+
+/** 内容类型查询变化处理 - 智能查询优化 */
+const handleQueryContentTypeChange = async () => {
+  // 当内容类型变化时，清空内容选择，避免无效查询
+  // 例如：从"系列"切换到"文章"时，之前选择的系列就无效了
+  queryParams.value.contentId = undefined;
+  queryContentOptions.value = [];
+  
+  // 如果选择了内容类型，加载对应的内容选项
+  if (queryParams.value.contentType) {
+    await loadQueryContentOptions();
+  }
+  
+  // 重置到第一页，重新查询
+  queryParams.value.pageNum = 1;
+  getList();
+}
+
+/** 加载查询用的内容选项 */
+const loadQueryContentOptions = async () => {
+  if (!queryParams.value.contentType) return;
+  
+  try {
+    let res;
+    const searchParams = { 
+      status: '0',        // 只加载启用状态的内容
+      pageNum: 1,         // 第一页
+      pageSize: 200       // 查询筛选需要更多选项
+    };
+    
+    // 根据内容类型调用对应的API
+    switch (queryParams.value.contentType) {
+      case 'series':
+        res = await listSeries(searchParams);
+        break;
+      case 'article':
+        res = await listArticle(searchParams);
+        break;
+      case 'track':
+        res = await listTrack(searchParams);
+        break;
+      default:
+        return;
+    }
+    
+    // 更新查询用的内容选项列表
+    queryContentOptions.value = res.rows || res.data || [];
+  } catch (error) {
+    console.error('加载查询内容选项失败:', error);
+    proxy?.$modal.msgError('加载查询内容选项失败');
+  }
+}
+
 /** 取消按钮 */
 const cancel = () => {
   reset();
   dialog.visible = false;
 }
 
-/** 表单重置 */
+/** 表单重置 - 智能重置：保持内容类型，重新加载内容选项 */
 const reset = () => {
   form.value = {...initFormData};
   selectedContent.value = null;
   contentOptions.value = [];
   contentSearch.value = '';
   recommendItemFormRef.value?.resetFields();
+  
+  // 如果当前有选择的内容类型，重新加载内容选项
+  // 这样用户重置表单后，内容选择下拉框仍然可用
+  if (form.value.contentType) {
+    loadContentOptions();
+  }
 }
 
 /** 搜索按钮操作 */
@@ -482,9 +668,11 @@ const handleQuery = () => {
   getList();
 }
 
-/** 重置按钮操作 */
+/** 重置按钮操作 - 智能重置：保持禁用状态逻辑 */
 const resetQuery = () => {
   queryFormRef.value?.resetFields();
+  // 重置后，如果内容类型被清空，内容ID应该保持禁用状态
+  // 这样用户就能清楚地知道需要先选择内容类型
   handleQuery();
 }
 
@@ -495,11 +683,17 @@ const handleSelectionChange = (selection: RecommendItemVO[]) => {
   multiple.value = !selection.length;
 }
 
-/** 新增按钮操作 */
+/** 新增按钮操作 - 智能初始化：自动选择推荐位，准备内容选择 */
 const handleAdd = () => {
   reset();
   dialog.visible = true;
   dialog.title = "添加推荐位内容";
+  
+  // 新增时默认选择第一个推荐位（如果有的话）
+  // 这样用户就不需要每次都手动选择推荐位，提升用户体验
+  if (slotList.value.length > 0 && !form.value.slotId) {
+    form.value.slotId = slotList.value[0].id;
+  }
 }
 
 /** 修改按钮操作 */
@@ -565,38 +759,237 @@ onMounted(() => {
   .content-title {
     font-weight: 500;
     margin-bottom: 4px;
+    color: #303133;
+    font-size: 14px;
   }
   
   .content-subtitle {
     font-size: 12px;
-    color: #999;
+    color: #909399;
+    margin-bottom: 8px;
+  }
+  
+  .content-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .content-type-tag {
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    
+    .content-id {
+      font-size: 11px;
+      color: #c0c4cc;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
   }
 }
 
 .content-preview {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+  
+  &.compact {
+    .preview-header {
+      padding: 10px 14px;
+      
+      .preview-type-tag {
+        font-size: 12px;
+      }
+      
+      .preview-id {
+        font-size: 12px;
+      }
+    }
+    
+    .preview-content {
+      padding: 14px;
+      
+      .preview-title {
+        font-size: 15px;
+        margin-bottom: 10px;
+      }
+      
+      .preview-subtitle {
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+      
+      .preview-info {
+        font-size: 12px;
+        margin-bottom: 14px;
+        padding: 10px;
+      }
+      
+      .preview-meta {
+        gap: 10px;
+        padding-top: 14px;
+        
+        .meta-item {
+          font-size: 11px;
+          padding: 3px 8px;
+          height: 22px;
+          border-radius: 12px;
+          
+          .el-icon {
+            font-size: 11px;
+          }
+        }
+      }
+    }
+  }
+  
   .preview-header {
-    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-bottom: 1px solid #e4e7ed;
+    
+    .preview-type-tag {
+      font-weight: 500;
+      border-radius: 12px;
+    }
+    
+    .preview-id {
+      font-size: 12px;
+      color: #909399;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
   }
   
   .preview-content {
+    padding: 20px;
+    background: #fff;
+    
     .preview-title {
-      font-size: 16px;
-      font-weight: 500;
-      margin-bottom: 8px;
-      color: #333;
+      font-size: 18px;
+      font-weight: 600;
+      color: #303133;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      word-break: break-word;
     }
     
     .preview-subtitle {
       font-size: 14px;
-      color: #666;
-      margin-bottom: 8px;
+      color: #606266;
+      margin-bottom: 12px;
+      line-height: 1.5;
+      font-style: italic;
     }
     
     .preview-info {
-      font-size: 12px;
-      color: #999;
-      line-height: 1.5;
+      font-size: 13px;
+      color: #909399;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid #409eff;
+    }
+    
+    .preview-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+      
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #606266;
+        padding: 4px 10px;
+        background: #f5f7fa;
+        border-radius: 14px;
+        border: 1px solid #e4e7ed;
+        transition: all 0.2s ease;
+        line-height: 1;
+        height: 24px;
+        
+        &:hover {
+          background: #ecf5ff;
+          border-color: #409eff;
+          color: #409eff;
+        }
+        
+        .el-icon {
+          font-size: 13px;
+        }
+      }
     }
   }
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .content-preview {
+    .preview-content {
+      padding: 16px;
+      
+      .preview-title {
+        font-size: 16px;
+      }
+      
+      .preview-meta {
+        gap: 8px;
+        
+        .meta-item {
+          font-size: 11px;
+          padding: 4px 8px;
+        }
+      }
+    }
+    
+    &.compact {
+      .preview-content {
+        padding: 12px;
+        
+        .preview-title {
+          font-size: 14px;
+        }
+        
+        .preview-subtitle {
+          font-size: 12px;
+        }
+        
+        .preview-info {
+          font-size: 11px;
+          padding: 8px;
+        }
+        
+        .preview-meta {
+          gap: 8px;
+          
+          .meta-item {
+            font-size: 10px;
+            padding: 3px 7px;
+            height: 20px;
+            border-radius: 10px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 去掉卡片默认margin
+:deep(.no-margin) {
+  padding: 0 !important;
+  margin: 0 !important;
 }
 </style>

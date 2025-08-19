@@ -4,13 +4,6 @@
   },
   "pages": [
     {
-      "path": "pages/login/login",
-      "style": {
-        "navigationBarTitleText": "登录",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "冥想首页",
@@ -41,34 +34,41 @@
         "navigationBarTitleText": "我的",
         "navigationStyle": "custom"
       }
-    },
+    }
+  ],
+  "subPackages": [
     {
-      "path": "pages/series/detail",
-      "style": {
-        "navigationBarTitleText": "系列详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/player/index",
-      "style": {
-        "navigationBarTitleText": "播放",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/article/detail",
-      "style": {
-        "navigationBarTitleText": "文章详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/favorites/index",
-      "style": {
-        "navigationBarTitleText": "我的收藏",
-        "navigationStyle": "custom"
-      }
+      "root": "subPages",
+      "pages": [
+        {
+          "path": "series/detail",
+          "style": {
+            "navigationBarTitleText": "系列详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "track/player",
+          "style": {
+            "navigationBarTitleText": "播放",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "article/detail",
+          "style": {
+            "navigationBarTitleText": "文章详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "favorites/index",
+          "style": {
+            "navigationBarTitleText": "我的收藏",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
     }
   ],
   "tabBar": {

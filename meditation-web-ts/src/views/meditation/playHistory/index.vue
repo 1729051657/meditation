@@ -24,26 +24,6 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="已播放时长" prop="progressSec">
-              <el-input v-model="queryParams.progressSec" placeholder="请输入已播放时长" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="最后播放时间" prop="lastPlayTime">
-              <el-date-picker clearable
-                v-model="queryParams.lastPlayTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择最后播放时间"
-              />
-            </el-form-item>
-            <el-form-item label="播放次数" prop="playCount">
-              <el-input v-model="queryParams.playCount" placeholder="请输入播放次数" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="是否已听完" prop="isCompleted">
-              <el-select v-model="queryParams.isCompleted" placeholder="请选择状态" clearable style="width: 120px">
-                <el-option label="是" value="Y" />
-                <el-option label="否" value="N" />
-              </el-select>
-            </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
               <el-button icon="Refresh" @click="resetQuery">重置</el-button>

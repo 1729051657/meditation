@@ -87,19 +87,18 @@ public class SeriesServiceImpl implements ISeriesService {
     private LambdaQueryWrapper<Series> buildQueryWrapper(SeriesBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<Series> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(Series::getId);
         lqw.eq(bo.getCategoryId() != null, Series::getCategoryId, bo.getCategoryId());
-        lqw.eq(StringUtils.isNotBlank(bo.getTitle()), Series::getTitle, bo.getTitle());
-        lqw.eq(StringUtils.isNotBlank(bo.getSubtitle()), Series::getSubtitle, bo.getSubtitle());
+        lqw.like(StringUtils.isNotBlank(bo.getTitle()), Series::getTitle, bo.getTitle());
+        lqw.like(StringUtils.isNotBlank(bo.getSubtitle()), Series::getSubtitle, bo.getSubtitle());
         lqw.eq(bo.getCover() != null, Series::getCover, bo.getCover());
         lqw.eq(bo.getBanner() != null, Series::getBanner, bo.getBanner());
         lqw.eq(StringUtils.isNotBlank(bo.getIntro()), Series::getIntro, bo.getIntro());
         lqw.eq(bo.getEpisodeCount() != null, Series::getEpisodeCount, bo.getEpisodeCount());
         lqw.eq(bo.getRecommendDuration() != null, Series::getRecommendDuration, bo.getRecommendDuration());
-        lqw.eq(StringUtils.isNotBlank(bo.getIsFree()), Series::getIsFree, bo.getIsFree());
         lqw.eq(bo.getOrderNum() != null, Series::getOrderNum, bo.getOrderNum());
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Series::getStatus, bo.getStatus());
         lqw.eq(bo.getPublishTime() != null, Series::getPublishTime, bo.getPublishTime());
+        lqw.orderByDesc(Series::getOrderNum);
         return lqw;
     }
 

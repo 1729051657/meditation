@@ -5,7 +5,14 @@
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
             <el-form-item label="所属页面" prop="page">
-              <el-input v-model="queryParams.page" placeholder="请输入所属页面" clearable @keyup.enter="handleQuery" />
+              <el-select v-model="queryParams.page" placeholder="请选择所属页面" clearable style="width: 150px">
+                <el-option label="首页" value="home" />
+                <el-option label="发现页" value="discover" />
+                <el-option label="分类页" value="category" />
+                <el-option label="我的页" value="mine" />
+                <el-option label="播放页" value="player" />
+                <el-option label="搜索结果页" value="search" />
+              </el-select>
             </el-form-item>
             <el-form-item label="链接目标" prop="linkTarget">
               <el-input v-model="queryParams.linkTarget" placeholder="请输入链接目标" clearable @keyup.enter="handleQuery" />
@@ -96,7 +103,14 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="所属页面" prop="page">
-              <el-input v-model="form.page" placeholder="请输入所属页面" />
+              <el-select v-model="form.page" placeholder="请选择所属页面" style="width: 100%">
+                <el-option label="首页" value="home" />
+                <el-option label="发现页" value="discover" />
+                <el-option label="分类页" value="category" />
+                <el-option label="我的页" value="mine" />
+                <el-option label="播放页" value="player" />
+                <el-option label="搜索结果页" value="search" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -115,7 +129,12 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+              <el-input-number 
+                v-model="form.orderNum" 
+                placeholder="请输入显示顺序"
+                :min="1"
+                :max="999"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">

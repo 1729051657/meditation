@@ -335,4 +335,11 @@ create table mg_series_progress
     unique key uk_user_series (tenant_id, user_id, series_id)
 ) engine=innodb comment = '系列学习进度表';
 
+-- 冥想小程序用户角色
+INSERT INTO sys_role (role_id, tenant_id, role_name, role_key, role_sort, data_scope, menu_check_strictly, dept_check_strictly, status, del_flag, create_dept, create_by, create_time, update_by, update_time, remark) 
+VALUES (5, '000000', '冥想用户', 'meditation_user', 5, '5', 1, 1, '0', '0', 103, 1, sysdate(), null, null, '冥想小程序用户角色');
+
+-- 为冥想用户角色分配基本权限（可以根据需要调整）
+-- 这里暂时不分配菜单权限，冥想用户主要是使用小程序功能
+
 

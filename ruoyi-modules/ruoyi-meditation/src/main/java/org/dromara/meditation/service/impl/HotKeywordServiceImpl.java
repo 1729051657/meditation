@@ -73,12 +73,13 @@ public class HotKeywordServiceImpl implements IHotKeywordService {
     private LambdaQueryWrapper<HotKeyword> buildQueryWrapper(HotKeywordBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<HotKeyword> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(HotKeyword::getId);
         lqw.eq(StringUtils.isNotBlank(bo.getKeyword()), HotKeyword::getKeyword, bo.getKeyword());
         lqw.eq(bo.getOrderNum() != null, HotKeyword::getOrderNum, bo.getOrderNum());
         lqw.eq(bo.getStartTime() != null, HotKeyword::getStartTime, bo.getStartTime());
         lqw.eq(bo.getEndTime() != null, HotKeyword::getEndTime, bo.getEndTime());
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), HotKeyword::getStatus, bo.getStatus());
+        lqw.eq(HotKeyword::getDelFlag, "0");
+        lqw.orderByDesc(HotKeyword::getOrderNum);
         return lqw;
     }
 

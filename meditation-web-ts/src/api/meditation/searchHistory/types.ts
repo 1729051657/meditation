@@ -76,6 +76,11 @@ export interface SearchHistoryQuery extends PageQuery {
    */
   lastTime?: string;
 
+  /**
+   * 排序方式
+   */
+  orderBy?: string;
+
     /**
      * 日期范围参数
      */

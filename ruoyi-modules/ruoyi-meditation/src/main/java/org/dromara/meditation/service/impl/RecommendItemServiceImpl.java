@@ -73,7 +73,6 @@ public class RecommendItemServiceImpl implements IRecommendItemService {
     private LambdaQueryWrapper<RecommendItem> buildQueryWrapper(RecommendItemBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<RecommendItem> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(RecommendItem::getId);
         lqw.eq(bo.getSlotId() != null, RecommendItem::getSlotId, bo.getSlotId());
         lqw.eq(StringUtils.isNotBlank(bo.getContentType()), RecommendItem::getContentType, bo.getContentType());
         lqw.eq(bo.getContentId() != null, RecommendItem::getContentId, bo.getContentId());
@@ -81,6 +80,8 @@ public class RecommendItemServiceImpl implements IRecommendItemService {
         lqw.eq(bo.getStartTime() != null, RecommendItem::getStartTime, bo.getStartTime());
         lqw.eq(bo.getEndTime() != null, RecommendItem::getEndTime, bo.getEndTime());
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), RecommendItem::getStatus, bo.getStatus());
+        lqw.eq(RecommendItem::getDelFlag, "0");
+        lqw.orderByDesc(RecommendItem::getOrderNum);
         return lqw;
     }
 

@@ -8,7 +8,12 @@
               <el-input v-model="queryParams.name" placeholder="请输入标签名称" clearable @keyup.enter="handleQuery" />
             </el-form-item>
             <el-form-item label="排序" prop="orderNum">
-              <el-input v-model="queryParams.orderNum" placeholder="请输入排序" clearable @keyup.enter="handleQuery" />
+              <el-input-number 
+                v-model="queryParams.orderNum" 
+                placeholder="请输入排序"
+                :min="1"
+                :max="999"
+                style="width: 100%" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -85,7 +90,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="排序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入排序" />
+          <el-input-number 
+            v-model="form.orderNum" 
+            placeholder="请输入排序"
+            :min="1"
+            :max="999"
+            style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
