@@ -4,10 +4,10 @@
 
 import { appConfig } from '@/common/config.js'
 
-const TOKEN_KEY = 'merchant_token'
-const USER_INFO_KEY = 'merchant_user_info'
-const TENANT_ID_KEY = 'merchant_tenant_id'
-const DEPT_ID_KEY = 'merchant_dept_id'
+const TOKEN_KEY = 'edu_token'
+const USER_INFO_KEY = 'edu_user_info'
+const TENANT_ID_KEY = 'edu_tenant_id'
+const DEPT_ID_KEY = 'edu_dept_id'
 
 /**
  * 获取token
