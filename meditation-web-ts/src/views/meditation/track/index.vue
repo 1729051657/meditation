@@ -27,16 +27,6 @@
             <el-form-item label="标题" prop="title">
               <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
             </el-form-item>
-
-            <el-form-item label="时长" prop="durationSec">
-              <el-input v-model="queryParams.durationSec" placeholder="请输入时长" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="简介" prop="intro">
-              <el-input v-model="queryParams.intro" placeholder="请输入简介" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
-            <el-form-item label="在系列内排序" prop="orderIndex">
-              <el-input v-model="queryParams.orderIndex" placeholder="请输入在系列内排序" clearable @keyup.enter="handleQuery" />
-            </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
               <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -86,7 +76,7 @@
         </el-table-column>
         <el-table-column label="时长" align="center" prop="durationSec" />
         <el-table-column label="简介" align="center" prop="intro" :show-overflow-tooltip="true" />
-        <el-table-column label="在系列内排序" align="center" prop="orderIndex" />
+        <el-table-column label="系列排序" align="center" prop="orderIndex" />
         <el-table-column label="状态" align="center" prop="status">
           <template #default="scope">
             <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'">
@@ -160,7 +150,6 @@
             <el-form-item label="在系列内排序" prop="orderIndex">
               <el-input v-model="form.orderIndex" placeholder="请输入在系列内排序" />
             </el-form-item>
-          </el-col>
           </el-col>
         </el-row>
         
@@ -291,10 +280,7 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
       { required: true, message: "简介不能为空", trigger: "blur" }
     ],
     orderIndex: [
-      { required: true, message: "在系列内排序不能为空", trigger: "blur" }
-    ]
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
+      { required: true, message: "系列排序不能为空", trigger: "blur" }
     ],
     remark: [
       { required: true, message: "备注不能为空", trigger: "blur" }

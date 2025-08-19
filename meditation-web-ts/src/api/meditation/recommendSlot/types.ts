@@ -20,6 +20,11 @@ export interface RecommendSlotVO {
   page: string;
 
   /**
+   * 推荐位类型（banner/list/grid/carousel等）
+   */
+  type?: string;
+
+  /**
    * 状态（0正常 1停用）
    */
   status: string;
@@ -30,10 +35,29 @@ export interface RecommendSlotVO {
   orderNum: number;
 
   /**
+   * 宽度（如：100% 或 750px）
+   */
+  width?: string;
+
+  /**
+   * 高度（如：200px 或 auto）
+   */
+  height?: string;
+
+  /**
    * 备注
    */
   remark: string;
 
+  /**
+   * 创建时间
+   */
+  createTime?: string;
+
+  /**
+   * 更新时间
+   */
+  updateTime?: string;
 }
 
 export interface RecommendSlotForm extends BaseEntity {
@@ -58,6 +82,11 @@ export interface RecommendSlotForm extends BaseEntity {
   page?: string;
 
   /**
+   * 推荐位类型（banner/list/grid/carousel等）
+   */
+  type?: string;
+
+  /**
    * 状态（0正常 1停用）
    */
   status?: string;
@@ -68,10 +97,19 @@ export interface RecommendSlotForm extends BaseEntity {
   orderNum?: number;
 
   /**
+   * 宽度（如：100% 或 750px）
+   */
+  width?: string;
+
+  /**
+   * 高度（如：200px 或 auto）
+   */
+  height?: string;
+
+  /**
    * 备注
    */
   remark?: string;
-
 }
 
 export interface RecommendSlotQuery extends PageQuery {
@@ -90,6 +128,11 @@ export interface RecommendSlotQuery extends PageQuery {
    * 所属页面（home/category/search等）
    */
   page?: string;
+
+  /**
+   * 推荐位类型（banner/list/grid/carousel等）
+   */
+  type?: string;
 
   /**
    * 状态（0正常 1停用）

@@ -42,7 +42,7 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "wx_meditation_app",
+        "appid" : "wx03df4b0ec47009cd",
         "setting" : {
             "urlCheck" : false,
             "postcss" : true,
@@ -53,7 +53,7 @@
         "optimization" : {
             "subPackages" : true
         },
-        "requiredPrivateInfos": ["getLocation", "chooseLocation"]
+        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
     },
     "mp-alipay" : {
         "usingComponents" : true

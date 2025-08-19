@@ -1,112 +1,457 @@
 <template>
-  <view class="mg-home">
-    <view class="top-bar">
-      <view class="greet">冥想</view>
-      <view class="search" @click="goSearch">🔍</view>
+  <view class="home-page">
+    <!-- 自定义导航栏 -->
+    <tn-nav-bar
+      :isBack="false"
+      :bottomShadow="false"
+      backgroundColor="#7C3AED"
+      :fixed="true"
+    >
+      <view class="nav-title">
+        <text class="nav-title-text">冥想</text>
+      </view>
+    </tn-nav-bar>
+
+    <!-- 登录状态提示 -->
+    <view v-if="!isLogin" class="login-tip">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">正在登录中...</text>
     </view>
-    <view class="chips">
-      <view v-for="c in categories" :key="c.id" class="chip" @click="goCategory(c)">{{ c.name }}</view>
-    </view>
-    <swiper class="banner" v-if="banners.length">
-      <swiper-item v-for="b in banners" :key="b.id">
-        <image class="banner-img" :src="oss(b.image)" mode="aspectFill" />
-      </swiper-item>
-    </swiper>
-    <view class="block" v-for="(items, code) in blocks" :key="code">
-      <view class="block-title">{{ slotName(code) }}</view>
-      <scroll-view class="hlist" scroll-x>
-        <view class="card" v-for="item in items" :key="item.id" @click="enterItem(item)">
-          <image class="cover" :src="coverOf(item)" mode="aspectFill" />
-          <view class="title">{{ titleOf(item) }}</view>
-          <view class="badge" v-if="durationOf(item)">{{ durationOf(item) }}</view>
+
+    <!-- 主要内容 -->
+    <view v-else class="main-content">
+      <!-- 轮播图 -->
+      <view class="banner-section" v-if="bannerList.length > 0">
+        <swiper class="banner-swiper" :indicator-dots="true" :autoplay="true" :interval="3000" :duration="500">
+          <swiper-item v-for="banner in bannerList" :key="banner.id" @click="handleBannerClick(banner)">
+            <image :src="oss(banner.image)" class="banner-image" mode="aspectFill" />
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <!-- 分类导航 -->
+      <view class="category-section" v-if="categoryList.length > 0">
+        <view class="section-title">分类导航</view>
+        <view class="category-grid">
+          <view 
+            class="category-item" 
+            v-for="category in categoryList" 
+            :key="category.id"
+            @click="goToCategory(category.id)"
+          >
+            <image :src="oss(category.icon)" class="category-icon" mode="aspectFill" />
+            <text class="category-name">{{ category.name }}</text>
+          </view>
         </view>
-      </scroll-view>
-    </view>
-    <view class="articles" v-if="articles.length">
-      <view class="block-title">冥想知识</view>
-      <view class="article" v-for="a in articles" :key="a.id" @click="goArticle(a.id)">
-        <image :src="oss(a.cover)" class="article-cover" mode="aspectFill" />
-        <view class="article-title">{{ a.title }}</view>
+      </view>
+
+      <!-- 推荐系列 -->
+      <view class="series-section" v-if="seriesList.length > 0">
+        <view class="section-title">为你推荐</view>
+        <scroll-view class="series-scroll" scroll-x>
+          <view class="series-list">
+            <view 
+              class="series-item" 
+              v-for="series in seriesList" 
+              :key="series.id"
+              @click="goToSeries(series.id)"
+            >
+              <image :src="oss(series.cover)" class="series-cover" mode="aspectFill" />
+              <view class="series-info">
+                <text class="series-title">{{ series.title }}</text>
+                <text class="series-subtitle">{{ series.subtitle }}</text>
+                <text class="series-episodes">{{ series.episodeCount }}集</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 热门文章 -->
+      <view class="article-section" v-if="articleList.length > 0">
+        <view class="section-title">热门文章</view>
+        <view class="article-list">
+          <view 
+            class="article-item" 
+            v-for="article in articleList" 
+            :key="article.id"
+            @click="goToArticle(article.id)"
+          >
+            <image :src="oss(article.cover)" class="article-cover" mode="aspectFill" />
+            <view class="article-info">
+              <text class="article-title">{{ article.title }}</text>
+              <text class="article-summary">{{ article.summary }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
-  </template>
+</template>
 
 <script>
-import { listCategories } from '@/api/category'
-import { listSlots, listSlotItems } from '@/api/recommend'
-import { listBanners } from '@/api/banner'
-import { listArticles } from '@/api/article'
+import { listCategory } from '@/api/category'
+import { listSeries } from '@/api/series'
+import { listArticle } from '@/api/article'
+import { listBanner } from '@/api/banner'
+import { inspectionWechatLogin } from '@/api/auth'
+import { setToken, setUserInfo, getToken } from '@/utils/auth'
+import { getTenantId, getDeptId } from '@/utils/auth'
+import appConfig from '@/common/config'
 
 export default {
   data() {
     return {
-      categories: [],
-      banners: [],
-      blocks: {},
-      articles: []
+      isLogin: false,
+      loginLoading: false,
+      categoryList: [],
+      seriesList: [],
+      articleList: [],
+      bannerList: []
     }
   },
-  async onLoad() {
-    const [cats, slots, banners, arts] = await Promise.all([
-      listCategories({ parentId: 0, status: 0 }),
-      listSlots({ page: 'home', status: 0 }),
-      listBanners({ page: 'home', status: 0 }),
-      listArticles({ status: 0, pageNum: 1, pageSize: 6 })
-    ])
-    const slotArr = slots.rows || slots.data || []
-    const itemsRes = await Promise.all(slotArr.map(s => listSlotItems({ slotId: s.id, status: 0 })))
-    const blocks = {}
-    slotArr.forEach((s, i) => { blocks[s.code] = (itemsRes[i].rows || itemsRes[i].data || []) })
-    this.categories = cats.rows || cats.data || []
-    this.banners = banners.rows || banners.data || []
-    this.blocks = blocks
-    this.articles = arts.rows || arts.data || []
+  
+  onLoad() {
+    // 页面加载时自动登录
+    this.autoLogin()
   },
+  
   methods: {
-    goSearch() { uni.navigateTo({ url: '/pages/search/index' }) },
-    goCategory(c) { uni.navigateTo({ url: `/pages/category/index?categoryId=${c.id}` }) },
-    goArticle(id) { uni.navigateTo({ url: `/pages/article/detail?id=${id}` }) },
-    enterItem(item) {
-      const type = item.contentType || item.type
-      const id = item.contentId || item.id
-      if (type === 'series') {
-        uni.navigateTo({ url: `/pages/series/detail?id=${id}` })
-      } else if (type === 'track') {
-        uni.navigateTo({ url: `/pages/player/index?trackId=${id}` })
-      } else if (type === 'article') {
-        this.goArticle(id)
+    // 自动微信登录
+    async autoLogin() {
+      try {
+        this.loginLoading = true
+        
+        // 检查是否已登录
+        const token = getToken()
+        if (token) {
+          this.isLogin = true
+          this.loadData()
+          return
+        }
+        
+        // 获取微信登录凭证
+        const loginRes = await uni.login({ provider: 'weixin' })
+        if (loginRes[1].errMsg !== 'login:ok') {
+          throw new Error('微信登录失败')
+        }
+        
+        const code = loginRes[1].code
+        
+        // 调用后端登录接口
+        const result = await inspectionWechatLogin({ 
+          code, 
+          appid: appConfig.wechatAppId || '', 
+          tenantId: getTenantId(), 
+          deptId: getDeptId() 
+        })
+        
+        if (result.code !== 200) {
+          throw new Error(result.msg || '登录失败')
+        }
+        
+        // 保存登录信息
+        const { access_token, user } = result.data
+        setToken(access_token)
+        setUserInfo(user)
+        
+        // 登录成功，加载数据
+        this.isLogin = true
+        this.loadData()
+        
+      } catch (error) {
+        console.error('自动登录失败:', error)
+        uni.showToast({
+          title: error.message || '登录失败',
+          icon: 'none'
+        })
+        // 登录失败时也尝试加载数据（可能有些接口不需要登录）
+        this.loadData()
+      } finally {
+        this.loginLoading = false
       }
     },
-    durationOf(it) { return it.durationSec ? Math.ceil(it.durationSec / 60) + '分钟' : '' },
-    titleOf(it) { return it.title },
-    coverOf(it) { return this.oss(it.cover) },
-    oss(id) { return id ? `${this.$baseUrl}/system/oss/download/${id}` : '' },
-    slotName(code) { return code }
+    
+    // 加载页面数据
+    async loadData() {
+      try {
+        // 并发加载数据
+        const [categoryRes, seriesRes, articleRes, bannerRes] = await Promise.all([
+          listCategory(),
+          listSeries({ pageNum: 1, pageSize: 10 }),
+          listArticle({ pageNum: 1, pageSize: 5 }),
+          listBanner({ pageNum: 1, pageSize: 5 })
+        ])
+        
+        if (categoryRes.code === 200) {
+          this.categoryList = categoryRes.data || []
+        }
+        
+        if (seriesRes.code === 200) {
+          this.seriesList = seriesRes.rows || []
+        }
+        
+        if (articleRes.code === 200) {
+          this.articleList = articleRes.rows || []
+        }
+        
+        if (bannerRes.code === 200) {
+          this.bannerList = bannerRes.rows || []
+        }
+        
+      } catch (error) {
+        console.error('加载数据失败:', error)
+      }
+    },
+    
+    // OSS资源链接
+    oss(path) {
+      if (!path) return '/static/images/default-cover.png'
+      return this.$baseUrl + path
+    },
+    
+    // 横幅点击
+    handleBannerClick(banner) {
+      if (banner.linkType === 'series') {
+        this.goToSeries(banner.linkTarget)
+      } else if (banner.linkType === 'article') {
+        this.goToArticle(banner.linkTarget)
+      } else if (banner.linkType === 'url' && banner.linkTarget) {
+        // 打开外部链接
+        uni.navigateTo({
+          url: `/subPages/webview/index?url=${encodeURIComponent(banner.linkTarget)}`
+        })
+      }
+    },
+    
+    // 跳转到分类页
+    goToCategory(categoryId) {
+      uni.navigateTo({
+        url: `/pages/category/index?categoryId=${categoryId}`
+      })
+    },
+    
+    // 跳转到系列详情
+    goToSeries(seriesId) {
+      uni.navigateTo({
+        url: `/subPages/series/detail?seriesId=${seriesId}`
+      })
+    },
+    
+    // 跳转到文章详情
+    goToArticle(articleId) {
+      uni.navigateTo({
+        url: `/subPages/article/detail?articleId=${articleId}`
+      })
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.mg-home { padding: 24rpx; }
-.top-bar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20rpx; }
-.greet{ font-size:40rpx; font-weight:600; }
-.search{ font-size:36rpx; }
-.chips{ display:flex; gap:16rpx; margin:12rpx 0; flex-wrap:wrap; }
-.chip{ background:#eef2f7; padding:12rpx 20rpx; border-radius:999rpx; font-size:26rpx; }
-.banner{ height:260rpx; border-radius:16rpx; overflow:hidden; margin:16rpx 0; }
-.banner-img{ width:100%; height:100%; }
-.block{ margin-top:20rpx; }
-.block-title{ font-size:32rpx; font-weight:600; margin:12rpx 4rpx; }
-.hlist{ white-space:nowrap; }
-.card{ width:300rpx; display:inline-block; margin-right:16rpx; position:relative; }
-.cover{ width:300rpx; height:200rpx; border-radius:16rpx; }
-.title{ font-size:26rpx; margin-top:8rpx; }
-.badge{ position:absolute; left:12rpx; top:12rpx; background:rgba(0,0,0,.5); color:#fff; font-size:22rpx; padding:4rpx 10rpx; border-radius:8rpx; }
-.articles{ margin-top:24rpx; }
-.article{ display:flex; gap:16rpx; background:#fff; border-radius:12rpx; padding:12rpx; margin-bottom:12rpx; }
-.article-cover{ width:160rpx; height:120rpx; border-radius:10rpx; }
-.article-title{ font-size:28rpx; flex:1; }
+.home-page {
+  min-height: 100vh;
+  background: #f5f5f7;
+}
+
+.nav-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .nav-title-text {
+    font-size: 32rpx;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.login-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+  
+  .loading-spinner {
+    width: 60rpx;
+    height: 60rpx;
+    border: 4rpx solid #e5e7eb;
+    border-top: 4rpx solid #7C3AED;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20rpx;
+  }
+  
+  .loading-text {
+    color: #6b7280;
+    font-size: 28rpx;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.main-content {
+  padding-top: 120rpx;
+}
+
+.banner-section {
+  margin: 20rpx;
+  
+  .banner-swiper {
+    height: 300rpx;
+    border-radius: 20rpx;
+    overflow: hidden;
+    
+    .banner-image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 40rpx 30rpx 20rpx;
+}
+
+.category-section {
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20rpx;
+    padding: 0 30rpx;
+    
+    .category-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20rpx;
+      background: #fff;
+      border-radius: 16rpx;
+      
+      .category-icon {
+        width: 80rpx;
+        height: 80rpx;
+        border-radius: 16rpx;
+        margin-bottom: 12rpx;
+      }
+      
+      .category-name {
+        font-size: 24rpx;
+        color: #374151;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.series-section {
+  .series-scroll {
+    white-space: nowrap;
+    padding: 0 30rpx;
+    
+    .series-list {
+      display: inline-flex;
+      gap: 20rpx;
+      
+      .series-item {
+        width: 280rpx;
+        background: #fff;
+        border-radius: 16rpx;
+        overflow: hidden;
+        
+        .series-cover {
+          width: 100%;
+          height: 180rpx;
+        }
+        
+        .series-info {
+          padding: 20rpx;
+          
+          .series-title {
+            display: block;
+            font-size: 28rpx;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 8rpx;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          
+          .series-subtitle {
+            display: block;
+            font-size: 24rpx;
+            color: #6b7280;
+            margin-bottom: 8rpx;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          
+          .series-episodes {
+            font-size: 22rpx;
+            color: #7C3AED;
+            background: rgba(124, 58, 237, 0.1);
+            padding: 4rpx 12rpx;
+            border-radius: 12rpx;
+          }
+        }
+      }
+    }
+  }
+}
+
+.article-section {
+  .article-list {
+    padding: 0 30rpx;
+    
+    .article-item {
+      display: flex;
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 20rpx;
+      margin-bottom: 20rpx;
+      
+      .article-cover {
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: 12rpx;
+        margin-right: 20rpx;
+      }
+      
+      .article-info {
+        flex: 1;
+        
+        .article-title {
+          display: block;
+          font-size: 28rpx;
+          font-weight: 500;
+          color: #1f2937;
+          margin-bottom: 12rpx;
+          line-height: 1.4;
+        }
+        
+        .article-summary {
+          font-size: 24rpx;
+          color: #6b7280;
+          line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      }
+    }
+  }
+}
 </style>
 
 

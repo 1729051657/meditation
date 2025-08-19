@@ -136,50 +136,6 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="发布时间" prop="publishTime">
-              <el-date-picker clearable
-                v-model="form.publishTime"
-                type="datetime"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                placeholder="请选择发布时间"
-                style="width: 100%">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <!-- 第二行：作者和状态 -->
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="作者" prop="authorId">
-              <el-select v-model="form.authorId" placeholder="请选择作者" style="width: 100%">
-                <el-option
-                  v-for="user in userList"
-                  :key="user.userId"
-                  :label="user.nickName"
-                  :value="user.userId"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio value="0">启用</el-radio>
-                <el-radio value="1">停用</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <!-- 第三行：显示顺序和标签 -->
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="标签" prop="tagIds">
               <el-select 
                 v-model="form.tagIds" 
@@ -200,13 +156,35 @@
           </el-col>
         </el-row>
         
-        <!-- 第四行：封面 -->
-        <el-form-item label="封面" prop="cover">
-          <image-upload v-model="form.cover" :limit="1" />
-        </el-form-item>
-        
-        <!-- 第五行：摘要 -->
-        <el-form-item label="摘要" prop="summary">
+        <!-- 第三行：显示顺序和标签 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="显示顺序" prop="orderNum">
+              <el-input-number 
+                v-model="form.orderNum" 
+                placeholder="请输入显示顺序"
+                :min="1"
+                :max="999"
+                style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio value="0">启用</el-radio>
+                <el-radio value="1">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="封面" prop="cover">
+              <image-upload v-model="form.cover" :limit="1" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="摘要" prop="summary">
           <el-input 
             v-model="form.summary" 
             type="textarea" 
@@ -214,6 +192,9 @@
             :rows="3"
             style="width: 100%" />
         </el-form-item>
+          </el-col>
+        </el-row>
+        
         
         <!-- 第六行：内容 -->
         <el-form-item label="内容" prop="content">

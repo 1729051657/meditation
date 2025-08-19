@@ -104,7 +104,12 @@
           <el-input v-model="form.description" placeholder="请输入简介" />
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+          <el-input-number 
+            v-model="form.orderNum" 
+            placeholder="请输入显示顺序"
+            :min="1"
+            :max="999"
+            style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">

@@ -578,6 +578,76 @@ public class SysUserServiceImpl implements ISysUserService, UserService {
     }
 
     /**
+     * 通过微信OpenID查询用户
+     *
+     * @param openid 微信OpenID
+     * @return 用户对象信息
+     */
+    @Override
+    public SysUserVo selectUserByWechatOpenId(String openid) {
+        SysUserVo user = baseMapper.selectVoOne(new LambdaQueryWrapper<SysUser>()
+            .eq(SysUser::getWechatOpenId, openid)
+            .eq(SysUser::getDelFlag, "0"));
+
+        if (ObjectUtil.isNotNull(user)) {
+            // 查询用户角色信息
+            user.setRoles(roleMapper.selectRolesByUserId(user.getUserId()));
+        }
+
+        return user;
+    }
+
+    /**
+     * 创建冥想小程序用户
+     *
+     * @param openid 微信OpenID
+     * @param unionid 微信UnionID
+     * @return 用户对象信息
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SysUserVo createMeditationUser(String openid, String unionid) {
+        // 生成用户名（避免重复）
+        String userName = "冥想用户" + openid.substring(0, 8);
+        int suffix = 1;
+        while (baseMapper.selectCount(new LambdaQueryWrapper<SysUser>()
+            .eq(SysUser::getUserName, userName)) > 0) {
+            userName = "冥想用户" + openid.substring(0, 8) + "_" + suffix++;
+        }
+
+        // 创建新用户
+        SysUser newUser = new SysUser();
+        newUser.setUserName(userName);
+        newUser.setNickName("冥想用户");
+        newUser.setUserType("xcx_user"); // 使用xcx_user类型
+        newUser.setStatus("0"); // 正常状态
+        newUser.setWechatOpenId(openid);
+        newUser.setWechatUnionId(unionid);
+        newUser.setDeptId(1L); // 默认部门
+
+        // 插入用户
+        int result = baseMapper.insert(newUser);
+        if (result <= 0) {
+            throw new ServiceException("创建用户失败");
+        }
+
+        // 分配默认角色（冥想用户角色）
+        Long roleId = 5L; // 冥想用户角色ID
+        SysUserRole sysUserRole = new SysUserRole();
+        sysUserRole.setRoleId(roleId);
+        sysUserRole.setUserId(newUser.getUserId());
+        userRoleMapper.insert(sysUserRole);
+
+        // 查询并返回完整的用户信息
+        SysUserVo userVo = baseMapper.selectVoById(newUser.getUserId());
+        if (ObjectUtil.isNotNull(userVo)) {
+            userVo.setRoles(roleMapper.selectRolesByUserId(userVo.getUserId()));
+        }
+
+        return userVo;
+    }
+
+    /**
      * 通过用户ID查询用户账户
      *
      * @param userId 用户ID

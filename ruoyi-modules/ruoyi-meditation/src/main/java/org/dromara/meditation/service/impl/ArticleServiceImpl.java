@@ -87,7 +87,6 @@ public class ArticleServiceImpl implements IArticleService {
     private LambdaQueryWrapper<Article> buildQueryWrapper(ArticleBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<Article> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(Article::getId);
         lqw.eq(StringUtils.isNotBlank(bo.getTitle()), Article::getTitle, bo.getTitle());
         lqw.eq(bo.getCover() != null, Article::getCover, bo.getCover());
         lqw.eq(StringUtils.isNotBlank(bo.getSummary()), Article::getSummary, bo.getSummary());
@@ -96,6 +95,8 @@ public class ArticleServiceImpl implements IArticleService {
         lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Article::getStatus, bo.getStatus());
         lqw.eq(bo.getPublishTime() != null, Article::getPublishTime, bo.getPublishTime());
         lqw.eq(bo.getOrderNum() != null, Article::getOrderNum, bo.getOrderNum());
+        lqw.eq(Article::getDelFlag, "0");
+        lqw.orderByDesc(Article::getOrderNum);
         return lqw;
     }
 

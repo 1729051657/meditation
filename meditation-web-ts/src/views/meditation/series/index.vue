@@ -156,19 +156,28 @@
               <el-input v-model="form.subtitle" placeholder="请输入副标题" />
             </el-form-item>
           </el-col>
-          </el-col>
         </el-row>
         
         <!-- 第三行：小节数和建议时长 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="小节数" prop="episodeCount">
-              <el-input v-model="form.episodeCount" placeholder="请输入小节数" />
+              <el-input-number 
+                v-model="form.episodeCount" 
+                placeholder="请输入小节数"
+                :min="1"
+                :max="999"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="建议时长(秒)" prop="recommendDuration">
-              <el-input v-model="form.recommendDuration" placeholder="请输入建议时长" />
+              <el-input-number 
+                v-model="form.recommendDuration" 
+                placeholder="请输入建议时长"
+                :min="1"
+                :max="9999"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -177,7 +186,12 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="显示顺序" prop="orderNum">
-              <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+              <el-input-number 
+                v-model="form.orderNum" 
+                placeholder="请输入显示顺序"
+                :min="1"
+                :max="999"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
