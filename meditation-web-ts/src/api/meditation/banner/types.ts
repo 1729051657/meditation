@@ -12,7 +12,7 @@ export interface BannerVO {
   /**
    * 图片文件id（sys_oss.oss_id）
    */
-  image: number;
+  image: string;
 
   /**
    * 图片文件id（sys_oss.oss_id）Url
@@ -64,7 +64,7 @@ export interface BannerForm extends BaseEntity {
   /**
    * 图片文件id（sys_oss.oss_id）
    */
-  image?: number;
+  image?: string;
 
   /**
    * 链接类型（0无 1外链URL 2内容跳转）
@@ -108,7 +108,7 @@ export interface BannerQuery extends PageQuery {
   /**
    * 图片文件id（sys_oss.oss_id）
    */
-  image?: number;
+  image?: string;
 
   /**
    * 链接类型（0无 1外链URL 2内容跳转）

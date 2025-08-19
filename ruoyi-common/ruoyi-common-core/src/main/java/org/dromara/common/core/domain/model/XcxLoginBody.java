@@ -3,7 +3,6 @@ package org.dromara.common.core.domain.model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**

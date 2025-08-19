@@ -40,6 +40,7 @@ public class TrackBo extends BaseEntity {
     /**
      * 标题
      */
+    @NotBlank(message = "标题不能为空", groups = { AddGroup.class, EditGroup.class })
     private String title;
 
     /**
@@ -80,6 +81,7 @@ public class TrackBo extends BaseEntity {
     /**
      * 状态（0正常 1停用）
      */
+    @NotBlank(message = "状态不能为空", groups = { AddGroup.class, EditGroup.class })
     private String status = "0";
 
     /**

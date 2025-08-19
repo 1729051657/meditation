@@ -2,7 +2,7 @@
   <view class="mg-category">
     <view class="header">
       <text class="back" @click="goBack">〈</text>
-      <text class="title">{{ category?.name || '分类' }}</text>
+      <text class="title">{{ category && category.name ? category.name : '分类' }}</text>
     </view>
     <view class="chips">
       <view class="chip" :class="{active: sub.id===currentSubId}" v-for="sub in subCats" :key="sub.id" @click="switchSub(sub.id)">{{ sub.name }}</view>

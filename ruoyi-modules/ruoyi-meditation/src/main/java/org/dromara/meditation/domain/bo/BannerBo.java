@@ -38,6 +38,7 @@ public class BannerBo extends BaseEntity {
     /**
      * 图片文件id（sys_oss.oss_id）
      */
+    @NotNull(message = "图片文件id（sys_oss.oss_id）不能为空", groups = { AddGroup.class, EditGroup.class })
     private Long image;
 
     /**
@@ -55,7 +56,6 @@ public class BannerBo extends BaseEntity {
     /**
      * 显示顺序
      */
-    @NotNull(message = "显示顺序不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer orderNum;
 
     /**
@@ -66,13 +66,11 @@ public class BannerBo extends BaseEntity {
     /**
      * 生效时间
      */
-    @NotNull(message = "生效时间不能为空", groups = { AddGroup.class, EditGroup.class })
     private Date startTime;
 
     /**
      * 失效时间
      */
-    @NotNull(message = "失效时间不能为空", groups = { AddGroup.class, EditGroup.class })
     private Date endTime;
 
 

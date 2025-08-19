@@ -15,10 +15,13 @@ import org.dromara.meditation.domain.vo.ArticleVo;
 import org.dromara.meditation.domain.Article;
 import org.dromara.meditation.mapper.ArticleMapper;
 import org.dromara.meditation.service.IArticleService;
+import org.dromara.meditation.service.IContentTagService;
+import org.dromara.meditation.service.ITagService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * 冥想知识文章Service业务层处理
@@ -32,6 +35,8 @@ import java.util.Collection;
 public class ArticleServiceImpl implements IArticleService {
 
     private final ArticleMapper baseMapper;
+    private final IContentTagService contentTagService;
+    private final ITagService tagService;
 
     /**
      * 查询冥想知识文章
@@ -41,7 +46,16 @@ public class ArticleServiceImpl implements IArticleService {
      */
     @Override
     public ArticleVo queryById(Long id){
-        return baseMapper.selectVoById(id);
+        ArticleVo vo = baseMapper.selectVoById(id);
+        if (vo != null) {
+            // 查询标签
+            List<Long> tagIds = contentTagService.getTagIdsByContent("article", id);
+            vo.setTagIds(tagIds);
+            if (CollUtil.isNotEmpty(tagIds)) {
+                vo.setTags(tagService.queryByIds(tagIds));
+            }
+        }
+        return vo;
     }
 
     /**
@@ -98,6 +112,10 @@ public class ArticleServiceImpl implements IArticleService {
         boolean flag = baseMapper.insert(add) > 0;
         if (flag) {
             bo.setId(add.getId());
+            // 保存标签关联
+            if (CollUtil.isNotEmpty(bo.getTagIds())) {
+                contentTagService.updateContentTags("article", add.getId(), bo.getTagIds());
+            }
         }
         return flag;
     }
@@ -112,7 +130,12 @@ public class ArticleServiceImpl implements IArticleService {
     public Boolean updateByBo(ArticleBo bo) {
         Article update = MapstructUtils.convert(bo, Article.class);
         validEntityBeforeSave(update);
-        return baseMapper.updateById(update) > 0;
+        boolean flag = baseMapper.updateById(update) > 0;
+        if (flag) {
+            // 更新标签关联
+            contentTagService.updateContentTags("article", bo.getId(), bo.getTagIds());
+        }
+        return flag;
     }
 
     /**
@@ -134,6 +157,11 @@ public class ArticleServiceImpl implements IArticleService {
         if(isValid){
             //TODO 做一些业务上的校验,判断是否需要校验
         }
-        return baseMapper.deleteByIds(ids) > 0;
+        boolean flag = baseMapper.deleteByIds(ids) > 0;
+        if (flag) {
+            // 删除标签关联
+            contentTagService.deleteByContent("article", ids);
+        }
+        return flag;
     }
 }

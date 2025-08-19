@@ -46,6 +46,14 @@ public class TagController extends BaseController {
     }
 
     /**
+     * 获取所有可用标签（不分页）
+     */
+    @GetMapping("/all")
+    public R<List<TagVo>> getAllAvailable() {
+        return R.ok(tagService.queryAllAvailable());
+    }
+
+    /**
      * 导出内容标签列表
      */
     @SaCheckPermission("meditation:tag:export")

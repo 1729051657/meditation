@@ -19,6 +19,8 @@ import org.dromara.meditation.service.IContentTagService;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import java.util.stream.Collectors;
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * 内容-标签关联Service业务层处理
@@ -130,5 +132,80 @@ public class ContentTagServiceImpl implements IContentTagService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+
+    /**
+     * 批量更新内容的标签
+     *
+     * @param contentType 内容类型（series/article/track）
+     * @param contentId   内容ID
+     * @param tagIds      标签ID列表
+     * @return 是否更新成功
+     */
+    @Override
+    public Boolean updateContentTags(String contentType, Long contentId, List<Long> tagIds) {
+        // 先删除原有的标签关联
+        LambdaQueryWrapper<ContentTag> deleteWrapper = Wrappers.lambdaQuery();
+        deleteWrapper.eq(ContentTag::getContentType, contentType)
+                     .eq(ContentTag::getContentId, contentId);
+        baseMapper.delete(deleteWrapper);
+
+        // 如果没有新标签，直接返回成功
+        if (CollUtil.isEmpty(tagIds)) {
+            return true;
+        }
+
+        // 批量插入新的标签关联
+        List<ContentTag> contentTags = tagIds.stream()
+            .distinct()
+            .map(tagId -> {
+                ContentTag contentTag = new ContentTag();
+                contentTag.setContentType(contentType);
+                contentTag.setContentId(contentId);
+                contentTag.setTagId(tagId);
+                return contentTag;
+            })
+            .collect(Collectors.toList());
+
+        return baseMapper.insertBatch(contentTags);
+    }
+
+    /**
+     * 根据内容获取标签列表
+     *
+     * @param contentType 内容类型
+     * @param contentId   内容ID
+     * @return 标签ID列表
+     */
+    @Override
+    public List<Long> getTagIdsByContent(String contentType, Long contentId) {
+        LambdaQueryWrapper<ContentTag> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(ContentTag::getContentType, contentType)
+               .eq(ContentTag::getContentId, contentId);
+        
+        List<ContentTag> contentTags = baseMapper.selectList(wrapper);
+        return contentTags.stream()
+            .map(ContentTag::getTagId)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 批量删除内容的所有标签
+     *
+     * @param contentType 内容类型
+     * @param contentIds  内容ID列表
+     * @return 是否删除成功
+     */
+    @Override
+    public Boolean deleteByContent(String contentType, Collection<Long> contentIds) {
+        if (CollUtil.isEmpty(contentIds)) {
+            return true;
+        }
+        
+        LambdaQueryWrapper<ContentTag> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(ContentTag::getContentType, contentType)
+               .in(ContentTag::getContentId, contentIds);
+        
+        return baseMapper.delete(wrapper) >= 0;
     }
 }

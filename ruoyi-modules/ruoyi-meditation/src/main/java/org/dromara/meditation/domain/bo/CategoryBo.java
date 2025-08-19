@@ -34,6 +34,7 @@ public class CategoryBo extends BaseEntity {
     /**
      * 分类名称
      */
+    @NotBlank(message = "分类名称不能为空", groups = { AddGroup.class, EditGroup.class })
     private String name;
 
     /**
@@ -45,19 +46,16 @@ public class CategoryBo extends BaseEntity {
     /**
      * 图标文件id（sys_oss.oss_id）
      */
-    @NotNull(message = "图标文件id（sys_oss.oss_id）不能为空", groups = { AddGroup.class, EditGroup.class })
     private Long icon;
 
     /**
      * 简介
      */
-    @NotBlank(message = "简介不能为空", groups = { AddGroup.class, EditGroup.class })
     private String description;
 
     /**
      * 显示顺序
      */
-    @NotNull(message = "显示顺序不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer orderNum;
 
     /**
@@ -68,7 +66,6 @@ public class CategoryBo extends BaseEntity {
     /**
      * 备注
      */
-    @NotBlank(message = "备注不能为空", groups = { AddGroup.class, EditGroup.class })
     private String remark;
 
 

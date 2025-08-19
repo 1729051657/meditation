@@ -37,6 +37,17 @@ public class SysUser extends TenantEntity {
      */
     private String userName;
 
+
+    /**
+     * 微信小程序OpenID
+     */
+    private String wechatOpenId;
+
+    /**
+     * 微信UnionID
+     */
+    private String wechatUnionId;
+
     /**
      * 用户昵称
      */
