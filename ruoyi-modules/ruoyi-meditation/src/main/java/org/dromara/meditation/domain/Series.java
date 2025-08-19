@@ -70,11 +70,6 @@ public class Series extends TenantEntity {
     private Integer recommendDuration;
 
     /**
-     * 是否免费（Y是 N否）
-     */
-    private String isFree;
-
-    /**
      * 显示顺序
      */
     private Integer orderNum;

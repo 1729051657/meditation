@@ -76,11 +76,7 @@ public class SeriesBo extends BaseEntity {
     @NotNull(message = "建议时长（秒）不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer recommendDuration;
 
-    /**
-     * 是否免费（Y是 N否）
-     */
-    @NotBlank(message = "是否免费（Y是 N否）不能为空", groups = { AddGroup.class, EditGroup.class })
-    private String isFree;
+
 
     /**
      * 显示顺序

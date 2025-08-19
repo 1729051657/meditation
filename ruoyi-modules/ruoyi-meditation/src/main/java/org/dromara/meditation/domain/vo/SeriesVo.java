@@ -90,12 +90,7 @@ public class SeriesVo implements Serializable {
     @ExcelDictFormat(readConverterExp = "秒=")
     private Integer recommendDuration;
 
-    /**
-     * 是否免费（Y是 N否）
-     */
-    @ExcelProperty(value = "是否免费", converter = ExcelDictConvert.class)
-    @ExcelDictFormat(readConverterExp = "Y=是,N=否")
-    private String isFree;
+
 
     /**
      * 显示顺序

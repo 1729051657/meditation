@@ -37,10 +37,7 @@ public class SocialLoginConfigProperties {
      */
     private String codingGroupName;
 
-    /**
-     * 支付宝公钥
-     */
-    private String alipayPublicKey;
+
 
     /**
      * 企业微信应用ID
