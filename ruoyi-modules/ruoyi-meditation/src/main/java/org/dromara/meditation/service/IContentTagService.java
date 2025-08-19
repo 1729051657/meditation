@@ -65,4 +65,32 @@ public interface IContentTagService {
      * @return 是否删除成功
      */
     Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+
+    /**
+     * 批量更新内容的标签
+     *
+     * @param contentType 内容类型（series/article/track）
+     * @param contentId   内容ID
+     * @param tagIds      标签ID列表
+     * @return 是否更新成功
+     */
+    Boolean updateContentTags(String contentType, Long contentId, List<Long> tagIds);
+
+    /**
+     * 根据内容获取标签列表
+     *
+     * @param contentType 内容类型
+     * @param contentId   内容ID
+     * @return 标签列表
+     */
+    List<Long> getTagIdsByContent(String contentType, Long contentId);
+
+    /**
+     * 批量删除内容的所有标签
+     *
+     * @param contentType 内容类型
+     * @param contentIds  内容ID列表
+     * @return 是否删除成功
+     */
+    Boolean deleteByContent(String contentType, Collection<Long> contentIds);
 }

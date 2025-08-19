@@ -65,4 +65,19 @@ public interface ITagService {
      * @return 是否删除成功
      */
     Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+
+    /**
+     * 批量查询标签信息
+     *
+     * @param ids 标签ID列表
+     * @return 标签信息列表
+     */
+    List<TagVo> queryByIds(Collection<Long> ids);
+
+    /**
+     * 查询所有可用标签
+     *
+     * @return 标签列表
+     */
+    List<TagVo> queryAllAvailable();
 }
