@@ -1,119 +1,56 @@
 <template>
   <view class="me-page">
-    <!-- 自定义导航栏 -->
-    <tn-nav-bar
-      :isBack="false"
-      :bottomShadow="false"
-      backgroundColor="#7C3AED"
-      :fixed="true"
-    >
-      <view class="nav-title">
-        <text class="nav-title-text">个人中心</text>
-      </view>
-    </tn-nav-bar>
-
-    <!-- 用户信息头部 -->
-    <view class="user-header">
-      <view class="header-bg"></view>
-      <view class="user-info">
-        <image
-          class="avatar"
-          :src="userInfo.avatar || '/static/images/default-avatar.png'"
+    <!-- 顶部背景 -->
+    <view class="header-bg">
+      <image src="/static/me/背景图@3x.png" mode="aspectFill" class="bg-image"></image>
+    </view>
+    
+    <!-- 用户信息区域 -->
+    <view class="user-section">
+      <view class="user-avatar">
+        <image 
+          :src="userInfo.avatar || '/static/images/default-avatar.png'" 
           mode="aspectFill"
-          @click="updateAvatar"
+          class="avatar-image"
         />
-        <view class="info-content">
-          <text class="nickname">{{ userInfo.nickName || '冥想者' }}</text>
-          <text class="username">{{ userInfo.userName || '点击登录' }}</text>
-        </view>
-        <view class="edit-btn" @click="editProfile">
-          <text class="tn-icon-edit"></text>
-        </view>
       </view>
-
-      <!-- 统计信息 -->
-      <view class="stats-container">
-        <view class="stat-item">
-          <text class="stat-value">{{ stats.totalMinutes || 0 }}</text>
-          <text class="stat-label">总时长(分)</text>
+      <text class="user-name">{{ userInfo.nickName || '昵称' }}</text>
+    </view>
+    
+    <!-- 功能卡片区域 -->
+    <view class="cards-section">
+      <!-- 第一行卡片 -->
+      <view class="card-row">
+        <view class="card-item" @click="goToFavorites">
+          <image src="/static/me/我的收藏@3x.png" class="card-icon"></image>
+          <text class="card-text">我的收藏</text>
         </view>
-        <view class="stat-item">
-          <text class="stat-value">{{ stats.totalDays || 0 }}</text>
-          <text class="stat-label">坚持天数</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-value">{{ stats.favorites || 0 }}</text>
-          <text class="stat-label">收藏数</text>
+        
+        <view class="card-item" @click="goToRecent">
+          <image src="/static/me/最近播放@3x.png" class="card-icon"></image>
+          <text class="card-text">最近播放</text>
         </view>
       </view>
     </view>
-
-    <!-- 功能菜单 -->
+    
+    <!-- 菜单列表区域 -->
     <view class="menu-section">
-      <view class="menu-group">
-        <view class="menu-item" @click="goTo('/pages/favorites/index')">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">
-              <text class="tn-icon-like-fill"></text>
-            </view>
-            <text class="menu-title">我的收藏</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
+      <!-- 常见问题 -->
+      <view class="menu-item" @click="goToFAQ">
+        <view class="menu-left">
+          <image src="/static/me/常见问题备份@3x.png" class="menu-icon"></image>
+          <text class="menu-text">常见问题</text>
         </view>
-
-        <view class="menu-item" @click="goTo('/pages/history/index')">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #4ECDC4, #44A08D);">
-              <text class="tn-icon-time-fill"></text>
-            </view>
-            <text class="menu-title">播放历史</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
-        </view>
-
-        <view class="menu-item" @click="goTo('/pages/progress/index')">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-              <text class="tn-icon-chart-bar"></text>
-            </view>
-            <text class="menu-title">冥想进度</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
-        </view>
+        <image src="/static/me/箭头@3x.png" class="menu-arrow"></image>
       </view>
-
-      <view class="menu-group">
-        <view class="menu-item" @click="goTo('/pages/settings/index')">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #6B7280, #374151);">
-              <text class="tn-icon-set-fill"></text>
-            </view>
-            <text class="menu-title">设置</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
+      
+      <!-- 退出登录 -->
+      <view class="menu-item" @click="goToLogout">
+        <view class="menu-left">
+          <image src="/static/me/退出登录@3x.png" class="menu-icon"></image>
+          <text class="menu-text">退出登录</text>
         </view>
-
-        <view class="menu-item" @click="goTo('/pages/about/index')">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #3B82F6, #1E40AF);">
-              <text class="tn-icon-info-circle-fill"></text>
-            </view>
-            <text class="menu-title">关于我们</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
-        </view>
-      </view>
-
-      <view class="menu-group" v-if="isLogin">
-        <view class="menu-item logout-item" @click="handleLogout">
-          <view class="menu-left">
-            <view class="menu-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
-              <text class="tn-icon-logout"></text>
-            </view>
-            <text class="menu-title">退出登录</text>
-          </view>
-          <text class="tn-icon-right menu-arrow"></text>
-        </view>
+        <image src="/static/me/箭头@3x.png" class="menu-arrow"></image>
       </view>
     </view>
   </view>
@@ -125,37 +62,91 @@ import { mapState, mapActions } from 'vuex'
 export default {
   data() {
     return {
-      stats: {}
+      
     }
   },
-
+  
   computed: {
     ...mapState('user', ['isLogin', 'token', 'userInfo'])
   },
-
+  
   onShow() {
     this.loadUserInfo()
   },
-
+  
   methods: {
     ...mapActions('user', ['logout', 'getUserInfo']),
-
+    
     async loadUserInfo() {
       if (this.token) {
-        // 获取最新用户信息
         try {
           await this.getUserInfo()
         } catch (error) {
           console.error('获取用户信息失败', error)
         }
-
-      } else {
-        this.stats = {}
       }
     },
-
-    goTo(url) {
-      if (!this.isLogin && url !== '/pages/about/index') {
+    
+    // 我的收藏
+    goToFavorites() {
+      if (!this.checkLogin()) return
+      uni.navigateTo({
+        url: '/pages/favorites/index'
+      })
+    },
+    
+    // 最近播放
+    goToRecent() {
+      if (!this.checkLogin()) return
+      uni.navigateTo({
+        url: '/pages/history/index'
+      })
+    },
+    
+    // 常见问题
+    goToFAQ() {
+      uni.navigateTo({
+        url: '/pages/faq/index'
+      })
+    },
+    
+    // 退出登录
+    goToLogout() {
+      if (!this.isLogin) {
+        uni.showToast({
+          title: '您还未登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      uni.showModal({
+        title: '提示',
+        content: '确定要退出登录吗？',
+        confirmText: '确定',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            await this.logout()
+            uni.showToast({
+              title: '已退出登录',
+              icon: 'success'
+            })
+            
+            // 可选：跳转到登录页
+            setTimeout(() => {
+              uni.navigateTo({
+                url: '/pages/login/login'
+              })
+            }, 1500)
+          }
+        }
+      })
+    },
+    
+    // 检查登录状态
+    checkLogin() {
+      if (!this.isLogin) {
         uni.showToast({
           title: '请先登录',
           icon: 'none'
@@ -165,30 +156,9 @@ export default {
             url: '/pages/login/login'
           })
         }, 1500)
-        return
+        return false
       }
-
-      uni.navigateTo({ url })
-    },
-
-
-    handleLogout() {
-      uni.showModal({
-        title: '提示',
-        content: '确定要退出登录吗？',
-        success: async (res) => {
-          if (res.confirm) {
-            // 调用store中的登出方法
-            await this.logout()
-            this.stats = {}
-
-            uni.showToast({
-              title: '已退出登录',
-              icon: 'success'
-            })
-          }
-        }
-      })
+      return true
     }
   }
 }
@@ -197,166 +167,141 @@ export default {
 <style lang="scss" scoped>
 .me-page {
   min-height: 100vh;
-  background: #f5f5f7;
-}
-
-.nav-title {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .nav-title-text {
-    font-size: 32rpx;
-    color: #fff;
-    font-weight: 500;
-  }
-}
-
-// 用户头部
-.user-header {
+  background: linear-gradient(180deg, #E8F0FF 0%, #F5F8FF 100%);
   position: relative;
-  padding-top: 120rpx;
-  background: #fff;
+  padding-bottom: 100rpx;
+}
 
-  .header-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 200rpx;
-    background: linear-gradient(135deg, #7C3AED 0%, #a855f7 100%);
+// 顶部背景
+.header-bg {
+  width: 100%;
+  height: 400rpx;
+  position: relative;
+  overflow: hidden;
+  
+  .bg-image {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
+}
 
-  .user-info {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 0 30rpx 30rpx;
-
-    .avatar {
-      width: 120rpx;
-      height: 120rpx;
-      border-radius: 50%;
-      border: 4rpx solid #fff;
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    }
-
-    .info-content {
-      flex: 1;
-      margin-left: 30rpx;
-
-      .nickname {
-        display: block;
-        font-size: 34rpx;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 8rpx;
-      }
-
-      .username {
-        display: block;
-        font-size: 26rpx;
-        color: #6b7280;
-      }
-    }
-
-    .edit-btn {
-      width: 60rpx;
-      height: 60rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f3f4f6;
-      border-radius: 50%;
-
-      text {
-        font-size: 32rpx;
-        color: #6b7280;
-      }
+// 用户信息区域
+.user-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -120rpx;
+  position: relative;
+  z-index: 10;
+  
+  .user-avatar {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 6rpx solid #FFFFFF;
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+    background: #FFFFFF;
+    
+    .avatar-image {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
   }
+  
+  .user-name {
+    margin-top: 24rpx;
+    font-size: 36rpx;
+    font-weight: 500;
+    color: #1A1A1A;
+  }
+}
 
-  .stats-container {
+// 功能卡片区域
+.cards-section {
+  padding: 40rpx 30rpx;
+  
+  .card-row {
     display: flex;
-    padding: 30rpx;
-    border-top: 1rpx solid #f3f4f6;
-
-    .stat-item {
+    justify-content: space-between;
+    gap: 24rpx;
+    
+    .card-item {
       flex: 1;
+      height: 160rpx;
+      background: #FFFFFF;
+      border-radius: 24rpx;
       display: flex;
       flex-direction: column;
       align-items: center;
-
-      .stat-value {
-        font-size: 36rpx;
-        font-weight: 600;
-        color: #7C3AED;
-        margin-bottom: 8rpx;
+      justify-content: center;
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+      
+      &:active {
+        transform: scale(0.98);
+        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
       }
-
-      .stat-label {
-        font-size: 24rpx;
-        color: #9ca3af;
+      
+      .card-icon {
+        width: 56rpx;
+        height: 56rpx;
+        margin-bottom: 16rpx;
+      }
+      
+      .card-text {
+        font-size: 28rpx;
+        color: #333333;
+        font-weight: 400;
       }
     }
   }
 }
 
-// 菜单部分
+// 菜单列表区域
 .menu-section {
-  padding: 20rpx;
-
-  .menu-group {
-    background: #fff;
-    border-radius: 20rpx;
-    overflow: hidden;
+  padding: 0 30rpx;
+  
+  .menu-item {
+    height: 120rpx;
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32rpx;
     margin-bottom: 20rpx;
-
-    .menu-item {
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+    
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+    }
+    
+    .menu-left {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 30rpx;
-      border-bottom: 1rpx solid #f3f4f6;
-
-      &:last-child {
-        border-bottom: none;
+      
+      .menu-icon {
+        width: 48rpx;
+        height: 48rpx;
+        margin-right: 24rpx;
       }
-
-      &:active {
-        background: #f9fafb;
+      
+      .menu-text {
+        font-size: 30rpx;
+        color: #333333;
+        font-weight: 400;
       }
-
-      .menu-left {
-        display: flex;
-        align-items: center;
-
-        .menu-icon {
-          width: 60rpx;
-          height: 60rpx;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 16rpx;
-          margin-right: 24rpx;
-
-          text {
-            font-size: 32rpx;
-            color: #fff;
-          }
-        }
-
-        .menu-title {
-          font-size: 30rpx;
-          color: #1f2937;
-        }
-      }
-
-      .menu-arrow {
-        font-size: 28rpx;
-        color: #d1d5db;
-      }
+    }
+    
+    .menu-arrow {
+      width: 24rpx;
+      height: 24rpx;
+      opacity: 0.5;
     }
   }
 }

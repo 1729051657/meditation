@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="80" fill="#E8F0FF" />
+  <path d="M100 60 L110 80 L130 82 L115 97 L119 117 L100 106 L81 117 L85 97 L70 82 L90 80 Z" fill="#7C3AED" opacity="0.3"/>
+  <text x="100" y="150" text-anchor="middle" fill="#999999" font-size="14">暂无收藏</text>
+</svg>
