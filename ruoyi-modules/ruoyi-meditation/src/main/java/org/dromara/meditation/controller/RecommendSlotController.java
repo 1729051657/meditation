@@ -2,6 +2,7 @@ package org.dromara.meditation.controller;
 
 import java.util.List;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
@@ -39,7 +40,7 @@ public class RecommendSlotController extends BaseController {
     /**
      * 查询推荐位列表
      */
-    @SaCheckPermission("meditation:recommendSlot:list")
+    @SaIgnore
     @GetMapping("/list")
     public TableDataInfo<RecommendSlotVo> list(RecommendSlotBo bo, PageQuery pageQuery) {
         return recommendSlotService.queryPageList(bo, pageQuery);
