@@ -88,16 +88,18 @@ export default {
     },
     
     // 我的收藏
-    goToFavorites() {
-      if (!this.checkLogin()) return
+    async goToFavorites() {
+      const isLoggedIn = await this.checkLogin()
+      if (!isLoggedIn) return
       uni.navigateTo({
         url: '/pages/favorites/index'
       })
     },
     
     // 最近播放
-    goToRecent() {
-      if (!this.checkLogin()) return
+    async goToRecent() {
+      const isLoggedIn = await this.checkLogin()
+      if (!isLoggedIn) return
       uni.navigateTo({
         url: '/pages/history/index'
       })
@@ -133,30 +135,46 @@ export default {
               icon: 'success'
             })
             
-            // 可选：跳转到登录页
-            setTimeout(() => {
-              uni.navigateTo({
-                url: '/pages/login/login'
-              })
-            }, 1500)
+            // 退出登录后停留在当前页面
+            // 用户可以继续浏览，下次需要登录时会自动触发无感登录
           }
         }
       })
     },
     
     // 检查登录状态
-    checkLogin() {
+    async checkLogin() {
       if (!this.isLogin) {
+        // #ifdef MP-WEIXIN
+        // 微信小程序环境，尝试无感登录
+        uni.showLoading({
+          title: '正在登录...'
+        })
+        try {
+          await this.$store.dispatch('user/wxLogin')
+          uni.hideLoading()
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success'
+          })
+          return true
+        } catch (error) {
+          uni.hideLoading()
+          uni.showToast({
+            title: '登录失败，请重试',
+            icon: 'none'
+          })
+          return false
+        }
+        // #endif
+        
+        // #ifndef MP-WEIXIN
         uni.showToast({
           title: '请先登录',
           icon: 'none'
         })
-        setTimeout(() => {
-          uni.navigateTo({
-            url: '/pages/login/login'
-          })
-        }, 1500)
         return false
+        // #endif
       }
       return true
     }

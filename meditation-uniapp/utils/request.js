@@ -104,25 +104,54 @@ const request = (options) => {
 
 						// 清空之前的待处理请求队列
 						pendingRequests = []
-
+						
+						// 清除本地存储的认证信息
+						uni.removeStorageSync('merchant_token')
+						uni.removeStorageSync('merchant_user_info')
+						uni.removeStorageSync('meditation_token')
+						uni.removeStorageSync('meditation_user_info')
+						uni.removeStorageSync('meditation_openid')
+						uni.removeStorageSync('meditation_scope')
+						
+						// #ifdef MP-WEIXIN
+						// 微信小程序环境，执行无感登录
+						console.log('登录状态已过期，尝试重新登录...')
+						
+						// 获取store实例并调用wxLogin
+						const store = require('@/store/index.js').default
+						store.dispatch('user/wxLogin').then(() => {
+							console.log('重新登录成功')
+							isLoginDialogShowing = false
+							// 重新登录成功，提示用户重试
+							uni.showToast({
+								title: '已重新登录，请重试',
+								icon: 'none'
+							})
+						}).catch(error => {
+							console.error('重新登录失败:', error)
+							isLoginDialogShowing = false
+							uni.showModal({
+								title: '提示',
+								content: '登录失败，请检查网络后重试',
+								showCancel: false
+							})
+						})
+						// #endif
+						
+						// #ifndef MP-WEIXIN
+						// 非微信小程序环境，提示用户
 						uni.showModal({
 							title: '提示',
-							content: '登录状态已过期，请重新登录',
+							content: '登录状态已过期，请重新操作',
 							showCancel: false,
 							success: () => {
 								isLoginDialogShowing = false
-								// 清除本地存储的认证信息
-								uni.removeStorageSync('merchant_token')
-								uni.removeStorageSync('merchant_user_info')
-								// 跳转到登录页
-								uni.reLaunch({
-									url: '/pages/login/login'
-								})
 							},
 							fail: () => {
 								isLoginDialogShowing = false
 							}
 						})
+						// #endif
 					}
 					reject(new Error('登录状态已过期'))
 				} else {

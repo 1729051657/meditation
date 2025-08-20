@@ -1,6 +1,7 @@
 <script>
 	import {
-		mapState
+		mapState,
+		mapActions
 	} from 'vuex'
 	import Vue from 'vue'
 	import store from './store/index.js'
@@ -13,12 +14,15 @@
 		computed: {
 			...mapState('user', ['userInfo', 'token'])
 		},
-		onLaunch: function() {
-			console.log('冥想空间应用启动')
-			
-			// 初始化应用
-			this.initApplication()
-		},
+			onLaunch: function() {
+		console.log('冥想空间应用启动')
+		
+		// 初始化应用
+		this.initApplication()
+		
+		// 执行无感登录
+		this.silentLogin()
+	},
 		onShow: function() {
 			console.log('App Show')
 		},
@@ -26,6 +30,8 @@
 			console.log('App Hide')
 		},
 		methods: {
+			...mapActions('user', ['wxLogin']),
+			
 			/**
 			 * 应用初始化主方法
 			 */
@@ -172,6 +178,41 @@
 			// 获取用户scope
 			getScope() {
 				return uni.getStorageSync(STORAGE_KEYS.SCOPE) || ''
+			},
+			
+			/**
+			 * 执行无感登录
+			 */
+			async silentLogin() {
+				// #ifdef MP-WEIXIN
+				try {
+					// 检查是否已登录
+					const token = uni.getStorageSync(STORAGE_KEYS.TOKEN)
+					if (token) {
+						console.log('用户已登录，跳过无感登录')
+						return
+					}
+					
+					console.log('开始执行无感登录...')
+					
+					// 调用store中的wxLogin方法
+					await this.wxLogin()
+					
+					console.log('无感登录成功')
+					
+					// 登录成功后，可以获取用户信息等其他操作
+					// 这里不需要跳转页面，让用户继续使用小程序
+					
+				} catch (error) {
+					console.error('无感登录失败:', error)
+					// 无感登录失败不影响用户使用，可以在需要登录的功能处再提示
+					// 不显示错误提示，避免影响用户体验
+				}
+				// #endif
+				
+				// #ifndef MP-WEIXIN
+				console.log('非微信小程序环境，跳过无感登录')
+				// #endif
 			}
 		}
 	}
