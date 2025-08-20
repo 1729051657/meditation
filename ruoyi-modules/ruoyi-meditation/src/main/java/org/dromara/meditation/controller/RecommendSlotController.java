@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaIgnore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import org.dromara.common.idempotent.annotation.RepeatSubmit;
@@ -20,6 +21,7 @@ import org.dromara.common.excel.utils.ExcelUtil;
 import org.dromara.meditation.domain.vo.RecommendSlotVo;
 import org.dromara.meditation.domain.bo.RecommendSlotBo;
 import org.dromara.meditation.service.IRecommendSlotService;
+import org.dromara.meditation.service.MockDataService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
 
 /**
@@ -35,14 +37,20 @@ import org.dromara.common.mybatis.core.page.TableDataInfo;
 public class RecommendSlotController extends BaseController {
 
     private final IRecommendSlotService recommendSlotService;
+    private final MockDataService mockDataService;
 
     /**
      * 查询推荐位列表
      */
-    @SaCheckPermission("meditation:recommendSlot:list")
+    @SaIgnore
     @GetMapping("/list")
     public TableDataInfo<RecommendSlotVo> list(RecommendSlotBo bo, PageQuery pageQuery) {
-        return recommendSlotService.queryPageList(bo, pageQuery);
+        TableDataInfo<RecommendSlotVo> result = recommendSlotService.queryPageList(bo, pageQuery);
+        // 如果没有数据，返回模拟数据
+        if (result.getRows() == null || result.getRows().isEmpty()) {
+            return mockDataService.generateMockSlots();
+        }
+        return result;
     }
 
     /**

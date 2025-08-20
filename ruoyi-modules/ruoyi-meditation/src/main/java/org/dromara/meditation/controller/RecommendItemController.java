@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaIgnore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import org.dromara.common.idempotent.annotation.RepeatSubmit;
@@ -20,6 +21,7 @@ import org.dromara.common.excel.utils.ExcelUtil;
 import org.dromara.meditation.domain.vo.RecommendItemVo;
 import org.dromara.meditation.domain.bo.RecommendItemBo;
 import org.dromara.meditation.service.IRecommendItemService;
+import org.dromara.meditation.service.MockDataService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
 
 /**
@@ -35,14 +37,20 @@ import org.dromara.common.mybatis.core.page.TableDataInfo;
 public class RecommendItemController extends BaseController {
 
     private final IRecommendItemService recommendItemService;
+    private final MockDataService mockDataService;
 
     /**
      * 查询推荐位内容列表
      */
-    @SaCheckPermission("meditation:recommendItem:list")
+    @SaIgnore
     @GetMapping("/list")
     public TableDataInfo<RecommendItemVo> list(RecommendItemBo bo, PageQuery pageQuery) {
-        return recommendItemService.queryPageList(bo, pageQuery);
+        TableDataInfo<RecommendItemVo> result = recommendItemService.queryPageList(bo, pageQuery);
+        // 如果没有数据，返回模拟数据
+        if (result.getRows() == null || result.getRows().isEmpty()) {
+            return mockDataService.generateMockItems();
+        }
+        return result;
     }
 
     /**
