@@ -138,26 +138,7 @@ export default {
       recommendItems: [], // 推荐内容
       knowledgeItems: [], // 知识内容
       defaultCover: '/static/images/default-cover.png',
-      defaultKnowledgeCover: '/static/images/default-knowledge.png',
-      // 模拟数据映射
-      mockDataMap: {
-        meditation: [
-          { id: 101, title: '初学者呼吸冥想', duration: 10, description: '适合初学者的基础呼吸练习' },
-          { id: 102, title: '深度放松冥想', duration: 20, description: '帮助深度放松身心的进阶练习' }
-        ],
-        series: [
-          { id: 201, title: '7天入门冥想课程', duration: 15, cover: '/static/images/series1.jpg' },
-          { id: 203, title: '21天冥想习惯养成', duration: 20, cover: '/static/images/series2.jpg' }
-        ],
-        track: [
-          { id: 202, title: '雨声冥想音乐', duration: 30, cover: '/static/images/track1.jpg' }
-        ],
-        article: [
-          { id: 301, title: '冥想的科学原理', description: '了解冥想如何改变大脑结构' },
-          { id: 302, title: '如何开始你的冥想之旅', description: '新手必读的冥想入门指南' },
-          { id: 303, title: '冥想与睡眠质量', description: '探索冥想对睡眠的积极影响' }
-        ]
-      }
+      defaultKnowledgeCover: '/static/images/default-knowledge.png'
     }
   },
   
@@ -177,118 +158,73 @@ export default {
       try {
         // 并行加载推荐位和推荐内容
         const [slotsRes, itemsRes] = await Promise.all([
-          listSlots({ status: 0, pageSize: 10 }),
-          listSlotItems({ status: 0, pageSize: 20 })
+          listSlots({ status: '0', pageSize: 10 }),
+          listSlotItems({ status: '0', pageSize: 20 })
         ])
         
         // 处理推荐位数据
         if (slotsRes.code === 200 && slotsRes.rows) {
           const slots = slotsRes.rows
           
-          // 处理冥想练习推荐位 - 匹配code或name包含meditation
+          // 冥想练习推荐位 - 根据code匹配
           this.meditationSlots = slots.filter(item => 
             item.code?.includes('meditation') || 
-            item.name?.includes('冥想') ||
-            item.page === 'home'
-          ).slice(0, 2).map(slot => {
-            // 如果是模拟数据，添加额外信息
-            const mockData = this.mockDataMap.meditation.find(m => m.id === 101 || m.id === 102)
-            return {
-              ...slot,
-              title: slot.name || mockData?.title,
-              duration: mockData?.duration || 10,
-              description: slot.remark || mockData?.description,
-              slotType: 'meditation',
-              position: 'meditation'
-            }
-          })
+            item.name?.includes('冥想练习')
+          ).slice(0, 2).map(slot => ({
+            ...slot,
+            title: slot.name,
+            duration: 10,
+            slotType: 'meditation'
+          }))
         }
         
         // 处理推荐内容数据
         if (itemsRes.code === 200 && itemsRes.rows) {
           const items = itemsRes.rows
           
-          // 处理推荐内容 - 根据contentType分类并添加详细信息
-          const recommendContentTypes = ['series', 'track', 'meditation']
-          const knowledgeContentTypes = ['article', 'knowledge']
-          
-          this.recommendItems = items.filter(item => 
-            recommendContentTypes.includes(item.contentType) || !item.contentType
-          ).slice(0, 3).map(item => {
-            // 根据contentType和contentId查找模拟数据
-            const mockList = this.mockDataMap[item.contentType] || []
-            const mockData = mockList.find(m => m.id === item.contentId)
-            return {
-              ...item,
-              title: mockData?.title || `推荐内容 ${item.contentId}`,
-              duration: mockData?.duration || 15,
-              cover: mockData?.cover || this.defaultCover,
-              itemType: 'recommend',
-              targetId: item.contentId,
-              targetType: item.contentType
+          // 根据slotId分组处理
+          const slotGroups = {}
+          items.forEach(item => {
+            if (!slotGroups[item.slotId]) {
+              slotGroups[item.slotId] = []
             }
+            slotGroups[item.slotId].push(item)
           })
           
-          this.knowledgeItems = items.filter(item => 
-            knowledgeContentTypes.includes(item.contentType)
-          ).slice(0, 3).map(item => {
-            // 根据contentType和contentId查找模拟数据
-            const mockList = this.mockDataMap[item.contentType] || []
-            const mockData = mockList.find(m => m.id === item.contentId)
-            return {
-              ...item,
-              title: mockData?.title || `知识文章 ${item.contentId}`,
-              description: mockData?.description || '探索冥想的奥秘',
-              cover: mockData?.cover || this.defaultKnowledgeCover,
-              itemType: 'knowledge',
-              targetId: item.contentId,
-              targetType: item.contentType
+          // 处理推荐内容（每日推荐、热门系列等）
+          const recommendSlotIds = [3, 5] // 每日推荐和热门系列的slot_id
+          this.recommendItems = []
+          recommendSlotIds.forEach(slotId => {
+            if (slotGroups[slotId]) {
+              this.recommendItems.push(...slotGroups[slotId])
             }
           })
-        }
-        
-        // 如果数据为空，使用纯模拟数据
-        if (this.meditationSlots.length === 0) {
-          this.meditationSlots = [
-            { id: 1, title: '初学者呼吸冥想', duration: 10, slotType: 'meditation' },
-            { id: 2, title: '深度放松冥想', duration: 20, slotType: 'meditation' }
-          ]
-        }
-        
-        if (this.recommendItems.length === 0) {
-          this.recommendItems = [
-            { id: 1, title: '7天入门冥想课程', duration: 15, cover: this.defaultCover, targetId: 201, targetType: 'series' },
-            { id: 2, title: '雨声冥想音乐', duration: 30, cover: this.defaultCover, targetId: 202, targetType: 'track' },
-            { id: 3, title: '21天冥想习惯养成', duration: 20, cover: this.defaultCover, targetId: 203, targetType: 'series' }
-          ]
-        }
-        
-        if (this.knowledgeItems.length === 0) {
-          this.knowledgeItems = [
-            { id: 1, title: '冥想的科学原理', description: '了解冥想如何改变大脑结构', cover: this.defaultKnowledgeCover },
-            { id: 2, title: '如何开始你的冥想之旅', description: '新手必读的冥想入门指南', cover: this.defaultKnowledgeCover },
-            { id: 3, title: '冥想与睡眠质量', description: '探索冥想对睡眠的积极影响', cover: this.defaultKnowledgeCover }
-          ]
+          this.recommendItems = this.recommendItems.slice(0, 3).map(item => ({
+            ...item,
+            title: `内容${item.contentId}`, // 实际应该关联查询获取标题
+            duration: 15,
+            cover: this.defaultCover,
+            targetId: item.contentId,
+            targetType: item.contentType
+          }))
+          
+          // 处理知识文章
+          const knowledgeSlotId = 4 // 冥想知识的slot_id
+          if (slotGroups[knowledgeSlotId]) {
+            this.knowledgeItems = slotGroups[knowledgeSlotId].slice(0, 3).map(item => ({
+              ...item,
+              title: `文章${item.contentId}`, // 实际应该关联查询获取标题
+              description: '探索冥想的奥秘',
+              cover: this.defaultKnowledgeCover,
+              targetId: item.contentId,
+              targetType: item.contentType
+            }))
+          }
         }
       } catch (error) {
         console.error('加载首页数据失败:', error)
-        // 加载失败时使用默认模拟数据
-        this.meditationSlots = [
-          { id: 1, title: '初学者呼吸冥想', duration: 10, slotType: 'meditation' },
-          { id: 2, title: '深度放松冥想', duration: 20, slotType: 'meditation' }
-        ]
-        this.recommendItems = [
-          { id: 1, title: '7天入门冥想课程', duration: 15, cover: this.defaultCover },
-          { id: 2, title: '雨声冥想音乐', duration: 30, cover: this.defaultCover },
-          { id: 3, title: '21天冥想习惯养成', duration: 20, cover: this.defaultCover }
-        ]
-        this.knowledgeItems = [
-          { id: 1, title: '冥想的科学原理', description: '了解冥想如何改变大脑结构', cover: this.defaultKnowledgeCover },
-          { id: 2, title: '如何开始你的冥想之旅', description: '新手必读的冥想入门指南', cover: this.defaultKnowledgeCover },
-          { id: 3, title: '冥想与睡眠质量', description: '探索冥想对睡眠的积极影响', cover: this.defaultKnowledgeCover }
-        ]
         uni.showToast({
-          title: '已加载默认数据',
+          title: '加载失败',
           icon: 'none'
         })
       }
