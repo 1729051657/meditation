@@ -8,10 +8,9 @@
       <!-- 问候语 -->
       <view class="greeting">上午好</view>
       
-      <!-- 搜索框 -->
-      <view class="search-box" @click="goToSearch">
-        <image src="/static/home/search@3x.png" class="search-icon" mode="aspectFit"></image>
-        <text class="search-placeholder">搜索</text>
+      <!-- 搜索图标 -->
+      <view class="search-icon" @click="goToSearch">
+        <tn-icon name="search" size="20" color="#333"></tn-icon>
       </view>
     </view>
 
@@ -20,29 +19,29 @@
       <view class="feature-item" @click="goToCategory('relax')">
         <view class="feature-icon-wrapper">
           <image src="/static/home/relax-stress@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">放松减压</text>
         </view>
-        <text class="feature-text">放松减压</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('sleep')">
         <view class="feature-icon-wrapper">
           <image src="/static/home/improve-sleep@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">改善睡眠</text>
         </view>
-        <text class="feature-text">改善睡眠</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('focus')">
         <view class="feature-icon-wrapper">
           <image src="/static/home/improve-focus@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">提升专注</text>
         </view>
-        <text class="feature-text">提升专注</text>
       </view>
       
       <view class="feature-item" @click="goToCategory('emotion')">
         <view class="feature-icon-wrapper">
           <image src="/static/home/emotion-regulation@2x.png" class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">情绪调节</text>
         </view>
-        <text class="feature-text">情绪调节</text>
       </view>
     </view>
 
@@ -55,7 +54,7 @@
         </view>
       </view>
       
-      <scroll-view class="meditation-cards" scroll-x>
+      <scroll-view class="meditation-cards" scroll-x :show-scrollbar="false" enhanced>
         <view class="meditation-card-list">
           <view 
             v-for="(item, index) in meditationSlots" 
@@ -65,14 +64,16 @@
             @click="goToMeditation(item)"
           >
             <view class="card-content">
-              <text class="card-title">{{ item.title }}</text>
+              <text class="card-title">{{ item.title||"123213" }}</text>
+            </view>
+            <view class="card-bottom-bar">
               <view class="card-duration">
                 <uni-icons type="time" size="14" color="#fff"></uni-icons>
                 <text class="duration-text">{{ item.duration || '10' }}分钟</text>
               </view>
-            </view>
-            <view class="card-play">
-              <image src="/static/home/play@3x.png" class="play-icon" mode="aspectFit"></image>
+              <view class="card-play">
+                <image src="/static/home/play@3x.png" class="play-icon" mode="aspectFit"></image>
+              </view>
             </view>
           </view>
         </view>
@@ -85,20 +86,22 @@
         <text class="section-title">冥想推荐</text>
       </view>
       
-      <view class="recommend-list">
-        <view 
-          v-for="item in recommendItems.slice(0, 3)" 
-          :key="item.id"
-          class="recommend-item"
-          @click="goToRecommend(item)"
-        >
-          <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
-          <view class="recommend-info">
-            <text class="recommend-title">{{ item.title }}</text>
-            <text class="recommend-duration">{{ item.duration || '10' }}分钟</text>
+      <scroll-view class="recommend-cards" scroll-x :show-scrollbar="false" enhanced>
+        <view class="recommend-card-list">
+          <view 
+            v-for="item in recommendItems" 
+            :key="item.id"
+            class="recommend-card-wrapper"
+            @click="goToRecommend(item)"
+          >
+            <view class="recommend-card">
+              <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
+              <view class="duration-tag">10分钟</view>
+            </view>
+            <text class="recommend-title">{{ item.title || '清理思绪' }}</text>
           </view>
         </view>
-      </view>
+      </scroll-view>
     </view>
 
     <!-- 冥想知识区域 -->
@@ -293,49 +296,66 @@ export default {
   left: 0;
   width: 100%;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 1;
+}
+
+/* 公共导航栏 */
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30rpx;
+}
+
+.nav-title {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #fff;
+}
+
+.nav-search {
+  width: 60rpx;
+  height: 60rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 顶部区域 */
 .header-section {
   padding: 40rpx 30rpx 30rpx;
-  padding-top: calc(var(--status-bar-height) + 40rpx);
+  padding-top: calc(var(--status-bar-height) + 60rpx);
   position: relative;
   z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .greeting {
-  font-size: 36rpx;
-  font-weight: 500;
+  font-size: 48rpx;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
-.search-box {
+.search-icon {
+  width: 60rpx;
+  height: 60rpx;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  background: #fff;
-  border-radius: 36rpx;
-  padding: 16rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-  
-  .search-icon {
-    width: 36rpx;
-    height: 36rpx;
-  }
-  
-  .search-placeholder {
-    margin-left: 12rpx;
-    color: #999;
-    font-size: 28rpx;
-  }
+  justify-content: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 /* 功能按钮区域 */
 .feature-section {
   display: flex;
   justify-content: space-around;
-  padding: 20rpx 30rpx 40rpx;
+  padding: 40rpx 30rpx 60rpx;
   position: relative;
   z-index: 1;
   
@@ -345,25 +365,34 @@ export default {
     align-items: center;
     
     .feature-icon-wrapper {
-      width: 120rpx;
-      height: 120rpx;
+      width: 150rpx;
+      height: 180rpx;
       background: #fff;
-      border-radius: 24rpx;
+      border-radius: 20rpx;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-      margin-bottom: 16rpx;
-    }
-    
-    .feature-icon {
-      width: 60rpx;
-      height: 60rpx;
-    }
-    
-    .feature-text {
-      font-size: 26rpx;
-      color: #333;
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      
+      &:active {
+        transform: scale(0.95);
+        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+      }
+      
+      .feature-icon {
+        width: 88rpx;
+        height: 88rpx;
+        margin-bottom: 10rpx;
+      }
+      
+      .feature-text {
+        font-size: 28rpx;
+        color: #333;
+        text-align: center;
+        line-height: 1.2;
+      }
     }
   }
 }
@@ -374,23 +403,31 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0 30rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: 30rpx;
   
   .section-title {
-    font-size: 32rpx;
-    font-weight: 500;
+    font-size: 36rpx;
+    font-weight: 600;
     color: #333;
   }
   
   .section-more {
     display: flex;
     align-items: center;
+    padding: 8rpx 16rpx;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20rpx;
+    transition: all 0.3s ease;
+    
+    &:active {
+      background: rgba(0, 0, 0, 0.1);
+    }
   }
 }
 
 /* 冥想练习区域 */
 .meditation-section {
-  margin-bottom: 40rpx;
+  margin-bottom: 50rpx;
   position: relative;
   z-index: 1;
   
@@ -399,23 +436,19 @@ export default {
     
     .meditation-card-list {
       display: flex;
-      gap: 20rpx;
+      gap: 30rpx;
       padding-right: 30rpx;
       
       .meditation-card {
         flex-shrink: 0;
-        width: 340rpx;
-        height: 200rpx;
-        border-radius: 20rpx;
-        padding: 30rpx;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+        width: 500rpx;
+        height: 339rpx;
+        border-radius: 32rpx;
         position: relative;
         overflow: hidden;
         
         &.card-basic {
-          background: linear-gradient(135deg, #A8D5E8 0%, #6BA3D0 100%);
+          background: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
         }
         
         &.card-advanced {
@@ -423,40 +456,61 @@ export default {
         }
         
         .card-content {
-          flex: 1;
+          position: absolute;
+          top: 32rpx;
+          left: 32rpx;
+          right: 32rpx;
           
           .card-title {
-            font-size: 32rpx;
-            font-weight: 500;
+            font-size: 48rpx;
+            font-weight: 600;
             color: #fff;
             display: block;
-            margin-bottom: 16rpx;
+            margin-bottom: 0;
+            text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
           }
+        }
+        
+        .card-bottom-bar {
+          position: absolute;
+          bottom: 24rpx;
+          left: 20rpx;
+          width: 460rpx;
+          height: 88rpx;
+          background: rgba(121, 177, 218, 0.6);
+          border-radius: 20rpx;
+          backdrop-filter: blur(1px);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 32rpx;
           
           .card-duration {
             display: flex;
             align-items: center;
-            gap: 8rpx;
+            gap: 12rpx;
             
             .duration-text {
-              font-size: 24rpx;
-              color: rgba(255, 255, 255, 0.9);
+              font-size: 28rpx;
+              color: #fff;
+              font-weight: 500;
             }
           }
-        }
-        
-        .card-play {
-          width: 60rpx;
-          height: 60rpx;
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           
-          .play-icon {
-            width: 24rpx;
-            height: 24rpx;
+          .card-play {
+            width: 60rpx;
+            height: 60rpx;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10rpx);
+            
+            .play-icon {
+              width: 24rpx;
+              height: 24rpx;
+            }
           }
         }
       }
@@ -466,47 +520,71 @@ export default {
 
 /* 冥想推荐区域 */
 .recommend-section {
-  margin-bottom: 40rpx;
+  margin-bottom: 50rpx;
   position: relative;
   z-index: 1;
   
-  .recommend-list {
-    padding: 0 30rpx;
-    display: flex;
-    flex-direction: column;
-    gap: 20rpx;
+  .recommend-cards {
+    padding-left: 30rpx;
     
-    .recommend-item {
+    .recommend-card-list {
       display: flex;
-      background: #fff;
-      border-radius: 16rpx;
-      overflow: hidden;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+      gap: 24rpx;
+      padding-right: 30rpx;
       
-      .recommend-image {
-        width: 200rpx;
-        height: 150rpx;
-        flex-shrink: 0;
-      }
-      
-      .recommend-info {
-        flex: 1;
-        padding: 24rpx;
+      .recommend-card-wrapper {
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        align-items: center;
+        width: 260rpx;
+      }
+
+      .recommend-card {
+        flex-shrink: 0;
+        width: 260rpx;
+        height: 260rpx;
+        background: #fff;
+        border-radius: 20rpx;
+        overflow: hidden;
+        box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
         
-        .recommend-title {
-          font-size: 30rpx;
-          color: #333;
-          margin-bottom: 12rpx;
+        &:active {
+          transform: scale(0.98);
+          box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
+        }
+        
+        .recommend-image {
+          width: 100%;
+          height: 200rpx;
+          flex-shrink: 0;
+        }
+
+        .duration-tag {
+          position: absolute;
+          top: 16rpx;
+          left: 16rpx;
+          background: rgba(121, 177, 218, 0.8);
+          color: #fff;
+          font-size: 22rpx;
           font-weight: 500;
+          padding: 6rpx 12rpx;
+          border-radius: 12rpx;
+          backdrop-filter: blur(1px);
         }
-        
-        .recommend-duration {
-          font-size: 24rpx;
-          color: #999;
-        }
+      }
+      
+      .recommend-title {
+        font-size: 26rpx;
+        color: #333;
+        margin-top: 10rpx;
+        text-align: left;
+        font-weight: 600;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
   }
