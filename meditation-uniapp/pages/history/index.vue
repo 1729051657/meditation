@@ -62,56 +62,17 @@
 </template>
 
 <script>
+import { listPlayHistory } from '@/api/play'
+
 export default {
   data() {
     return {
-      historyList: [
-        {
-          id: 1,
-          title: '深度睡眠冥想',
-          author: '冥想大师',
-          playTime: '22:30',
-          progress: 75,
-          cover: '/static/home/meditation1.jpg',
-          date: '2024-01-15'
-        },
-        {
-          id: 2,
-          title: '清晨正念练习',
-          author: '静心导师',
-          playTime: '08:15',
-          progress: 100,
-          cover: '/static/home/meditation2.jpg',
-          date: '2024-01-15'
-        },
-        {
-          id: 3,
-          title: '压力释放冥想',
-          author: '身心疗愈师',
-          playTime: '19:45',
-          progress: 50,
-          cover: '/static/home/meditation3.jpg',
-          date: '2024-01-14'
-        },
-        {
-          id: 4,
-          title: '专注力训练',
-          author: '专注教练',
-          playTime: '14:20',
-          progress: 30,
-          cover: '/static/home/meditation4.jpg',
-          date: '2024-01-14'
-        },
-        {
-          id: 5,
-          title: '呼吸放松练习',
-          author: '瑜伽导师',
-          playTime: '10:00',
-          progress: 100,
-          cover: '/static/home/meditation5.jpg',
-          date: '2024-01-13'
-        }
-      ]
+      historyList: [],
+      loading: false,
+      pageNum: 1,
+      pageSize: 20,
+      total: 0,
+      hasMore: true
     }
   },
   
@@ -136,34 +97,148 @@ export default {
     this.loadHistory()
   },
   
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.pageNum = 1
+    this.historyList = []
+    this.hasMore = true
+    this.loadHistory().finally(() => {
+      uni.stopPullDownRefresh()
+    })
+  },
+  
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.hasMore && !this.loading) {
+      this.pageNum++
+      this.loadHistory()
+    }
+  },
+  
   methods: {
-    loadHistory() {
-      // 从本地存储或API加载历史记录
-      const cached = uni.getStorageSync('historyList')
-      if (cached) {
-        this.historyList = cached
+    async loadHistory() {
+      if (this.loading) return
+      
+      try {
+        this.loading = true
+        const res = await listPlayHistory({
+          pageNum: this.pageNum,
+          pageSize: this.pageSize
+        })
+        
+        if (res.code === 200) {
+          const { rows, total } = res.data
+          
+          // 格式化数据
+          const formattedList = rows.map(item => ({
+            id: item.trackId,
+            historyId: item.historyId, // 保存历史记录ID
+            title: item.trackTitle || item.trackName,
+            author: item.author || item.artistName || '未知作者',
+            playTime: this.formatTime(item.lastPlayTime || item.createTime),
+            progress: this.calculateProgress(item.playedDuration, item.totalDuration),
+            playedDuration: item.playedDuration || 0,
+            totalDuration: item.totalDuration || 0,
+            cover: item.coverUrl || item.trackCover || '/static/images/default-cover.png',
+            date: this.formatDate(item.lastPlayTime || item.createTime)
+          }))
+          
+          if (this.pageNum === 1) {
+            this.historyList = formattedList
+          } else {
+            this.historyList = [...this.historyList, ...formattedList]
+          }
+          
+          this.total = total
+          this.hasMore = this.historyList.length < total
+        }
+      } catch (error) {
+        console.error('加载播放历史失败:', error)
+        uni.showToast({
+          title: '加载失败',
+          icon: 'none'
+        })
+      } finally {
+        this.loading = false
       }
     },
     
+    // 格式化时间
+    formatTime(timestamp) {
+      if (!timestamp) return '--:--'
+      const date = new Date(timestamp)
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
+    },
+    
+    // 格式化日期
+    formatDate(timestamp) {
+      if (!timestamp) return new Date().toISOString().split('T')[0]
+      const date = new Date(timestamp)
+      return date.toISOString().split('T')[0]
+    },
+    
+    // 计算播放进度
+    calculateProgress(played, total) {
+      if (!total || total === 0) return 0
+      const progress = Math.floor((played / total) * 100)
+      return Math.min(100, Math.max(0, progress))
+    },
+    
     formatDateLabel(dateStr) {
-      const date = new Date(dateStr)
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
+      if (!dateStr) return '未知日期'
       
-      if (date.toDateString() === today.toDateString()) {
-        return '今天'
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        return '昨天'
-      } else {
-        return `${date.getMonth() + 1}月${date.getDate()}日`
+      try {
+        const date = new Date(dateStr)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        
+        // 比较日期字符串（只比较日期部分）
+        const dateOnly = date.toDateString()
+        const todayOnly = today.toDateString()
+        const yesterdayOnly = yesterday.toDateString()
+        
+        if (dateOnly === todayOnly) {
+          return '今天'
+        } else if (dateOnly === yesterdayOnly) {
+          return '昨天'
+        } else {
+          // 计算天数差
+          const diffTime = Math.abs(today - date)
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          
+          if (diffDays <= 7) {
+            return `${date.getMonth() + 1}月${date.getDate()}日`
+          } else if (diffDays <= 30) {
+            return `${Math.floor(diffDays / 7)}周前`
+          } else {
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+          }
+        }
+      } catch (error) {
+        console.error('日期格式化错误:', error)
+        return dateStr
       }
     },
     
     playAudio(item) {
-      // 跳转到播放页面，从上次进度继续播放
+      // 跳转到播放页面，传递播放进度信息
+      const params = {
+        id: item.id,
+        title: encodeURIComponent(item.title),
+        progress: item.progress,
+        playedDuration: item.playedDuration,
+        totalDuration: item.totalDuration
+      }
+      
+      const queryString = Object.keys(params)
+        .map(key => `${key}=${params[key]}`)
+        .join('&')
+      
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.id}&title=${item.title}&progress=${item.progress}`
+        url: `/pages/player/index?${queryString}`
       })
     },
     
@@ -172,26 +247,55 @@ export default {
         itemList: ['继续播放', '从头播放', '删除记录'],
         success: (res) => {
           if (res.tapIndex === 0) {
+            // 继续播放
             this.playAudio(item)
           } else if (res.tapIndex === 1) {
+            // 从头播放
+            const params = {
+              id: item.id,
+              title: encodeURIComponent(item.title),
+              progress: 0,
+              playedDuration: 0,
+              totalDuration: item.totalDuration
+            }
+            
+            const queryString = Object.keys(params)
+              .map(key => `${key}=${params[key]}`)
+              .join('&')
+            
             uni.navigateTo({
-              url: `/pages/player/index?id=${item.id}&title=${item.title}&progress=0`
+              url: `/pages/player/index?${queryString}`
             })
           } else if (res.tapIndex === 2) {
+            // 删除记录
             this.deleteHistory(item)
           }
         }
       })
     },
     
-    deleteHistory(item) {
-      const index = this.historyList.findIndex(h => h.id === item.id)
-      if (index > -1) {
-        this.historyList.splice(index, 1)
-        uni.setStorageSync('historyList', this.historyList)
+    async deleteHistory(item) {
+      try {
+        // 目前后端可能没有删除单条历史记录的接口
+        // 先在本地删除
+        const index = this.historyList.findIndex(h => h.id === item.id)
+        if (index > -1) {
+          this.historyList.splice(index, 1)
+          this.total--
+          
+          uni.showToast({
+            title: '已删除',
+            icon: 'success'
+          })
+        }
+        
+        // TODO: 当后端提供删除接口后，调用API删除
+        // await deletePlayHistory(item.historyId)
+      } catch (error) {
+        console.error('删除历史记录失败:', error)
         uni.showToast({
-          title: '已删除',
-          icon: 'success'
+          title: '删除失败',
+          icon: 'none'
         })
       }
     },
@@ -200,14 +304,27 @@ export default {
       uni.showModal({
         title: '提示',
         content: '确定要清空所有播放记录吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            this.historyList = []
-            uni.removeStorageSync('historyList')
-            uni.showToast({
-              title: '已清空',
-              icon: 'success'
-            })
+            try {
+              // 目前先在本地清空
+              this.historyList = []
+              this.total = 0
+              
+              // TODO: 当后端提供清空接口后，调用API清空
+              // await clearAllPlayHistory()
+              
+              uni.showToast({
+                title: '已清空',
+                icon: 'success'
+              })
+            } catch (error) {
+              console.error('清空历史记录失败:', error)
+              uni.showToast({
+                title: '清空失败',
+                icon: 'none'
+              })
+            }
           }
         }
       })

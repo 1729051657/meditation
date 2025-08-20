@@ -46,21 +46,46 @@
       "path": "pages/favorites/index",
       "style": {
         "navigationBarTitleText": "我的收藏",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
       "path": "pages/history/index",
       "style": {
         "navigationBarTitleText": "最近播放",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
+      }
+    },
+    {
+      "path": "pages/player/index",
+      "style": {
+        "navigationBarTitleText": "播放器",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/series/detail",
+      "style": {
+        "navigationBarTitleText": "系列详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/article/detail",
+      "style": {
+        "navigationBarTitleText": "文章详情",
         "navigationStyle": "custom"
       }
     }
   ],
   "tabBar": {
     "custom": false,
-    "color": "#6B7280",
-    "selectedColor": "#7C3AED",
+    "color": "#000000",
+    "selectedColor": "#000000",
     "borderStyle": "white",
     "backgroundColor": "#ffffff",
     "list": [

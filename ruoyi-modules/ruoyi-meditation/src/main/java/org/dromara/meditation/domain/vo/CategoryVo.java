@@ -5,6 +5,8 @@ import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
 import cn.idev.excel.annotation.ExcelProperty;
 import org.dromara.common.excel.annotation.ExcelDictFormat;
 import org.dromara.common.excel.convert.ExcelDictConvert;
+import org.dromara.common.translation.annotation.Translation;
+import org.dromara.common.translation.constant.TransConstant;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
@@ -58,6 +60,7 @@ public class CategoryVo implements Serializable {
      */
     @ExcelProperty(value = "图标文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long icon;
 
     /**

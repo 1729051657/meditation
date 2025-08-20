@@ -151,7 +151,6 @@ create table mg_content_tag
     tag_id        bigint(20)     not null                 comment '标签ID',
     create_by     bigint(20)     default null             comment '创建者',
     create_time   datetime                                 comment '创建时间',
-    del_flag      char(1)        default '0'              comment '删除标志（0代表存在 1代表删除）',
     primary key (id),
     unique key uk_content_tag (tenant_id, content_type, content_id, tag_id),
     key idx_tag (tag_id)

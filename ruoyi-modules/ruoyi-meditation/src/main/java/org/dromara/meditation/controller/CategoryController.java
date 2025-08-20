@@ -2,6 +2,7 @@ package org.dromara.meditation.controller;
 
 import java.util.List;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
@@ -38,7 +39,7 @@ public class CategoryController extends BaseController {
     /**
      * 查询冥想分类列表
      */
-    @SaCheckPermission("meditation:category:list")
+    @SaIgnore
     @GetMapping("/list")
     public R<List<CategoryVo>> list(CategoryBo bo) {
         List<CategoryVo> list = categoryService.queryList(bo);

@@ -5,6 +5,8 @@ import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
 import cn.idev.excel.annotation.ExcelProperty;
 import org.dromara.common.excel.annotation.ExcelDictFormat;
 import org.dromara.common.excel.convert.ExcelDictConvert;
+import org.dromara.common.translation.annotation.Translation;
+import org.dromara.common.translation.constant.TransConstant;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
@@ -59,14 +61,18 @@ public class TrackVo implements Serializable {
      */
     @ExcelProperty(value = "封面文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long cover;
+
 
     /**
      * 音频文件id（sys_oss.oss_id）
      */
     @ExcelProperty(value = "音频文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long audio;
+
 
     /**
      * 时长（秒）

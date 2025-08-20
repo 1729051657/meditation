@@ -109,6 +109,7 @@ const user = {
 			uni.removeStorageSync(STORAGE_KEYS.TENANT_ID)
 			uni.removeStorageSync(STORAGE_KEYS.OPENID)
 			uni.removeStorageSync(STORAGE_KEYS.SCOPE)
+			uni.removeStorageSync('meditation_token_time')
 		}
 	},
 
@@ -194,6 +195,9 @@ const user = {
 						commit('SET_TENANT_INFO', tenantInfo)
 						commit('SET_OPENID', openid)
 						commit('SET_SCOPE', scope)
+						
+						// 记录token获取时间，用于过期检查
+						uni.setStorageSync('meditation_token_time', Date.now().toString())
 
 						resolve(result)
 					} else {

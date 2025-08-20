@@ -163,10 +163,35 @@
 			checkLoginStatus() {
 				const token = uni.getStorageSync(STORAGE_KEYS.TOKEN)
 				const userInfo = uni.getStorageSync(STORAGE_KEYS.USER_INFO)
+				const tenantId = uni.getStorageSync(STORAGE_KEYS.TENANT_ID)
+				const openid = uni.getStorageSync(STORAGE_KEYS.OPENID)
+				const scope = uni.getStorageSync(STORAGE_KEYS.SCOPE)
 
 				if (token && userInfo) {
+					// 检查token是否过期
+					if (this.isTokenExpired(token)) {
+						console.log('Token已过期，清除登录状态')
+						this.clearLoginStatus()
+						return
+					}
+					
+					// 恢复完整的登录状态
 					this.$store.commit('user/SET_TOKEN', token)
 					this.$store.commit('user/SET_USER_INFO', userInfo)
+					
+					if (tenantId) {
+						this.$store.commit('user/SET_TENANT_INFO', { tenantId })
+					}
+					
+					if (openid) {
+						this.$store.commit('user/SET_OPENID', openid)
+					}
+					
+					if (scope) {
+						this.$store.commit('user/SET_SCOPE', scope)
+					}
+					
+					console.log('已恢复登录状态')
 				}
 			},
 
@@ -181,22 +206,82 @@
 			},
 			
 			/**
+			 * 清除登录状态
+			 */
+			clearLoginStatus() {
+				console.log('清除之前的登录状态')
+				// 清除store中的状态
+				this.$store.commit('user/CLEAR_USER_INFO')
+				// 清除本地存储
+				uni.removeStorageSync(STORAGE_KEYS.TOKEN)
+				uni.removeStorageSync(STORAGE_KEYS.USER_INFO)
+				uni.removeStorageSync(STORAGE_KEYS.TENANT_ID)
+				uni.removeStorageSync(STORAGE_KEYS.OPENID)
+				uni.removeStorageSync(STORAGE_KEYS.SCOPE)
+			},
+			
+			/**
+			 * 检查token是否过期
+			 */
+			isTokenExpired(token) {
+				try {
+					// 解析JWT token（如果使用JWT）
+					if (token && token.includes('.')) {
+						const payload = JSON.parse(atob(token.split('.')[1]))
+						const currentTime = Math.floor(Date.now() / 1000)
+						
+						// 检查exp字段（过期时间）
+						if (payload.exp && payload.exp < currentTime) {
+							return true
+						}
+						
+						// 检查iat字段（签发时间），如果超过2小时认为过期
+						if (payload.iat && (currentTime - payload.iat) > 7200) {
+							return true
+						}
+					}
+					
+					// 如果不是JWT或没有过期信息，检查本地存储时间
+					const tokenTime = uni.getStorageSync('meditation_token_time')
+					if (tokenTime) {
+						const currentTime = Date.now()
+						const tokenAge = currentTime - parseInt(tokenTime)
+						// 如果token超过2小时，认为过期
+						if (tokenAge > 7200000) { // 2小时 = 7200000毫秒
+							return true
+						}
+					}
+					
+					return false
+				} catch (error) {
+					console.error('检查token过期失败:', error)
+					// 如果解析失败，认为token无效
+					return true
+				}
+			},
+			
+			/**
 			 * 执行无感登录
 			 */
 			async silentLogin() {
 				// #ifdef MP-WEIXIN
 				try {
-					// 检查是否已登录
-					const token = uni.getStorageSync(STORAGE_KEYS.TOKEN)
-					if (token) {
-						console.log('用户已登录，跳过无感登录')
-						return
-					}
-					
 					console.log('开始执行无感登录...')
+					
+					// 先清除之前的登录状态
+					this.clearLoginStatus()
+					
+					// 显示加载提示
+					uni.showLoading({
+						title: '登录中...',
+						mask: true
+					})
 					
 					// 调用store中的wxLogin方法
 					await this.wxLogin()
+					
+					// 隐藏加载提示
+					uni.hideLoading()
 					
 					console.log('无感登录成功')
 					
@@ -204,7 +289,20 @@
 					// 这里不需要跳转页面，让用户继续使用小程序
 					
 				} catch (error) {
+					// 隐藏加载提示
+					uni.hideLoading()
+					
 					console.error('无感登录失败:', error)
+					
+					// 如果是网络错误或其他可恢复的错误，可以稍后重试
+					if (error.message && error.message.includes('网络')) {
+						console.log('网络错误，稍后重试登录')
+						// 可以设置一个定时器，稍后重试登录
+						setTimeout(() => {
+							this.silentLogin()
+						}, 5000) // 5秒后重试
+					}
+					
 					// 无感登录失败不影响用户使用，可以在需要登录的功能处再提示
 					// 不显示错误提示，避免影响用户体验
 				}

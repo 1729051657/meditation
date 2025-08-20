@@ -5,8 +5,13 @@
     
     <!-- 顶部区域 -->
     <view class="header-section">
-      <!-- 问候语 -->
-      <view class="greeting">{{ greeting }}</view>
+      <!-- 问候语和用户状态 -->
+      <view class="header-left">
+        <view class="greeting">{{ greeting }}</view>
+        <view class="user-status" v-if="isLoggedIn">
+          <text class="status-text">已登录</text>
+        </view>
+      </view>
       
       <!-- 搜索图标 -->
       <view class="search-icon" @click="goToSearch">
@@ -16,17 +21,17 @@
 
     <!-- 功能按钮区域 -->
     <view class="feature-section">
-      <view 
-        v-for="category in categories" 
-        :key="category.type"
-        class="feature-item" 
-        @click="goToCategory(category.type)"
-      >
-        <view class="feature-icon-wrapper">
-          <image :src="category.icon" class="feature-icon" mode="aspectFit"></image>
-          <text class="feature-text">{{ category.name }}</text>
+              <view 
+          v-for="category in categories" 
+          :key="category.id"
+          class="feature-item" 
+          @click="goToCategory(category.code)"
+        >
+          <view class="feature-icon-wrapper">
+            <image :src="category.icon || categoryIconMap[category.code] || '/static/images/default-category.png'" class="feature-icon" mode="aspectFit"></image>
+            <text class="feature-text">{{ category.name }}</text>
+          </view>
         </view>
-      </view>
     </view>
 
     <!-- 冥想练习区域 -->
@@ -45,15 +50,17 @@
             :key="item.id"
             class="meditation-card"
             :class="index === 0 ? 'card-basic' : 'card-advanced'"
+            :style="item.cover ? `background-image: url(${item.cover}); background-size: cover; background-position: center;` : ''"
             @click="goToMeditation(item)"
           >
             <view class="card-content">
-              <text class="card-title">{{ item.title||"123213" }}</text>
+              <text class="card-title">{{ item.title }}</text>
+              <text class="card-subtitle" v-if="item.subtitle">{{ item.subtitle }}</text>
             </view>
             <view class="card-bottom-bar">
               <view class="card-duration">
                 <uni-icons type="time" size="14" color="#fff"></uni-icons>
-                <text class="duration-text">{{ item.duration || '10' }}分钟</text>
+                <text class="duration-text">{{ Math.round(item.recommendDuration / 60) || 15 }}分钟</text>
               </view>
               <view class="card-play">
                 <image src="/static/home/play@3x.png" class="play-icon" mode="aspectFit"></image>
@@ -80,9 +87,9 @@
           >
             <view class="recommend-card">
               <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
-              <view class="duration-tag">10分钟</view>
+              <view class="duration-tag">{{ Math.round(item.durationSec / 60) || 15 }}分钟</view>
             </view>
-            <text class="recommend-title">{{ item.title || '清理思绪' }}</text>
+            <text class="recommend-title">{{ item.title }}</text>
           </view>
         </view>
       </scroll-view>
@@ -107,7 +114,7 @@
           <image :src="item.cover || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
           <view class="knowledge-content">
             <text class="knowledge-title">{{ item.title }}</text>
-            <text class="knowledge-desc" v-if="item.description">{{ item.description }}</text>
+            <text class="knowledge-desc" v-if="item.summary">{{ item.summary }}</text>
           </view>
         </view>
       </view>
@@ -127,12 +134,21 @@ export default {
       recommendItems: [], // 推荐内容
       knowledgeItems: [], // 知识内容
       defaultCover: '/static/images/default-cover.png',
-      defaultKnowledgeCover: '/static/images/default-knowledge.png'
+      defaultKnowledgeCover: '/static/images/default-knowledge.png',
+      isLoggedIn: false, // 登录状态
+      // 分类图标映射
+      categoryIconMap: {
+        'relax': '/static/home/relax-stress@2x.png',
+        'sleep': '/static/home/improve-sleep@2x.png',
+        'focus': '/static/home/improve-focus@2x.png',
+        'emotion': '/static/home/emotion-regulation@2x.png'
+      }
     }
   },
   
   onLoad() {
     this.loadHomeData()
+    this.checkLoginStatus()
   },
   
   onPullDownRefresh() {
@@ -142,6 +158,89 @@ export default {
   },
   
   methods: {
+    // 检查登录状态
+    checkLoginStatus() {
+      const token = uni.getStorageSync('meditation_token')
+      const userInfo = uni.getStorageSync('meditation_user_info')
+      
+      if (token && userInfo) {
+        // 检查token是否过期
+        if (this.isTokenExpired(token)) {
+          console.log('Token已过期，尝试重新登录')
+          this.isLoggedIn = false
+          this.autoRelogin()
+          return
+        }
+        
+        console.log('用户已登录:', userInfo)
+        this.isLoggedIn = true
+        // 可以在这里更新UI显示登录状态
+      } else {
+        console.log('用户未登录')
+        this.isLoggedIn = false
+        // 可以在这里显示登录提示或引导
+      }
+    },
+    
+    // 检查token是否过期
+    isTokenExpired(token) {
+      try {
+        // 检查本地存储时间
+        const tokenTime = uni.getStorageSync('meditation_token_time')
+        if (tokenTime) {
+          const currentTime = Date.now()
+          const tokenAge = currentTime - parseInt(tokenTime)
+          // 如果token超过2小时，认为过期
+          if (tokenAge > 7200000) { // 2小时 = 7200000毫秒
+            return true
+          }
+        }
+        return false
+      } catch (error) {
+        console.error('检查token过期失败:', error)
+        return true
+      }
+    },
+    
+    // 自动重新登录
+    async autoRelogin() {
+      try {
+        console.log('开始自动重新登录...')
+        
+        // 显示加载提示
+        uni.showLoading({
+          title: '重新登录中...',
+          mask: true
+        })
+        
+        // 调用store中的wxLogin方法
+        await this.$store.dispatch('user/wxLogin')
+        
+        // 隐藏加载提示
+        uni.hideLoading()
+        
+        console.log('自动重新登录成功')
+        this.isLoggedIn = true
+        
+        // 重新加载首页数据
+        this.loadHomeData()
+        
+      } catch (error) {
+        // 隐藏加载提示
+        uni.hideLoading()
+        
+        console.error('自动重新登录失败:', error)
+        this.isLoggedIn = false
+        
+        // 显示登录失败提示
+        uni.showToast({
+          title: '登录失败，请重试',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    },
+    
     // 加载首页数据
     async loadHomeData() {
       try {
@@ -154,16 +253,16 @@ export default {
           this.greeting = data.greeting || '您好'
           
           // 设置功能分类
-          this.categories = data.categories || []
+          this.categories = data.categoryVoList || []
           
-          // 设置冥想练习
-          this.meditationSlots = data.meditationSlots || []
+          // 设置冥想练习 - 使用 seriesVoList 作为冥想练习数据
+          this.meditationSlots = data.seriesVoList || []
           
-          // 设置推荐内容
-          this.recommendItems = data.recommendItems || []
+          // 设置推荐内容 - 使用 trackVoList 作为推荐内容
+          this.recommendItems = data.trackVoList || []
           
-          // 设置知识内容
-          this.knowledgeItems = data.knowledgeItems || []
+          // 设置知识内容 - 使用 articleVoList 作为知识内容
+          this.knowledgeItems = data.articleVoList || []
         }
       } catch (error) {
         console.error('加载首页数据失败:', error)
@@ -190,42 +289,26 @@ export default {
     
     // 跳转到冥想详情
     goToMeditation(item) {
-      // 根据实际数据结构跳转
-      if (item.targetId) {
-        uni.navigateTo({
-          url: `/pages/player/index?id=${item.targetId}&type=${item.targetType || 'meditation'}`
-        })
-      } else if (item.link) {
-        uni.navigateTo({
-          url: item.link
-        })
-      }
+      // 跳转到系列详情页
+      uni.navigateTo({
+        url: `/pages/series/detail?id=${item.id}`
+      })
     },
     
     // 跳转到推荐详情
     goToRecommend(item) {
-      if (item.targetId) {
-        uni.navigateTo({
-          url: `/pages/player/index?id=${item.targetId}&type=${item.targetType || 'meditation'}`
-        })
-      } else if (item.link) {
-        uni.navigateTo({
-          url: item.link
-        })
-      }
+      // 跳转到播放器页面
+      uni.navigateTo({
+        url: `/pages/player/index?id=${item.id}&type=track`
+      })
     },
     
     // 跳转到知识详情
     goToKnowledge(item) {
-      if (item.targetId) {
-        uni.navigateTo({
-          url: `/pages/article/detail?id=${item.targetId}`
-        })
-      } else if (item.link) {
-        uni.navigateTo({
-          url: item.link
-        })
-      }
+      // 跳转到文章详情页
+      uni.navigateTo({
+        url: `/pages/article/detail?id=${item.id}`
+      })
     },
     
     // 查看更多
@@ -297,10 +380,31 @@ export default {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
 .greeting {
   font-size: 48rpx;
   font-weight: 600;
   color: #333;
+}
+
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.status-text {
+  font-size: 24rpx;
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-weight: 500;
 }
 
 .search-icon {
@@ -409,13 +513,26 @@ export default {
         border-radius: 32rpx;
         position: relative;
         overflow: hidden;
+        background-size: cover;
+        background-position: center;
         
         &.card-basic {
-          background: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
+          background-color: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
         }
         
         &.card-advanced {
-          background: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
+          background-color: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
+        }
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%);
+          z-index: 1;
         }
         
         .card-content {
@@ -423,14 +540,22 @@ export default {
           top: 32rpx;
           left: 32rpx;
           right: 32rpx;
+          z-index: 2;
           
           .card-title {
             font-size: 48rpx;
             font-weight: 600;
             color: #fff;
             display: block;
-            margin-bottom: 0;
+            margin-bottom: 8rpx;
             text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+          }
+          
+          .card-subtitle {
+            font-size: 28rpx;
+            color: rgba(255, 255, 255, 0.9);
+            display: block;
+            text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
           }
         }
         
@@ -447,6 +572,7 @@ export default {
           justify-content: space-between;
           align-items: center;
           padding: 0 32rpx;
+          z-index: 2;
           
           .card-duration {
             display: flex;

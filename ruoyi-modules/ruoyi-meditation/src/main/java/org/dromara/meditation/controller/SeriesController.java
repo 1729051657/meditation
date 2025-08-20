@@ -2,6 +2,7 @@ package org.dromara.meditation.controller;
 
 import java.util.List;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
@@ -39,7 +40,7 @@ public class SeriesController extends BaseController {
     /**
      * 查询冥想系列列表
      */
-    @SaCheckPermission("meditation:series:list")
+    @SaIgnore
     @GetMapping("/list")
     public TableDataInfo<SeriesVo> list(SeriesBo bo, PageQuery pageQuery) {
         return seriesService.queryPageList(bo, pageQuery);
@@ -61,7 +62,7 @@ public class SeriesController extends BaseController {
      *
      * @param id 主键
      */
-    @SaCheckPermission("meditation:series:query")
+    @SaIgnore
     @GetMapping("/{id}")
     public R<SeriesVo> getInfo(@NotNull(message = "主键不能为空")
                                      @PathVariable Long id) {

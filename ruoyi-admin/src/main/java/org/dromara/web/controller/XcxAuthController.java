@@ -92,7 +92,7 @@ public class XcxAuthController {
             Long userId = LoginHelper.getUserId();
             scheduledExecutorService.schedule(() -> {
                 SseMessageDto dto = new SseMessageDto();
-                dto.setMessage("欢迎使用美研通小程序");
+                dto.setMessage("欢迎使用冥想小程序");
                 dto.setUserIds(List.of(userId));
                 SseMessageUtils.publishMessage(dto);
             }, 2, TimeUnit.SECONDS);
