@@ -16,6 +16,7 @@ import org.dromara.common.core.constant.SystemConstants;
 import org.dromara.common.core.domain.model.LoginUser;
 import org.dromara.common.core.domain.model.XcxLoginBody;
 import org.dromara.common.core.domain.model.XcxLoginUser;
+import org.dromara.common.core.enums.UserType;
 import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.utils.ValidatorUtils;
 import org.dromara.common.json.utils.JsonUtils;
@@ -85,6 +86,7 @@ public class XcxAuthStrategy implements IAuthStrategy {
 
             loginUser.setClientKey(client.getClientKey());
             loginUser.setDeviceType(client.getDeviceType());
+            loginUser.setUserType(UserType.XCX_USER.getUserType());
 
             SaLoginParameter model = new SaLoginParameter();
             model.setDeviceType(client.getDeviceType());

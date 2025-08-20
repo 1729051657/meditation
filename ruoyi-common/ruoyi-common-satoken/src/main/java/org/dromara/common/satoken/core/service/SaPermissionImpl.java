@@ -36,7 +36,7 @@ public class SaPermissionImpl implements StpInterface {
             }
         }
         UserType userType = UserType.getUserType(loginUser.getUserType());
-        if (userType == UserType.APP_USER) {
+        if (userType == UserType.XCX_USER) {
             // 其他端 自行根据业务编写
         }
         // SYS_USER 默认返回权限
@@ -59,7 +59,7 @@ public class SaPermissionImpl implements StpInterface {
             }
         }
         UserType userType = UserType.getUserType(loginUser.getUserType());
-        if (userType == UserType.APP_USER) {
+        if (userType == UserType.XCX_USER) {
             // 其他端 自行根据业务编写
         }
         // SYS_USER 默认返回权限
