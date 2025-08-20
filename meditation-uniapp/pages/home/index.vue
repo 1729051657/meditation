@@ -6,7 +6,7 @@
     <!-- 顶部区域 -->
     <view class="header-section">
       <!-- 问候语 -->
-      <view class="greeting">上午好</view>
+      <view class="greeting">{{ greeting }}</view>
       
       <!-- 搜索图标 -->
       <view class="search-icon" @click="goToSearch">
@@ -16,31 +16,15 @@
 
     <!-- 功能按钮区域 -->
     <view class="feature-section">
-      <view class="feature-item" @click="goToCategory('relax')">
+      <view 
+        v-for="category in categories" 
+        :key="category.type"
+        class="feature-item" 
+        @click="goToCategory(category.type)"
+      >
         <view class="feature-icon-wrapper">
-          <image src="/static/home/relax-stress@2x.png" class="feature-icon" mode="aspectFit"></image>
-          <text class="feature-text">放松减压</text>
-        </view>
-      </view>
-      
-      <view class="feature-item" @click="goToCategory('sleep')">
-        <view class="feature-icon-wrapper">
-          <image src="/static/home/improve-sleep@2x.png" class="feature-icon" mode="aspectFit"></image>
-          <text class="feature-text">改善睡眠</text>
-        </view>
-      </view>
-      
-      <view class="feature-item" @click="goToCategory('focus')">
-        <view class="feature-icon-wrapper">
-          <image src="/static/home/improve-focus@2x.png" class="feature-icon" mode="aspectFit"></image>
-          <text class="feature-text">提升专注</text>
-        </view>
-      </view>
-      
-      <view class="feature-item" @click="goToCategory('emotion')">
-        <view class="feature-icon-wrapper">
-          <image src="/static/home/emotion-regulation@2x.png" class="feature-icon" mode="aspectFit"></image>
-          <text class="feature-text">情绪调节</text>
+          <image :src="category.icon" class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">{{ category.name }}</text>
         </view>
       </view>
     </view>
@@ -132,11 +116,13 @@
 </template>
 
 <script>
-import { listSlots, listSlotItems } from '@/api/recommend'
+import { getHomeData } from '@/api/home'
 
 export default {
   data() {
     return {
+      greeting: '', // 问候语
+      categories: [], // 功能分类
       meditationSlots: [], // 冥想练习推荐位
       recommendItems: [], // 推荐内容
       knowledgeItems: [], // 知识内容
@@ -159,48 +145,25 @@ export default {
     // 加载首页数据
     async loadHomeData() {
       try {
-        // 并行加载推荐位和推荐内容
-        const [slotsRes, itemsRes] = await Promise.all([
-          listSlots({ status: 1, pageSize: 10 }),
-          listSlotItems({ status: 1, pageSize: 20 })
-        ])
+        const res = await getHomeData()
         
-        // 处理推荐位数据
-        if (slotsRes.code === 200 && slotsRes.rows) {
-          // 根据slotType分类处理
-          const slots = slotsRes.rows
+        if (res.code === 200 && res.data) {
+          const data = res.data
           
-          // 冥想练习 (type: meditation)
-          this.meditationSlots = slots.filter(item => 
-            item.slotType === 'meditation' || item.position === 'meditation'
-          ).slice(0, 2) // 只取前两个
+          // 设置问候语
+          this.greeting = data.greeting || '您好'
           
-          // 如果没有明确的分类，就按位置分配
-          if (this.meditationSlots.length === 0) {
-            this.meditationSlots = slots.slice(0, 2)
-          }
-        }
-        
-        // 处理推荐内容数据
-        if (itemsRes.code === 200 && itemsRes.rows) {
-          const items = itemsRes.rows
+          // 设置功能分类
+          this.categories = data.categories || []
           
-          // 根据itemType分类
-          this.recommendItems = items.filter(item => 
-            item.itemType === 'recommend' || item.itemType === 'meditation' || !item.itemType
-          ).slice(0, 3)
+          // 设置冥想练习
+          this.meditationSlots = data.meditationSlots || []
           
-          this.knowledgeItems = items.filter(item => 
-            item.itemType === 'knowledge' || item.itemType === 'article'
-          ).slice(0, 3)
+          // 设置推荐内容
+          this.recommendItems = data.recommendItems || []
           
-          // 如果没有明确分类，按顺序分配
-          if (this.recommendItems.length === 0) {
-            this.recommendItems = items.slice(0, 3)
-          }
-          if (this.knowledgeItems.length === 0) {
-            this.knowledgeItems = items.slice(3, 6)
-          }
+          // 设置知识内容
+          this.knowledgeItems = data.knowledgeItems || []
         }
       } catch (error) {
         console.error('加载首页数据失败:', error)
@@ -508,8 +471,8 @@ export default {
             backdrop-filter: blur(10rpx);
             
             .play-icon {
-              width: 24rpx;
-              height: 24rpx;
+				width: 60rpx;
+				height: 60rpx;
             }
           }
         }
