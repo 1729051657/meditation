@@ -161,45 +161,67 @@ export default {
       try {
         // 并行加载推荐位和推荐内容
         const [slotsRes, itemsRes] = await Promise.all([
-          listSlots({ status: 1, pageSize: 10 }),
-          listSlotItems({ status: 1, pageSize: 20 })
+          listSlots({ status: '0', pageSize: 10 }),
+          listSlotItems({ status: '0', pageSize: 20 })
         ])
         
         // 处理推荐位数据
         if (slotsRes.code === 200 && slotsRes.rows) {
-          // 根据slotType分类处理
           const slots = slotsRes.rows
           
-          // 冥想练习 (type: meditation)
+          // 冥想练习推荐位 - 根据code匹配
           this.meditationSlots = slots.filter(item => 
-            item.slotType === 'meditation' || item.position === 'meditation'
-          ).slice(0, 2) // 只取前两个
-          
-          // 如果没有明确的分类，就按位置分配
-          if (this.meditationSlots.length === 0) {
-            this.meditationSlots = slots.slice(0, 2)
-          }
+            item.code?.includes('meditation') || 
+            item.name?.includes('冥想练习')
+          ).slice(0, 2).map(slot => ({
+            ...slot,
+            title: slot.name,
+            duration: 10,
+            slotType: 'meditation'
+          }))
         }
         
         // 处理推荐内容数据
         if (itemsRes.code === 200 && itemsRes.rows) {
           const items = itemsRes.rows
           
-          // 根据itemType分类
-          this.recommendItems = items.filter(item => 
-            item.itemType === 'recommend' || item.itemType === 'meditation' || !item.itemType
-          ).slice(0, 3)
+          // 根据slotId分组处理
+          const slotGroups = {}
+          items.forEach(item => {
+            if (!slotGroups[item.slotId]) {
+              slotGroups[item.slotId] = []
+            }
+            slotGroups[item.slotId].push(item)
+          })
           
-          this.knowledgeItems = items.filter(item => 
-            item.itemType === 'knowledge' || item.itemType === 'article'
-          ).slice(0, 3)
+          // 处理推荐内容（每日推荐、热门系列等）
+          const recommendSlotIds = [3, 5] // 每日推荐和热门系列的slot_id
+          this.recommendItems = []
+          recommendSlotIds.forEach(slotId => {
+            if (slotGroups[slotId]) {
+              this.recommendItems.push(...slotGroups[slotId])
+            }
+          })
+          this.recommendItems = this.recommendItems.slice(0, 3).map(item => ({
+            ...item,
+            title: `内容${item.contentId}`, // 实际应该关联查询获取标题
+            duration: 15,
+            cover: this.defaultCover,
+            targetId: item.contentId,
+            targetType: item.contentType
+          }))
           
-          // 如果没有明确分类，按顺序分配
-          if (this.recommendItems.length === 0) {
-            this.recommendItems = items.slice(0, 3)
-          }
-          if (this.knowledgeItems.length === 0) {
-            this.knowledgeItems = items.slice(3, 6)
+          // 处理知识文章
+          const knowledgeSlotId = 4 // 冥想知识的slot_id
+          if (slotGroups[knowledgeSlotId]) {
+            this.knowledgeItems = slotGroups[knowledgeSlotId].slice(0, 3).map(item => ({
+              ...item,
+              title: `文章${item.contentId}`, // 实际应该关联查询获取标题
+              description: '探索冥想的奥秘',
+              cover: this.defaultKnowledgeCover,
+              targetId: item.contentId,
+              targetType: item.contentType
+            }))
           }
         }
       } catch (error) {
