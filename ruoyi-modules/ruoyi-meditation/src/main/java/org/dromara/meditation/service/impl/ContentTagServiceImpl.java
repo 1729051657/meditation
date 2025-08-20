@@ -15,6 +15,7 @@ import org.dromara.meditation.domain.vo.ContentTagVo;
 import org.dromara.meditation.domain.ContentTag;
 import org.dromara.meditation.mapper.ContentTagMapper;
 import org.dromara.meditation.service.IContentTagService;
+import org.dromara.common.core.exception.ServiceException;
 
 import java.util.List;
 import java.util.Map;
@@ -116,7 +117,21 @@ public class ContentTagServiceImpl implements IContentTagService {
      * 保存前的数据校验
      */
     private void validEntityBeforeSave(ContentTag entity){
-        //TODO 做一些数据校验,如唯一约束
+        // 检查唯一约束
+        LambdaQueryWrapper<ContentTag> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(ContentTag::getTenantId, entity.getTenantId())
+               .eq(ContentTag::getContentType, entity.getContentType())
+               .eq(ContentTag::getContentId, entity.getContentId())
+               .eq(ContentTag::getTagId, entity.getTagId());
+
+        if (entity.getId() != null) {
+            wrapper.ne(ContentTag::getId, entity.getId());
+        }
+
+        long count = baseMapper.selectCount(wrapper);
+        if (count > 0) {
+            throw new ServiceException("该内容标签关联已存在");
+        }
     }
 
     /**
@@ -144,7 +159,7 @@ public class ContentTagServiceImpl implements IContentTagService {
      */
     @Override
     public Boolean updateContentTags(String contentType, Long contentId, List<Long> tagIds) {
-        // 先删除原有的标签关联
+        // 先物理删除原有的标签关联
         LambdaQueryWrapper<ContentTag> deleteWrapper = Wrappers.lambdaQuery();
         deleteWrapper.eq(ContentTag::getContentType, contentType)
                      .eq(ContentTag::getContentId, contentId);

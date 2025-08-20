@@ -7,6 +7,8 @@ import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
 import cn.idev.excel.annotation.ExcelProperty;
 import org.dromara.common.excel.annotation.ExcelDictFormat;
 import org.dromara.common.excel.convert.ExcelDictConvert;
+import org.dromara.common.translation.annotation.Translation;
+import org.dromara.common.translation.constant.TransConstant;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
@@ -79,6 +81,5 @@ public class RecommendItemVo implements Serializable {
     @ExcelProperty(value = "状态", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "0=正常,1=停用")
     private String status;
-
 
 }

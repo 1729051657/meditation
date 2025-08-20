@@ -1,9 +1,9 @@
 <template>
   <view
     class="tn-custom-nav-bar-class tn-custom-nav-bar"
-    :style="[navBarStyle]"
   >
-  	<view
+    <!-- 固定导航栏 -->
+    <view
       class="tn-custom-nav-bar__bar"
       :class="[barClass]"
       :style="[barStyle]"
@@ -32,6 +32,13 @@
         <slot name="right"></slot>
       </view>
   	</view>
+    
+    <!-- 当使用fixed时，自动添加透明占位元素 -->
+    <view 
+      v-if="fixed" 
+      class="tn-custom-nav-bar__placeholder"
+      :style="[placeholderStyle]"
+    ></view>
   </view>
 </template>
 
@@ -103,9 +110,6 @@
       navBarStyle() {
         let style = {}
         style.height = this.height === 0 ? this.customBarHeight + this.unit : this.height + this.unit
-        if (this.fixed) {
-          style.position = 'fixed'
-        }
         style.zIndex = this.elZIndex
         
         return style
@@ -166,6 +170,16 @@
           style.width = '100%'
         }
         
+        return style
+      },
+      placeholderStyle() {
+        let style = {}
+        if (this.fixed) {
+          // 占位元素高度应该包含状态栏高度
+          const totalHeight = this.height === 0 ? this.customBarHeight : this.height
+          style.height = totalHeight + this.unit
+          style.width = '100%'
+        }
         return style
       },
       elZIndex() {
@@ -296,6 +310,8 @@
         position: fixed;
         width: 100%;
         top: 0;
+        left: 0;
+        right: 0;
       }
       
       &--alpha {
@@ -305,6 +321,12 @@
       
       &--bottom-shadow {
         box-shadow: 0rpx 0rpx 80rpx 0rpx rgba(0, 0, 0, 0.05);
+      }
+      
+      &__placeholder {
+        display: block;
+        width: 100%;
+        background: transparent;
       }
       
       &__action {

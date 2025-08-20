@@ -51,43 +51,17 @@
 </template>
 
 <script>
+import { listFavorites, removeFavorite } from '@/api/favorite'
+
 export default {
   data() {
     return {
-      favoritesList: [
-        {
-          id: 1,
-          title: '深度睡眠冥想',
-          author: '冥想大师',
-          duration: '15:00',
-          plays: 1234,
-          cover: '/static/home/meditation1.jpg'
-        },
-        {
-          id: 2,
-          title: '清晨正念练习',
-          author: '静心导师',
-          duration: '10:00',
-          plays: 892,
-          cover: '/static/home/meditation2.jpg'
-        },
-        {
-          id: 3,
-          title: '压力释放冥想',
-          author: '身心疗愈师',
-          duration: '20:00',
-          plays: 2156,
-          cover: '/static/home/meditation3.jpg'
-        },
-        {
-          id: 4,
-          title: '专注力训练',
-          author: '专注教练',
-          duration: '12:00',
-          plays: 567,
-          cover: '/static/home/meditation4.jpg'
-        }
-      ]
+      favoritesList: [],
+      loading: false,
+      pageNum: 1,
+      pageSize: 20,
+      total: 0,
+      hasMore: true
     }
   },
   
@@ -95,13 +69,75 @@ export default {
     this.loadFavorites()
   },
   
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.pageNum = 1
+    this.favoritesList = []
+    this.hasMore = true
+    this.loadFavorites().finally(() => {
+      uni.stopPullDownRefresh()
+    })
+  },
+  
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.hasMore && !this.loading) {
+      this.pageNum++
+      this.loadFavorites()
+    }
+  },
+  
   methods: {
-    loadFavorites() {
-      // 从本地存储或API加载收藏列表
-      const cached = uni.getStorageSync('favoritesList')
-      if (cached) {
-        this.favoritesList = cached
+    async loadFavorites() {
+      if (this.loading) return
+      
+      try {
+        this.loading = true
+        const res = await listFavorites({
+          pageNum: this.pageNum,
+          pageSize: this.pageSize
+        })
+        
+        if (res.code === 200) {
+          const { rows, total } = res.data
+          
+          // 格式化数据
+          const formattedList = rows.map(item => ({
+            id: item.trackId,
+            title: item.trackTitle || item.trackName,
+            author: item.author || item.artistName || '未知作者',
+            duration: this.formatDuration(item.duration || 0),
+            plays: item.playCount || 0,
+            cover: item.coverUrl || item.trackCover || '/static/images/default-cover.png',
+            favoriteId: item.favoriteId // 保存收藏记录ID用于删除
+          }))
+          
+          if (this.pageNum === 1) {
+            this.favoritesList = formattedList
+          } else {
+            this.favoritesList = [...this.favoritesList, ...formattedList]
+          }
+          
+          this.total = total
+          this.hasMore = this.favoritesList.length < total
+        }
+      } catch (error) {
+        console.error('加载收藏列表失败:', error)
+        uni.showToast({
+          title: '加载失败',
+          icon: 'none'
+        })
+      } finally {
+        this.loading = false
       }
+    },
+    
+    // 格式化时长
+    formatDuration(seconds) {
+      if (!seconds) return '00:00'
+      const minutes = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     },
     
     playAudio(item) {
@@ -111,19 +147,41 @@ export default {
       })
     },
     
-    removeFavorite(item, index) {
+    async removeFavorite(item, index) {
       uni.showModal({
         title: '提示',
         content: '确定要取消收藏吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            this.favoritesList.splice(index, 1)
-            // 更新本地存储
-            uni.setStorageSync('favoritesList', this.favoritesList)
-            uni.showToast({
-              title: '已取消收藏',
-              icon: 'success'
-            })
+            try {
+              uni.showLoading({
+                title: '正在取消...'
+              })
+              
+              // 调用API删除收藏
+              const result = await removeFavorite(item.favoriteId || item.id)
+              
+              if (result.code === 200) {
+                // 从列表中移除
+                this.favoritesList.splice(index, 1)
+                this.total--
+                
+                uni.hideLoading()
+                uni.showToast({
+                  title: '已取消收藏',
+                  icon: 'success'
+                })
+              } else {
+                throw new Error(result.msg || '取消收藏失败')
+              }
+            } catch (error) {
+              console.error('取消收藏失败:', error)
+              uni.hideLoading()
+              uni.showToast({
+                title: error.message || '取消收藏失败',
+                icon: 'none'
+              })
+            }
           }
         }
       })
