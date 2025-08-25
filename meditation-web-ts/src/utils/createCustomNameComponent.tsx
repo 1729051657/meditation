@@ -1,7 +1,5 @@
 /**
  * 后台返回的路由动态生成name 解决缓存问题
- * 感谢 @fourteendp
- * 详见 https://github.com/vbenjs/vue-vben-admin/issues/3927
  */
 import { Component, defineComponent, h } from 'vue';
 
