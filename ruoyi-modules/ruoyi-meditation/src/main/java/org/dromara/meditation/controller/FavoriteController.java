@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaIgnore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import org.dromara.common.idempotent.annotation.RepeatSubmit;
@@ -18,6 +19,7 @@ import org.dromara.common.core.validate.EditGroup;
 import org.dromara.common.log.enums.BusinessType;
 import org.dromara.common.excel.utils.ExcelUtil;
 import org.dromara.meditation.domain.vo.FavoriteVo;
+import org.dromara.meditation.domain.vo.FavoriteDetailVo;
 import org.dromara.meditation.domain.bo.FavoriteBo;
 import org.dromara.meditation.service.IFavoriteService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -43,6 +45,15 @@ public class FavoriteController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo<FavoriteVo> list(FavoriteBo bo, PageQuery pageQuery) {
         return favoriteService.queryPageList(bo, pageQuery);
+    }
+
+    /**
+     * 查询用户收藏详情列表（包含目标详细信息）
+     */
+    @SaIgnore
+    @GetMapping("/detail/list")
+    public TableDataInfo<FavoriteDetailVo> detailList(FavoriteBo bo, PageQuery pageQuery) {
+        return favoriteService.queryDetailPageList(bo, pageQuery);
     }
 
     /**

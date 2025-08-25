@@ -1,6 +1,7 @@
 package org.dromara.meditation.service;
 
 import org.dromara.meditation.domain.vo.PlayHistoryVo;
+import org.dromara.meditation.domain.vo.PlayHistoryDetailVo;
 import org.dromara.meditation.domain.bo.PlayHistoryBo;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
 import org.dromara.common.mybatis.core.page.PageQuery;
@@ -65,4 +66,21 @@ public interface IPlayHistoryService {
      * @return 是否删除成功
      */
     Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+
+    /**
+     * 分页查询播放历史详情列表（包含单集详细信息）
+     *
+     * @param bo        查询条件
+     * @param pageQuery 分页参数
+     * @return 播放历史详情分页列表
+     */
+    TableDataInfo<PlayHistoryDetailVo> queryDetailPageList(PlayHistoryBo bo, PageQuery pageQuery);
+
+    /**
+     * 查询播放历史详情（包含单集详细信息）
+     *
+     * @param id 主键
+     * @return 播放历史详情
+     */
+    PlayHistoryDetailVo queryDetailById(Long id);
 }

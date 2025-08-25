@@ -12,9 +12,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.dromara.meditation.domain.bo.FavoriteBo;
 import org.dromara.meditation.domain.vo.FavoriteVo;
+import org.dromara.meditation.domain.vo.FavoriteDetailVo;
 import org.dromara.meditation.domain.Favorite;
 import org.dromara.meditation.mapper.FavoriteMapper;
+import org.dromara.meditation.mapper.TrackMapper;
+import org.dromara.meditation.mapper.SeriesMapper;
+import org.dromara.meditation.mapper.ArticleMapper;
+import org.dromara.meditation.mapper.CategoryMapper;
 import org.dromara.meditation.service.IFavoriteService;
+import org.dromara.meditation.domain.vo.TrackVo;
+import org.dromara.meditation.domain.vo.SeriesVo;
+import org.dromara.meditation.domain.vo.ArticleVo;
+import org.dromara.meditation.domain.vo.CategoryVo;
+import org.dromara.common.satoken.utils.LoginHelper;
+import org.springframework.beans.BeanUtils;
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +44,10 @@ import java.util.Collection;
 public class FavoriteServiceImpl implements IFavoriteService {
 
     private final FavoriteMapper baseMapper;
+    private final TrackMapper trackMapper;
+    private final SeriesMapper seriesMapper;
+    private final ArticleMapper articleMapper;
+    private final CategoryMapper categoryMapper;
 
     /**
      * 查询用户收藏
@@ -130,5 +146,114 @@ public class FavoriteServiceImpl implements IFavoriteService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+
+    /**
+     * 分页查询用户收藏详情列表
+     */
+    @Override
+    public TableDataInfo<FavoriteDetailVo> queryDetailPageList(FavoriteBo bo, PageQuery pageQuery) {
+        // 设置当前用户ID
+        if (bo.getUserId() == null) {
+            bo.setUserId(LoginHelper.getUserId());
+        }
+        
+        LambdaQueryWrapper<Favorite> lqw = buildQueryWrapper(bo);
+        Page<FavoriteVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        
+        // 转换为详情VO
+        List<FavoriteDetailVo> detailList = new ArrayList<>();
+        for (FavoriteVo favoriteVo : result.getRecords()) {
+            FavoriteDetailVo detailVo = convertToDetailVo(favoriteVo);
+            detailList.add(detailVo);
+        }
+        
+        Page<FavoriteDetailVo> detailPage = new Page<>();
+        detailPage.setRecords(detailList);
+        detailPage.setTotal(result.getTotal());
+        detailPage.setCurrent(result.getCurrent());
+        detailPage.setSize(result.getSize());
+        
+        return TableDataInfo.build(detailPage);
+    }
+
+    /**
+     * 查询用户收藏详情
+     */
+    @Override
+    public FavoriteDetailVo queryDetailById(Long id) {
+        FavoriteVo favoriteVo = baseMapper.selectVoById(id);
+        if (favoriteVo == null) {
+            return null;
+        }
+        return convertToDetailVo(favoriteVo);
+    }
+
+    /**
+     * 转换为详情VO
+     */
+    private FavoriteDetailVo convertToDetailVo(FavoriteVo favoriteVo) {
+        FavoriteDetailVo detailVo = new FavoriteDetailVo();
+        BeanUtils.copyProperties(favoriteVo, detailVo);
+        
+        // 根据目标类型获取详细信息
+        if ("track".equals(favoriteVo.getTargetType())) {
+            TrackVo track = trackMapper.selectVoById(favoriteVo.getTargetId());
+            if (track != null) {
+                detailVo.setTargetTitle(track.getTitle());
+                detailVo.setTargetSubtitle(track.getSubtitle());
+                detailVo.setTargetAuthor(track.getAuthor());
+                detailVo.setTargetCover(track.getCover());
+                detailVo.setTargetIntro(track.getIntro());
+                detailVo.setTargetDuration(track.getDurationSec());
+                detailVo.setAudioUrl(track.getAudioUrl());
+                detailVo.setPlayCount(track.getPlayCount());
+                detailVo.setCategoryId(track.getCategoryId());
+                detailVo.setStatus(track.getStatus());
+                
+                // 获取分类名称
+                if (track.getCategoryId() != null) {
+                    CategoryVo category = categoryMapper.selectVoById(track.getCategoryId());
+                    if (category != null) {
+                        detailVo.setCategoryName(category.getName());
+                    }
+                }
+            }
+        } else if ("series".equals(favoriteVo.getTargetType())) {
+            SeriesVo series = seriesMapper.selectVoById(favoriteVo.getTargetId());
+            if (series != null) {
+                detailVo.setTargetTitle(series.getTitle());
+                detailVo.setTargetSubtitle(series.getSubtitle());
+                detailVo.setTargetAuthor(series.getAuthor());
+                detailVo.setTargetCover(series.getCover());
+                detailVo.setTargetBanner(series.getBanner());
+                detailVo.setTargetIntro(series.getIntro());
+                detailVo.setTargetDuration(series.getTotalDuration());
+                detailVo.setEpisodeCount(series.getEpisodeCount());
+                detailVo.setPlayCount(series.getPlayCount());
+                detailVo.setCategoryId(series.getCategoryId());
+                detailVo.setStatus(series.getStatus());
+                
+                // 获取分类名称
+                if (series.getCategoryId() != null) {
+                    CategoryVo category = categoryMapper.selectVoById(series.getCategoryId());
+                    if (category != null) {
+                        detailVo.setCategoryName(category.getName());
+                    }
+                }
+            }
+        } else if ("article".equals(favoriteVo.getTargetType())) {
+            ArticleVo article = articleMapper.selectVoById(favoriteVo.getTargetId());
+            if (article != null) {
+                detailVo.setTargetTitle(article.getTitle());
+                detailVo.setTargetAuthor(article.getAuthor());
+                detailVo.setTargetCover(article.getCover());
+                detailVo.setTargetSummary(article.getSummary());
+                detailVo.setViewCount(article.getViewCount());
+                detailVo.setStatus(article.getStatus());
+            }
+        }
+        
+        return detailVo;
     }
 }

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaIgnore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import org.dromara.common.idempotent.annotation.RepeatSubmit;
@@ -18,6 +19,7 @@ import org.dromara.common.core.validate.EditGroup;
 import org.dromara.common.log.enums.BusinessType;
 import org.dromara.common.excel.utils.ExcelUtil;
 import org.dromara.meditation.domain.vo.PlayHistoryVo;
+import org.dromara.meditation.domain.vo.PlayHistoryDetailVo;
 import org.dromara.meditation.domain.bo.PlayHistoryBo;
 import org.dromara.meditation.service.IPlayHistoryService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -43,6 +45,15 @@ public class PlayHistoryController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo<PlayHistoryVo> list(PlayHistoryBo bo, PageQuery pageQuery) {
         return playHistoryService.queryPageList(bo, pageQuery);
+    }
+
+    /**
+     * 查询播放历史详情列表（包含单集详细信息）
+     */
+    @SaIgnore
+    @GetMapping("/detail/list")
+    public TableDataInfo<PlayHistoryDetailVo> detailList(PlayHistoryBo bo, PageQuery pageQuery) {
+        return playHistoryService.queryDetailPageList(bo, pageQuery);
     }
 
     /**
