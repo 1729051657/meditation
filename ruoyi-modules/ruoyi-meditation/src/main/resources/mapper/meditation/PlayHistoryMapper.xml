@@ -4,4 +4,106 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.dromara.meditation.mapper.PlayHistoryMapper">
 
+    <resultMap type="org.dromara.meditation.domain.vo.PlayHistoryVo" id="PlayHistoryVoResult">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="trackId" column="track_id"/>
+        <result property="progressSec" column="progress_sec"/>
+        <result property="lastPlayTime" column="last_play_time"/>
+        <result property="playCount" column="play_count"/>
+        <result property="isCompleted" column="is_completed"/>
+        <!-- 关联Track信息 -->
+        <association property="track" javaType="org.dromara.meditation.domain.vo.TrackVo">
+            <result property="id" column="track_id"/>
+            <result property="seriesId" column="track_series_id"/>
+            <result property="categoryId" column="track_category_id"/>
+            <result property="title" column="track_title"/>
+            <result property="cover" column="track_cover"/>
+            <result property="audio" column="track_audio"/>
+            <result property="durationSec" column="track_duration_sec"/>
+            <result property="intro" column="track_intro"/>
+            <result property="orderIndex" column="track_order_index"/>
+            <result property="status" column="track_status"/>
+            <result property="remark" column="track_remark"/>
+        </association>
+    </resultMap>
+
+    <!-- 查询播放历史列表（包含关联的Track信息） -->
+    <select id="selectPlayHistoryWithTrackList" parameterType="com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper" resultMap="PlayHistoryVoResult">
+        SELECT 
+            ph.id,
+            ph.user_id,
+            ph.track_id,
+            ph.progress_sec,
+            ph.last_play_time,
+            ph.play_count,
+            ph.is_completed,
+            t.id as track_id,
+            t.series_id as track_series_id,
+            t.category_id as track_category_id,
+            t.title as track_title,
+            t.cover as track_cover,
+            t.audio as track_audio,
+            t.duration_sec as track_duration_sec,
+            t.intro as track_intro,
+            t.order_index as track_order_index,
+            t.status as track_status,
+            t.remark as track_remark
+        FROM mg_play_history ph
+        LEFT JOIN mg_track t ON ph.track_id = t.id
+        ${ew.customSqlSegment}
+    </select>
+
+    <!-- 分页查询播放历史列表（包含关联的Track信息） -->
+    <select id="selectPlayHistoryWithTrackPage" resultMap="PlayHistoryVoResult">
+        SELECT 
+            ph.id,
+            ph.user_id,
+            ph.track_id,
+            ph.progress_sec,
+            ph.last_play_time,
+            ph.play_count,
+            ph.is_completed,
+            t.id as track_id,
+            t.series_id as track_series_id,
+            t.category_id as track_category_id,
+            t.title as track_title,
+            t.cover as track_cover,
+            t.audio as track_audio,
+            t.duration_sec as track_duration_sec,
+            t.intro as track_intro,
+            t.order_index as track_order_index,
+            t.status as track_status,
+            t.remark as track_remark
+        FROM mg_play_history ph
+        LEFT JOIN mg_track t ON ph.track_id = t.id
+        ${ew.customSqlSegment}
+    </select>
+
+    <!-- 根据ID查询播放历史（包含关联的Track信息） -->
+    <select id="selectPlayHistoryWithTrackById" parameterType="Long" resultMap="PlayHistoryVoResult">
+        SELECT 
+            ph.id,
+            ph.user_id,
+            ph.track_id,
+            ph.progress_sec,
+            ph.last_play_time,
+            ph.play_count,
+            ph.is_completed,
+            t.id as track_id,
+            t.series_id as track_series_id,
+            t.category_id as track_category_id,
+            t.title as track_title,
+            t.cover as track_cover,
+            t.audio as track_audio,
+            t.duration_sec as track_duration_sec,
+            t.intro as track_intro,
+            t.order_index as track_order_index,
+            t.status as track_status,
+            t.remark as track_remark
+        FROM mg_play_history ph
+        LEFT JOIN mg_track t ON ph.track_id = t.id
+        WHERE ph.id = #{id}
+    </select>
+
 </mapper>

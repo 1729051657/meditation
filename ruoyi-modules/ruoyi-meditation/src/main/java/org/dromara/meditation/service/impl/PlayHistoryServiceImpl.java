@@ -54,7 +54,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      */
     @Override
     public PlayHistoryVo queryById(Long id){
-        return baseMapper.selectVoById(id);
+        return baseMapper.selectPlayHistoryWithTrackById(id);
     }
 
     /**
@@ -67,7 +67,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     @Override
     public TableDataInfo<PlayHistoryVo> queryPageList(PlayHistoryBo bo, PageQuery pageQuery) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
-        Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        Page<PlayHistoryVo> result = baseMapper.selectPlayHistoryWithTrackPage(pageQuery.build(), lqw);
         return TableDataInfo.build(result);
     }
 
@@ -80,7 +80,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     @Override
     public List<PlayHistoryVo> queryList(PlayHistoryBo bo) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
-        return baseMapper.selectVoList(lqw);
+        return baseMapper.selectPlayHistoryWithTrackList(lqw);
     }
 
     private LambdaQueryWrapper<PlayHistory> buildQueryWrapper(PlayHistoryBo bo) {
@@ -159,7 +159,8 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         }
         
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
-        Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        // 使用关联查询，避免N+1问题
+        Page<PlayHistoryVo> result = baseMapper.selectPlayHistoryWithTrackPage(pageQuery.build(), lqw);
         
         // 转换为详情VO
         List<PlayHistoryDetailVo> detailList = new ArrayList<>();
@@ -182,7 +183,8 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      */
     @Override
     public PlayHistoryDetailVo queryDetailById(Long id) {
-        PlayHistoryVo historyVo = baseMapper.selectVoById(id);
+        // 使用关联查询，避免N+1问题
+        PlayHistoryVo historyVo = baseMapper.selectPlayHistoryWithTrackById(id);
         if (historyVo == null) {
             return null;
         }
@@ -196,12 +198,13 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         PlayHistoryDetailVo detailVo = new PlayHistoryDetailVo();
         BeanUtils.copyProperties(historyVo, detailVo);
         
-        // 获取单集详细信息
-        TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
+        // 直接使用关联查询得到的track信息，避免N+1查询
+        TrackVo track = historyVo.getTrack();
         if (track != null) {
             detailVo.setTrackTitle(track.getTitle());
-            detailVo.setTrackSubtitle(track.getSubtitle());
-            detailVo.setTrackAuthor(track.getAuthor());
+            // Track实体没有subtitle和author字段，这两个字段可以设置为null或空字符串
+            detailVo.setTrackSubtitle("");
+            detailVo.setTrackAuthor("");
             detailVo.setTrackCover(track.getCover());
             detailVo.setTrackIntro(track.getIntro());
             detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
