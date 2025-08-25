@@ -66,10 +66,10 @@
       </view>
     </view>
 
-    <!-- 加载更多 -->
-    <view class="load-more" v-if="hasMore" @click="loadMore">
+    <!-- 加载更多 - 全部冥想不需要加载更多按钮 -->
+    <view class="load-more" v-if="seriesHasMore" @click="loadSeriesList">
       <tn-icon name="more" size="16" color="#666"></tn-icon>
-      <text class="load-text">加载更多</text>
+      <text class="load-text">加载更多系列</text>
     </view>
 
     <!-- 空状态 -->
@@ -83,7 +83,7 @@
 <script>
 import { listCategories } from '@/api/category'
 import { listSeries } from '@/api/series'
-import { listTracks } from '@/api/track'
+import { listTracks, getAllTracks } from '@/api/track'
 
 export default {
   data() {
@@ -156,27 +156,26 @@ export default {
       }
     },
 
-    // 加载单集列表
+    // 加载单集列表 - 修改为加载全部冥想
     async loadTracksList(reset = false) {
       if (reset) {
         this.tracksPageNum = 1;
         this.tracks = [];
-        this.tracksHasMore = true
+        this.tracksHasMore = false  // 改为不分页，一次加载全部
       }
-      if (!this.tracksHasMore || this.loading) return
+      if (this.loading) return
 
       this.loading = true
       try {
-        const res = await listTracks({
+        // 使用新的getAllTracks API一次性加载所有冥想单集
+        const res = await getAllTracks({
           categoryId: this.currentCategoryId,
-          status: 0,
-          pageNum: this.tracksPageNum,
-          pageSize: 10
+          status: 0
         })
-        const rows = res.rows || res.data || []
-        this.tracks = this.tracks.concat(rows)
-        this.tracksHasMore = rows.length >= 10
-        if (this.tracksHasMore) this.tracksPageNum += 1
+        const rows = res.data || []
+        this.tracks = rows  // 直接设置所有数据
+        this.tracksHasMore = false  // 不再有更多数据
+        console.log(`加载了 ${rows.length} 个冥想单集`)
       } catch (error) {
         console.error('加载单集列表失败:', error)
         uni.showToast({
@@ -254,19 +253,16 @@ export default {
     }
   },
   onReachBottom() {
-    // 根据滚动位置决定加载哪个模块的数据
-    // 这里简单处理，优先加载系列数据
+    // 只需要加载更多系列数据，单集已经全部加载
     if (this.seriesHasMore) {
       this.loadSeriesList()
-    } else if (this.tracksHasMore) {
-      this.loadTracksList()
     }
   },
 
   onPullDownRefresh() {
     // 刷新时重新加载所有数据
     this.loadSeriesList(true)
-    this.loadTracksList(true)
+    this.loadTracksList(true)  // 重新加载全部冥想
     uni.stopPullDownRefresh()
   }
 }
