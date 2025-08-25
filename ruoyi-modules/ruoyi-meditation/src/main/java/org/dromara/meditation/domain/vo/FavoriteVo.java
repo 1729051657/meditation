@@ -11,7 +11,8 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
-
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 
 /**
@@ -53,5 +54,35 @@ public class FavoriteVo implements Serializable {
     @ExcelProperty(value = "目标ID")
     private Long targetId;
 
+    /**
+     * 创建时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(exist = false)
+    private Date createTime;
+
+    /**
+     * 关联的音频对象（当targetType为track时）
+     */
+    @TableField(exist = false)
+    private TrackVo track;
+
+    /**
+     * 关联的系列对象（当targetType为series时）
+     */
+    @TableField(exist = false)
+    private SeriesVo series;
+
+    /**
+     * 关联的文章对象（当targetType为article时）
+     */
+    @TableField(exist = false)
+    private ArticleVo article;
+
+    /**
+     * 分类信息
+     */
+    @TableField(exist = false)
+    private CategoryVo category;
 
 }
