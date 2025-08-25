@@ -9,9 +9,7 @@
     <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }">
     </view>
     <view class="imggo" @click="go">
-      <image class="w64"
-        src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1756090212124hHgC9NMon8Dz93aef614c75aad026b85ed225e189066.png"
-        lazy-load="false" binderror="" bindload="" />
+      <tn-icon name="left" size="64" color="#FFFFFF"></tn-icon>
 
     </view>
 
@@ -35,9 +33,7 @@
           <text class="track-title">{{ track.title }}</text>
           <text class="track-artist">{{ track.artist || '冥想音乐' }}</text>
           <view class="collect">
-            <image class="w64" @click="toggleFavorite"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755842963823hoYmdjzpgaFAe4fd7107ae99861a945d539e0078f288.png"
-              lazy-load="false" binderror="" bindload="" />
+            <tn-icon @click="toggleFavorite" :name="isFavorite ? 'like-fill' : 'like'" size="64" :color="isFavorite ? '#FF6B6B' : '#FFFFFF'"></tn-icon>
           </view>
         </view>
         <!-- 进度条 -->

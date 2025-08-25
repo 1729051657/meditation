@@ -15,7 +15,7 @@
               
            
               
-            <image class="chipImg" src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755828501297iHQLj0I3PmGi29286aa513711b343802eda9d37844ef.png"  lazy-load="false" binderror="" bindload="" />
+            <tn-icon name="apps" size="32" color="#79B1DA" class="chipImg"></tn-icon>
               
             {{ category.name }}
              </view>
@@ -36,7 +36,7 @@
              <view class="series-content">
               <text class="series-title">{{ s.title }}</text>
               <view class="series-subtitle">
-                <image class="play" src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755829634435OCIwCnUHZHbycf7a9d5915d6277a02a4125c26c2c4b8.png"  lazy-load="false" binderror="" bindload="" />
+                <tn-icon name="play-circle" size="24" color="#79B1DA" style="margin-right: 8rpx;"></tn-icon>
                 系列·{{ s.episodeCount || 0 }}节
               </view>
             </view>
