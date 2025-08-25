@@ -110,13 +110,13 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (bo.getUserId() == null) {
             bo.setUserId(LoginHelper.getUserId());
         }
-        
+
         // 检查是否已经收藏
         if (checkFavoriteExists(bo.getUserId(), bo.getTargetId(), bo.getTargetType())) {
             log.warn("用户 {} 已经收藏了 {} 类型的 {}", bo.getUserId(), bo.getTargetType(), bo.getTargetId());
             return false;
         }
-        
+
         Favorite add = MapstructUtils.convert(bo, Favorite.class);
         validEntityBeforeSave(add);
         boolean flag = baseMapper.insert(add) > 0;
@@ -153,10 +153,10 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (StringUtils.isBlank(entity.getTargetType())) {
             throw new IllegalArgumentException("目标类型不能为空");
         }
-        
+
         // 验证目标类型
-        if (!"track".equals(entity.getTargetType()) 
-            && !"series".equals(entity.getTargetType()) 
+        if (!"track".equals(entity.getTargetType())
+            && !"series".equals(entity.getTargetType())
             && !"article".equals(entity.getTargetType())) {
             throw new IllegalArgumentException("不支持的收藏类型: " + entity.getTargetType());
         }
@@ -186,19 +186,19 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (bo.getUserId() == null) {
             bo.setUserId(LoginHelper.getUserId());
         }
-        
+
         LambdaQueryWrapper<Favorite> lqw = buildQueryWrapper(bo);
         Page<FavoriteVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
-        
+
         // 转换为详情VO - 批量处理避免N+1问题
         List<FavoriteDetailVo> detailList = convertToDetailVoBatch(result.getRecords());
-        
+
         Page<FavoriteDetailVo> detailPage = new Page<>();
         detailPage.setRecords(detailList);
         detailPage.setTotal(result.getTotal());
         detailPage.setCurrent(result.getCurrent());
         detailPage.setSize(result.getSize());
-        
+
         return TableDataInfo.build(detailPage);
     }
 
@@ -221,18 +221,18 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (favoriteVoList == null || favoriteVoList.isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         // 按类型分组收藏记录
         Map<String, List<FavoriteVo>> typeGroupMap = favoriteVoList.stream()
             .filter(fav -> fav != null && fav.getTargetType() != null)
             .collect(Collectors.groupingBy(FavoriteVo::getTargetType));
-        
+
         // 批量查询各类型的目标数据
         Map<Long, TrackVo> trackMap = new java.util.HashMap<>();
         Map<Long, SeriesVo> seriesMap = new java.util.HashMap<>();
         Map<Long, ArticleVo> articleMap = new java.util.HashMap<>();
         Map<Long, CategoryVo> categoryMap = new java.util.HashMap<>();
-        
+
         // 批量查询track数据
         List<FavoriteVo> trackFavorites = typeGroupMap.get("track");
         if (trackFavorites != null && !trackFavorites.isEmpty()) {
@@ -242,11 +242,11 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 .distinct()
                 .collect(Collectors.toList());
             if (!trackIds.isEmpty()) {
-                List<TrackVo> tracks = trackMapper.selectVoBatchIds(trackIds);
+                List<TrackVo> tracks = trackMapper.selectVoByIds(trackIds);
                 trackMap = tracks.stream()
                     .filter(Objects::nonNull)
                     .collect(Collectors.toMap(TrackVo::getId, t -> t, (v1, v2) -> v1));
-                
+
                 // 收集所有分类ID
                 List<Long> categoryIds = tracks.stream()
                     .map(TrackVo::getCategoryId)
@@ -258,7 +258,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 }
             }
         }
-        
+
         // 批量查询series数据
         List<FavoriteVo> seriesFavorites = typeGroupMap.get("series");
         if (seriesFavorites != null && !seriesFavorites.isEmpty()) {
@@ -268,11 +268,11 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 .distinct()
                 .collect(Collectors.toList());
             if (!seriesIds.isEmpty()) {
-                List<SeriesVo> seriesList = seriesMapper.selectVoBatchIds(seriesIds);
+                List<SeriesVo> seriesList = seriesMapper.selectVoByIds(seriesIds);
                 seriesMap = seriesList.stream()
                     .filter(Objects::nonNull)
                     .collect(Collectors.toMap(SeriesVo::getId, s -> s, (v1, v2) -> v1));
-                
+
                 // 收集所有分类ID
                 List<Long> categoryIds = seriesList.stream()
                     .map(SeriesVo::getCategoryId)
@@ -284,7 +284,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 }
             }
         }
-        
+
         // 批量查询article数据
         List<FavoriteVo> articleFavorites = typeGroupMap.get("article");
         if (articleFavorites != null && !articleFavorites.isEmpty()) {
@@ -294,19 +294,19 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 .distinct()
                 .collect(Collectors.toList());
             if (!articleIds.isEmpty()) {
-                List<ArticleVo> articles = articleMapper.selectVoBatchIds(articleIds);
+                List<ArticleVo> articles = articleMapper.selectVoByIds(articleIds);
                 articleMap = articles.stream()
                     .filter(Objects::nonNull)
                     .collect(Collectors.toMap(ArticleVo::getId, a -> a, (v1, v2) -> v1));
             }
         }
-        
+
         // 组装详情数据
         List<FavoriteDetailVo> detailList = new ArrayList<>();
         for (FavoriteVo favoriteVo : favoriteVoList) {
             FavoriteDetailVo detailVo = new FavoriteDetailVo();
             BeanUtils.copyProperties(favoriteVo, detailVo);
-            
+
             if (favoriteVo.getTargetId() != null && favoriteVo.getTargetType() != null) {
                 switch (favoriteVo.getTargetType()) {
                     case "track":
@@ -331,13 +331,13 @@ public class FavoriteServiceImpl implements IFavoriteService {
                         log.warn("Unknown target type: {}", favoriteVo.getTargetType());
                 }
             }
-            
+
             detailList.add(detailVo);
         }
-        
+
         return detailList;
     }
-    
+
     /**
      * 批量加载分类信息
      */
@@ -345,12 +345,12 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (categoryIds == null || categoryIds.isEmpty()) {
             return new java.util.HashMap<>();
         }
-        List<CategoryVo> categories = categoryMapper.selectVoBatchIds(categoryIds);
+        List<CategoryVo> categories = categoryMapper.selectVoByIds(categoryIds);
         return categories.stream()
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(CategoryVo::getId, c -> c, (v1, v2) -> v1));
     }
-    
+
     /**
      * 填充音频详情
      */
@@ -365,7 +365,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
         detailVo.setPlayCount(track.getPlayCount());
         detailVo.setCategoryId(track.getCategoryId());
         detailVo.setStatus(track.getStatus());
-        
+
         if (track.getCategoryId() != null) {
             CategoryVo category = categoryMap.get(track.getCategoryId());
             if (category != null) {
@@ -373,7 +373,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
             }
         }
     }
-    
+
     /**
      * 填充系列详情
      */
@@ -389,7 +389,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
         detailVo.setPlayCount(series.getPlayCount());
         detailVo.setCategoryId(series.getCategoryId());
         detailVo.setStatus(series.getStatus());
-        
+
         if (series.getCategoryId() != null) {
             CategoryVo category = categoryMap.get(series.getCategoryId());
             if (category != null) {
@@ -397,7 +397,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
             }
         }
     }
-    
+
     /**
      * 填充文章详情
      */
@@ -409,7 +409,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
         detailVo.setViewCount(article.getViewCount());
         detailVo.setStatus(article.getStatus());
     }
-    
+
     /**
      * 转换为详情VO - 单个查询
      */
@@ -431,10 +431,10 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (userId == null) {
             return false;
         }
-        
+
         return checkFavoriteExists(userId, targetId, targetType);
     }
-    
+
     /**
      * 检查收藏是否存在
      */
@@ -442,14 +442,14 @@ public class FavoriteServiceImpl implements IFavoriteService {
         if (userId == null || targetId == null || StringUtils.isBlank(targetType)) {
             return false;
         }
-        
+
         // 构建查询条件
         LambdaQueryWrapper<Favorite> lqw = Wrappers.lambdaQuery();
         lqw.eq(Favorite::getUserId, userId);
         lqw.eq(Favorite::getTargetId, targetId);
         lqw.eq(Favorite::getTargetType, targetType);
         lqw.last("LIMIT 1"); // 优化查询，只需要知道是否存在
-        
+
         // 查询是否存在收藏记录
         return baseMapper.selectCount(lqw) > 0;
     }

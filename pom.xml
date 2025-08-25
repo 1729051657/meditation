@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.dromara</groupId>
-    <artifactId>meditation-admin</artifactId>
+    <artifactId>ruoyi-vue-plus</artifactId>
     <version>${revision}</version>
 
     <name>冥想后台管理</name>
