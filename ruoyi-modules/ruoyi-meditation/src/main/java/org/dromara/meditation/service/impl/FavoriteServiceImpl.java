@@ -27,6 +27,8 @@ import org.dromara.meditation.domain.vo.CategoryVo;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.springframework.beans.BeanUtils;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.Map;
@@ -104,6 +106,17 @@ public class FavoriteServiceImpl implements IFavoriteService {
      */
     @Override
     public Boolean insertByBo(FavoriteBo bo) {
+        // 设置当前用户ID
+        if (bo.getUserId() == null) {
+            bo.setUserId(LoginHelper.getUserId());
+        }
+        
+        // 检查是否已经收藏
+        if (checkFavoriteExists(bo.getUserId(), bo.getTargetId(), bo.getTargetType())) {
+            log.warn("用户 {} 已经收藏了 {} 类型的 {}", bo.getUserId(), bo.getTargetType(), bo.getTargetId());
+            return false;
+        }
+        
         Favorite add = MapstructUtils.convert(bo, Favorite.class);
         validEntityBeforeSave(add);
         boolean flag = baseMapper.insert(add) > 0;
@@ -130,7 +143,23 @@ public class FavoriteServiceImpl implements IFavoriteService {
      * 保存前的数据校验
      */
     private void validEntityBeforeSave(Favorite entity){
-        //TODO 做一些数据校验,如唯一约束
+        // 验证必填字段
+        if (entity.getUserId() == null) {
+            throw new IllegalArgumentException("用户ID不能为空");
+        }
+        if (entity.getTargetId() == null) {
+            throw new IllegalArgumentException("目标ID不能为空");
+        }
+        if (StringUtils.isBlank(entity.getTargetType())) {
+            throw new IllegalArgumentException("目标类型不能为空");
+        }
+        
+        // 验证目标类型
+        if (!"track".equals(entity.getTargetType()) 
+            && !"series".equals(entity.getTargetType()) 
+            && !"article".equals(entity.getTargetType())) {
+            throw new IllegalArgumentException("不支持的收藏类型: " + entity.getTargetType());
+        }
     }
 
     /**
@@ -161,12 +190,8 @@ public class FavoriteServiceImpl implements IFavoriteService {
         LambdaQueryWrapper<Favorite> lqw = buildQueryWrapper(bo);
         Page<FavoriteVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
         
-        // 转换为详情VO
-        List<FavoriteDetailVo> detailList = new ArrayList<>();
-        for (FavoriteVo favoriteVo : result.getRecords()) {
-            FavoriteDetailVo detailVo = convertToDetailVo(favoriteVo);
-            detailList.add(detailVo);
-        }
+        // 转换为详情VO - 批量处理避免N+1问题
+        List<FavoriteDetailVo> detailList = convertToDetailVoBatch(result.getRecords());
         
         Page<FavoriteDetailVo> detailPage = new Page<>();
         detailPage.setRecords(detailList);
@@ -190,71 +215,210 @@ public class FavoriteServiceImpl implements IFavoriteService {
     }
 
     /**
-     * 转换为详情VO
+     * 批量转换为详情VO - 避免N+1查询问题
      */
-    private FavoriteDetailVo convertToDetailVo(FavoriteVo favoriteVo) {
-        FavoriteDetailVo detailVo = new FavoriteDetailVo();
-        BeanUtils.copyProperties(favoriteVo, detailVo);
+    private List<FavoriteDetailVo> convertToDetailVoBatch(List<FavoriteVo> favoriteVoList) {
+        if (favoriteVoList == null || favoriteVoList.isEmpty()) {
+            return new ArrayList<>();
+        }
         
-        // 根据目标类型获取详细信息
-        if ("track".equals(favoriteVo.getTargetType())) {
-            TrackVo track = trackMapper.selectVoById(favoriteVo.getTargetId());
-            if (track != null) {
-                detailVo.setTargetTitle(track.getTitle());
-                detailVo.setTargetSubtitle(track.getSubtitle());
-                detailVo.setTargetAuthor(track.getAuthor());
-                detailVo.setTargetCover(track.getCover());
-                detailVo.setTargetIntro(track.getIntro());
-                detailVo.setTargetDuration(track.getDurationSec());
-                detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
-                detailVo.setPlayCount(track.getPlayCount());
-                detailVo.setCategoryId(track.getCategoryId());
-                detailVo.setStatus(track.getStatus());
+        // 按类型分组收藏记录
+        Map<String, List<FavoriteVo>> typeGroupMap = favoriteVoList.stream()
+            .filter(fav -> fav != null && fav.getTargetType() != null)
+            .collect(Collectors.groupingBy(FavoriteVo::getTargetType));
+        
+        // 批量查询各类型的目标数据
+        Map<Long, TrackVo> trackMap = new java.util.HashMap<>();
+        Map<Long, SeriesVo> seriesMap = new java.util.HashMap<>();
+        Map<Long, ArticleVo> articleMap = new java.util.HashMap<>();
+        Map<Long, CategoryVo> categoryMap = new java.util.HashMap<>();
+        
+        // 批量查询track数据
+        List<FavoriteVo> trackFavorites = typeGroupMap.get("track");
+        if (trackFavorites != null && !trackFavorites.isEmpty()) {
+            List<Long> trackIds = trackFavorites.stream()
+                .map(FavoriteVo::getTargetId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+            if (!trackIds.isEmpty()) {
+                List<TrackVo> tracks = trackMapper.selectVoBatchIds(trackIds);
+                trackMap = tracks.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(TrackVo::getId, t -> t, (v1, v2) -> v1));
                 
-                // 获取分类名称
-                if (track.getCategoryId() != null) {
-                    CategoryVo category = categoryMapper.selectVoById(track.getCategoryId());
-                    if (category != null) {
-                        detailVo.setCategoryName(category.getName());
-                    }
+                // 收集所有分类ID
+                List<Long> categoryIds = tracks.stream()
+                    .map(TrackVo::getCategoryId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+                if (!categoryIds.isEmpty()) {
+                    categoryMap.putAll(loadCategories(categoryIds));
                 }
-            }
-        } else if ("series".equals(favoriteVo.getTargetType())) {
-            SeriesVo series = seriesMapper.selectVoById(favoriteVo.getTargetId());
-            if (series != null) {
-                detailVo.setTargetTitle(series.getTitle());
-                detailVo.setTargetSubtitle(series.getSubtitle());
-                detailVo.setTargetAuthor(series.getAuthor());
-                detailVo.setTargetCover(series.getCover());
-                detailVo.setTargetBanner(series.getBanner());
-                detailVo.setTargetIntro(series.getIntro());
-                detailVo.setTargetDuration(series.getTotalDuration());
-                detailVo.setEpisodeCount(series.getEpisodeCount());
-                detailVo.setPlayCount(series.getPlayCount());
-                detailVo.setCategoryId(series.getCategoryId());
-                detailVo.setStatus(series.getStatus());
-                
-                // 获取分类名称
-                if (series.getCategoryId() != null) {
-                    CategoryVo category = categoryMapper.selectVoById(series.getCategoryId());
-                    if (category != null) {
-                        detailVo.setCategoryName(category.getName());
-                    }
-                }
-            }
-        } else if ("article".equals(favoriteVo.getTargetType())) {
-            ArticleVo article = articleMapper.selectVoById(favoriteVo.getTargetId());
-            if (article != null) {
-                detailVo.setTargetTitle(article.getTitle());
-                detailVo.setTargetAuthor(article.getAuthor());
-                detailVo.setTargetCover(article.getCover());
-                detailVo.setTargetSummary(article.getSummary());
-                detailVo.setViewCount(article.getViewCount());
-                detailVo.setStatus(article.getStatus());
             }
         }
         
-        return detailVo;
+        // 批量查询series数据
+        List<FavoriteVo> seriesFavorites = typeGroupMap.get("series");
+        if (seriesFavorites != null && !seriesFavorites.isEmpty()) {
+            List<Long> seriesIds = seriesFavorites.stream()
+                .map(FavoriteVo::getTargetId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+            if (!seriesIds.isEmpty()) {
+                List<SeriesVo> seriesList = seriesMapper.selectVoBatchIds(seriesIds);
+                seriesMap = seriesList.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(SeriesVo::getId, s -> s, (v1, v2) -> v1));
+                
+                // 收集所有分类ID
+                List<Long> categoryIds = seriesList.stream()
+                    .map(SeriesVo::getCategoryId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+                if (!categoryIds.isEmpty()) {
+                    categoryMap.putAll(loadCategories(categoryIds));
+                }
+            }
+        }
+        
+        // 批量查询article数据
+        List<FavoriteVo> articleFavorites = typeGroupMap.get("article");
+        if (articleFavorites != null && !articleFavorites.isEmpty()) {
+            List<Long> articleIds = articleFavorites.stream()
+                .map(FavoriteVo::getTargetId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+            if (!articleIds.isEmpty()) {
+                List<ArticleVo> articles = articleMapper.selectVoBatchIds(articleIds);
+                articleMap = articles.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(ArticleVo::getId, a -> a, (v1, v2) -> v1));
+            }
+        }
+        
+        // 组装详情数据
+        List<FavoriteDetailVo> detailList = new ArrayList<>();
+        for (FavoriteVo favoriteVo : favoriteVoList) {
+            FavoriteDetailVo detailVo = new FavoriteDetailVo();
+            BeanUtils.copyProperties(favoriteVo, detailVo);
+            
+            if (favoriteVo.getTargetId() != null && favoriteVo.getTargetType() != null) {
+                switch (favoriteVo.getTargetType()) {
+                    case "track":
+                        TrackVo track = trackMap.get(favoriteVo.getTargetId());
+                        if (track != null) {
+                            fillTrackDetail(detailVo, track, categoryMap);
+                        }
+                        break;
+                    case "series":
+                        SeriesVo series = seriesMap.get(favoriteVo.getTargetId());
+                        if (series != null) {
+                            fillSeriesDetail(detailVo, series, categoryMap);
+                        }
+                        break;
+                    case "article":
+                        ArticleVo article = articleMap.get(favoriteVo.getTargetId());
+                        if (article != null) {
+                            fillArticleDetail(detailVo, article);
+                        }
+                        break;
+                    default:
+                        log.warn("Unknown target type: {}", favoriteVo.getTargetType());
+                }
+            }
+            
+            detailList.add(detailVo);
+        }
+        
+        return detailList;
+    }
+    
+    /**
+     * 批量加载分类信息
+     */
+    private Map<Long, CategoryVo> loadCategories(List<Long> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        List<CategoryVo> categories = categoryMapper.selectVoBatchIds(categoryIds);
+        return categories.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(CategoryVo::getId, c -> c, (v1, v2) -> v1));
+    }
+    
+    /**
+     * 填充音频详情
+     */
+    private void fillTrackDetail(FavoriteDetailVo detailVo, TrackVo track, Map<Long, CategoryVo> categoryMap) {
+        detailVo.setTargetTitle(track.getTitle());
+        detailVo.setTargetSubtitle(track.getSubtitle());
+        detailVo.setTargetAuthor(track.getAuthor());
+        detailVo.setTargetCover(track.getCover());
+        detailVo.setTargetIntro(track.getIntro());
+        detailVo.setTargetDuration(track.getDurationSec());
+        detailVo.setAudioUrl(track.getAudio());
+        detailVo.setPlayCount(track.getPlayCount());
+        detailVo.setCategoryId(track.getCategoryId());
+        detailVo.setStatus(track.getStatus());
+        
+        if (track.getCategoryId() != null) {
+            CategoryVo category = categoryMap.get(track.getCategoryId());
+            if (category != null) {
+                detailVo.setCategoryName(category.getName());
+            }
+        }
+    }
+    
+    /**
+     * 填充系列详情
+     */
+    private void fillSeriesDetail(FavoriteDetailVo detailVo, SeriesVo series, Map<Long, CategoryVo> categoryMap) {
+        detailVo.setTargetTitle(series.getTitle());
+        detailVo.setTargetSubtitle(series.getSubtitle());
+        detailVo.setTargetAuthor(series.getAuthor());
+        detailVo.setTargetCover(series.getCover());
+        detailVo.setTargetBanner(series.getBanner());
+        detailVo.setTargetIntro(series.getIntro());
+        detailVo.setTargetDuration(series.getTotalDuration());
+        detailVo.setEpisodeCount(series.getEpisodeCount());
+        detailVo.setPlayCount(series.getPlayCount());
+        detailVo.setCategoryId(series.getCategoryId());
+        detailVo.setStatus(series.getStatus());
+        
+        if (series.getCategoryId() != null) {
+            CategoryVo category = categoryMap.get(series.getCategoryId());
+            if (category != null) {
+                detailVo.setCategoryName(category.getName());
+            }
+        }
+    }
+    
+    /**
+     * 填充文章详情
+     */
+    private void fillArticleDetail(FavoriteDetailVo detailVo, ArticleVo article) {
+        detailVo.setTargetTitle(article.getTitle());
+        detailVo.setTargetAuthor(article.getAuthor());
+        detailVo.setTargetCover(article.getCover());
+        detailVo.setTargetSummary(article.getSummary());
+        detailVo.setViewCount(article.getViewCount());
+        detailVo.setStatus(article.getStatus());
+    }
+    
+    /**
+     * 转换为详情VO - 单个查询
+     */
+    private FavoriteDetailVo convertToDetailVo(FavoriteVo favoriteVo) {
+        if (favoriteVo == null) {
+            return null;
+        }
+        List<FavoriteDetailVo> detailList = convertToDetailVoBatch(java.util.Collections.singletonList(favoriteVo));
+        return detailList.isEmpty() ? new FavoriteDetailVo() : detailList.get(0);
     }
 
     /**
@@ -268,14 +432,25 @@ public class FavoriteServiceImpl implements IFavoriteService {
             return false;
         }
         
+        return checkFavoriteExists(userId, targetId, targetType);
+    }
+    
+    /**
+     * 检查收藏是否存在
+     */
+    private Boolean checkFavoriteExists(Long userId, Long targetId, String targetType) {
+        if (userId == null || targetId == null || StringUtils.isBlank(targetType)) {
+            return false;
+        }
+        
         // 构建查询条件
         LambdaQueryWrapper<Favorite> lqw = Wrappers.lambdaQuery();
         lqw.eq(Favorite::getUserId, userId);
         lqw.eq(Favorite::getTargetId, targetId);
         lqw.eq(Favorite::getTargetType, targetType);
+        lqw.last("LIMIT 1"); // 优化查询，只需要知道是否存在
         
         // 查询是否存在收藏记录
-        long count = baseMapper.selectCount(lqw);
-        return count > 0;
+        return baseMapper.selectCount(lqw) > 0;
     }
 }
