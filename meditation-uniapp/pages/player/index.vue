@@ -193,8 +193,12 @@
 import { getTrackDetail, recordPlay } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
 import { addPlayHistory, updatePlayHistory } from '@/api/play'
+import { mapGetters } from 'vuex'
 
 export default {
+  computed: {
+    ...mapGetters(['userInfo'])
+  },
   data() {
     return {
       trackId: '',
@@ -359,14 +363,25 @@ export default {
     // 添加到播放历史
     async addToPlayHistory() {
       try {
-        const res = await addPlayHistory({
+        // 获取当前用户ID
+        const userId = this.userInfo?.userId || this.userInfo?.id
+        
+        const playHistoryData = {
           trackId: this.trackId,
           progressSec: Math.floor(this.currentTime),
           isCompleted: '0'
-        })
+        }
+        
+        // 如果有用户ID，添加到请求数据中
+        if (userId) {
+          playHistoryData.userId = userId
+        }
+        
+        const res = await addPlayHistory(playHistoryData)
         
         if (res.code === 200 && res.data) {
           this.playHistoryId = res.data.id
+          console.log('播放历史记录成功, ID:', this.playHistoryId)
         }
       } catch (error) {
         console.error('添加播放历史失败:', error)
@@ -399,12 +414,23 @@ export default {
         const progressSec = Math.floor(this.currentTime)
         const isCompleted = this.duration > 0 && this.currentTime >= this.duration * 0.95 ? '1' : '0'
         
-        await updatePlayHistory({
+        // 获取当前用户ID
+        const userId = this.userInfo?.userId || this.userInfo?.id
+        
+        const updateData = {
           id: this.playHistoryId,
           trackId: this.trackId,
           progressSec: progressSec,
           isCompleted: isCompleted
-        })
+        }
+        
+        // 如果有用户ID，添加到更新数据中
+        if (userId) {
+          updateData.userId = userId
+        }
+        
+        await updatePlayHistory(updateData)
+        console.log('播放进度已更新:', progressSec, '秒, 完成状态:', isCompleted)
       } catch (error) {
         console.error('更新播放进度失败:', error)
       }
@@ -415,12 +441,23 @@ export default {
       if (!this.playHistoryId || !this.trackId) return
       
       try {
-        await updatePlayHistory({
+        // 获取当前用户ID
+        const userId = this.userInfo?.userId || this.userInfo?.id
+        
+        const updateData = {
           id: this.playHistoryId,
           trackId: this.trackId,
           progressSec: Math.floor(this.duration),
           isCompleted: '1'
-        })
+        }
+        
+        // 如果有用户ID，添加到更新数据中
+        if (userId) {
+          updateData.userId = userId
+        }
+        
+        await updatePlayHistory(updateData)
+        console.log('播放完成，已标记')
       } catch (error) {
         console.error('标记完成失败:', error)
       }

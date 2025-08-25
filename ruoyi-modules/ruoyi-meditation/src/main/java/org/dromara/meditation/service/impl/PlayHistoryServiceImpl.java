@@ -148,6 +148,15 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      * 保存前的数据校验
      */
     private void validEntityBeforeSave(PlayHistory entity){
+        // 自动设置当前用户ID
+        if (entity.getUserId() == null) {
+            try {
+                Long userId = LoginHelper.getUserId();
+                entity.setUserId(userId);
+            } catch (Exception e) {
+                log.warn("获取当前用户ID失败，可能是未登录状态: {}", e.getMessage());
+            }
+        }
         //TODO 做一些数据校验,如唯一约束
     }
 

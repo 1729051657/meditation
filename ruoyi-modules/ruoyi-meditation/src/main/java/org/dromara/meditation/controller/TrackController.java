@@ -47,6 +47,15 @@ public class TrackController extends BaseController {
     }
 
     /**
+     * 获取所有冥想单集（不分页）
+     */
+    @SaIgnore
+    @GetMapping("/all")
+    public R<List<TrackVo>> getAllTracks(TrackBo bo) {
+        return R.ok(trackService.queryList(bo));
+    }
+
+    /**
      * 导出冥想单集列表
      */
     @SaCheckPermission("meditation:track:export")
