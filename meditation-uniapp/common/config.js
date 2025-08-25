@@ -9,7 +9,7 @@ import { STORAGE_KEYS, DEFAULT_VALUES } from './constants.js'
 const envConfig = {
   // 开发环境
   development: {
-    baseUrl: 'http://localhost:8080',
+    baseUrl: 'https://thoughtadmin.bawutech.com/prod-api/',
     debug: true
   },
   // 测试环境
@@ -63,10 +63,10 @@ export const appConfig = {
   imageTypes: ['jpg', 'jpeg', 'png', 'gif'],
   
   // 微信小程序AppID
-  wechatAppId: 'wx03df4b0ec47009cd', // 冥想小程序AppID
+  wechatAppId: 'wx1ef177b90f6fb543', // 冥想小程序AppID
   
   // 客户端配置
-  clientId: 'wx03df4b0ec47009cd', // 对应sys_client表中的client_id
+  clientId: 'wx1ef177b90f6fb543', // 对应sys_client表中的client_id
   clientKey: 'user_xcx', // 对应sys_client表中的client_key
   
   // 微信小程序Secret（仅在后端配置，前端不需要）

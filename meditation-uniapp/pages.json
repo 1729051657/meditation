@@ -80,11 +80,18 @@
         "navigationBarTitleText": "文章详情",
         "navigationStyle": "custom"
       }
+    },
+        {
+      "path": "pages/list/list",
+      "style": {
+        "navigationBarTitleText": "冥想知识",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "tabBar": {
     "custom": false,
-    "color": "#000000",
+    "color": "#CECECE",
     "selectedColor": "#000000",
     "borderStyle": "white",
     "backgroundColor": "#ffffff",

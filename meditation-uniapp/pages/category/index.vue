@@ -1,9 +1,7 @@
 <template>
   <view class="mg-category">
     <!-- 导航栏 -->
-    <tn-nav-bar
-      :alpha="true"
-    >
+    <tn-nav-bar :alpha="true">
     </tn-nav-bar>
 
 
@@ -11,14 +9,16 @@
     <view class="category-chips">
       <scroll-view class="chips-scroll" scroll-x :show-scrollbar="false" enhanced>
         <view class="chips-container">
-          <view 
-            class="chip" 
-            :class="{active: category.id === currentCategoryId}" 
-            v-for="category in categories" 
-            :key="category.id" 
-            @click="switchCategory(category.id)"
-          >
+          <view class="chip" :class="{ active: category.id === currentCategoryId }" v-for="category in categories"
+            :key="category.id" @click="switchCategory(category.id)">
+            <view class="newchip">
+              
+           
+              
+            <image class="chipImg" src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755828501297iHQLj0I3PmGi29286aa513711b343802eda9d37844ef.png"  lazy-load="false" binderror="" bindload="" />
+              
             {{ category.name }}
+             </view>
           </view>
         </view>
       </scroll-view>
@@ -29,17 +29,21 @@
       <view class="section-header">
         <text class="section-title">为您推荐</text>
       </view>
-      
+
       <scroll-view class="series-scroll" scroll-x :show-scrollbar="false" enhanced>
         <view class="series-container">
           <view class="series-card" v-for="s in series" :key="s.id" @click="playSeries(s)">
+             <view class="series-content">
+              <text class="series-title">{{ s.title }}</text>
+              <view class="series-subtitle">
+                <image class="play" src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755829634435OCIwCnUHZHbycf7a9d5915d6277a02a4125c26c2c4b8.png"  lazy-load="false" binderror="" bindload="" />
+                系列·{{ s.episodeCount || 0 }}节
+              </view>
+            </view>
             <view class="series-image-wrapper">
               <image :src="s.cover" class="series-cover" mode="aspectFill" />
             </view>
-            <view class="series-content">
-              <text class="series-title">{{ s.title }}</text>
-              <text class="series-subtitle">系列·{{ s.episodeCount || 0 }}节</text>
-            </view>
+           
           </view>
         </view>
       </scroll-view>
@@ -50,12 +54,12 @@
       <view class="section-header">
         <text class="section-title">全部冥想</text>
       </view>
-      
+
       <view class="tracks-grid">
         <view class="track-card" v-for="t in tracks" :key="t.id" @click="playTrack(t)">
           <view class="track-image-wrapper">
             <image :src="t.cover" class="track-cover" mode="aspectFill" />
-            <view class="duration-badge">{{ Math.ceil((t.durationSec||0)/60) }}分钟</view>
+            <view class="duration-badge">{{ Math.ceil((t.durationSec || 0) / 60) }}分钟</view>
             <view class="track-title-overlay">{{ t.title }}</view>
           </view>
         </view>
@@ -82,10 +86,10 @@ import { listSeries } from '@/api/series'
 import { listTracks } from '@/api/track'
 
 export default {
-  data(){
-    return { 
+  data() {
+    return {
       categories: [], // 分类列表
-      currentCategoryId: null, 
+      currentCategoryId: null,
       series: [], // 系列数据
       tracks: [], // 单集数据
       seriesPageNum: 1, // 系列分页
@@ -95,16 +99,16 @@ export default {
       loading: false
     }
   },
-  async onLoad(query){
+  async onLoad(query) {
     await this.loadCategoryData()
   },
-  methods:{
+  methods: {
     // 加载分类数据
     async loadCategoryData() {
       try {
         const res = await listCategories({ status: 0 })
         this.categories = res.rows || res.data || []
-        
+
         if (this.categories.length > 0) {
           this.currentCategoryId = this.categories[0].id
           // 默认加载第一个分类的系列和单集数据
@@ -119,23 +123,23 @@ export default {
         })
       }
     },
-    
+
     // 加载系列列表
     async loadSeriesList(reset = false) {
-      if (reset) { 
-        this.seriesPageNum = 1; 
-        this.series = []; 
-        this.seriesHasMore = true 
+      if (reset) {
+        this.seriesPageNum = 1;
+        this.series = [];
+        this.seriesHasMore = true
       }
       if (!this.seriesHasMore || this.loading) return
-      
+
       this.loading = true
       try {
-        const res = await listSeries({ 
-          categoryId: this.currentCategoryId, 
-          status: 0, 
-          pageNum: this.seriesPageNum, 
-          pageSize: 10 
+        const res = await listSeries({
+          categoryId: this.currentCategoryId,
+          status: 0,
+          pageNum: this.seriesPageNum,
+          pageSize: 10
         })
         const rows = res.rows || res.data || []
         this.series = this.series.concat(rows)
@@ -151,23 +155,23 @@ export default {
         this.loading = false
       }
     },
-    
+
     // 加载单集列表
     async loadTracksList(reset = false) {
-      if (reset) { 
-        this.tracksPageNum = 1; 
-        this.tracks = []; 
-        this.tracksHasMore = true 
+      if (reset) {
+        this.tracksPageNum = 1;
+        this.tracks = [];
+        this.tracksHasMore = true
       }
       if (!this.tracksHasMore || this.loading) return
-      
+
       this.loading = true
       try {
-        const res = await listTracks({ 
-          categoryId: this.currentCategoryId, 
-          status: 0, 
-          pageNum: this.tracksPageNum, 
-          pageSize: 10 
+        const res = await listTracks({
+          categoryId: this.currentCategoryId,
+          status: 0,
+          pageNum: this.tracksPageNum,
+          pageSize: 10
         })
         const rows = res.rows || res.data || []
         this.tracks = this.tracks.concat(rows)
@@ -183,37 +187,37 @@ export default {
         this.loading = false
       }
     },
-    
+
     // 切换分类
-    switchCategory(id) { 
+    switchCategory(id) {
       this.currentCategoryId = id
       this.seriesPageNum = 1
       this.tracksPageNum = 1
       this.seriesHasMore = true
       this.tracksHasMore = true
-      
+
       // 重新加载系列和单集数据
       this.loadSeriesList(true)
       this.loadTracksList(true)
     },
-    
+
     // 播放系列
-    playSeries(series) { 
-      uni.navigateTo({ 
-        url: `/pages/series/detail?id=${series.id}` 
-      }) 
+    playSeries(series) {
+      uni.navigateTo({
+        url: `/pages/series/detail?id=${series.id}`
+      })
     },
-    
+
     // 播放单集
-    playTrack(track) { 
-      uni.navigateTo({ 
-        url: `/pages/player/index?trackId=${track.id}` 
-      }) 
+    playTrack(track) {
+      uni.navigateTo({
+        url: `/pages/player/index?trackId=${track.id}`
+      })
     },
-    
-    goBack(){ uni.navigateBack() },
-    goToSearch(){ uni.navigateTo({ url: '/pages/search/index' }) },
-    
+
+    goBack() { uni.navigateBack() },
+    goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) },
+
     // 获取当前分类名称
     getCurrentCategoryName() {
       if (this.currentCategoryId && this.categories.length > 0) {
@@ -223,7 +227,7 @@ export default {
       return '分类'
     }
   },
-  onReachBottom(){ 
+  onReachBottom() {
     // 根据滚动位置决定加载哪个模块的数据
     // 这里简单处理，优先加载系列数据
     if (this.seriesHasMore) {
@@ -232,8 +236,8 @@ export default {
       this.loadTracksList()
     }
   },
-  
-  onPullDownRefresh(){ 
+
+  onPullDownRefresh() {
     // 刷新时重新加载所有数据
     this.loadSeriesList(true)
     this.loadTracksList(true)
@@ -258,7 +262,8 @@ export default {
   height: 88rpx;
 }
 
-.nav-left, .nav-right {
+.nav-left,
+.nav-right {
   width: 60rpx;
   height: 60rpx;
   display: flex;
@@ -285,25 +290,28 @@ export default {
 
 /* 系列横向滚动样式 */
 .series-scroll {
-  padding: 0 30rpx;
   margin-bottom: 40rpx;
 }
 
 .series-container {
   display: flex;
+  align-items: center;
   gap: 24rpx;
   padding-right: 30rpx;
 }
 
 .series-card {
   flex-shrink: 0;
-  width: 280rpx;
+  width: 540rpx;
   background: #fff;
   border-radius: 20rpx;
   overflow: hidden;
+ 
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  display: flex;
   
+
   &:active {
     transform: scale(0.98);
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
@@ -312,18 +320,22 @@ export default {
 
 .series-image-wrapper {
   position: relative;
-  width: 100%;
-  height: 180rpx;
+  width: 160rpx;
+  
   overflow: hidden;
+  padding:20rpx;
+  box-sizing: border-box;
 }
 
 .series-cover {
   width: 100%;
   height: 100%;
-  border-radius: 20rpx 20rpx 0 0;
+  border-radius: 20rpx;
 }
 
 .series-content {
+  flex:1;
+  box-sizing: border-box;
   padding: 20rpx;
 }
 
@@ -331,6 +343,7 @@ export default {
   display: block;
   font-size: 28rpx;
   font-weight: 600;
+  height: 80rpx;
   color: #333;
   margin-bottom: 8rpx;
   line-height: 1.4;
@@ -346,6 +359,9 @@ export default {
   font-size: 24rpx;
   color: #999;
   line-height: 1.4;
+  margin-top:48rpx;
+  display: flex;
+  align-items: center;
 }
 
 /* 单集网格样式 */
@@ -362,7 +378,7 @@ export default {
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  
+
   &:active {
     transform: scale(0.98);
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
@@ -371,15 +387,15 @@ export default {
 
 .track-image-wrapper {
   position: relative;
-  width: 100%;
-  height: 200rpx;
+ width: 342rpx;
+height: 360rpx;
   overflow: hidden;
 }
 
 .track-cover {
   width: 100%;
   height: 100%;
-  border-radius: 20rpx;
+ border-radius: 24rpx;
 }
 
 .track-title-overlay {
@@ -410,23 +426,31 @@ export default {
 
 .chip {
   flex-shrink: 0;
-  background: #fff;
-  padding: 16rpx 32rpx;
-  border-radius: 999rpx;
-  font-size: 28rpx;
-  color: #666;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  // background: #fff;
+  // padding: 16rpx 32rpx;
+  // border-radius: 999rpx;
+  // font-size: 28rpx;
+  // color: #666;
+  // box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  font-weight: 400;
+  font-size: 36rpx;
+  color: #888888;
   transition: all 0.3s ease;
   border: 2rpx solid transparent;
-  
+  opacity: 0.7;
+
   &:active {
     transform: scale(0.95);
+    opacity: 1;
   }
-  
+
   &.active {
-    background: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
-    color: #fff;
-    box-shadow: 0 4rpx 16rpx rgba(74, 111, 165, 0.3);
+    // background: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
+    // color: #fff;
+    // box-shadow: 0 4rpx 16rpx rgba(74, 111, 165, 0.3);
+    font-weight: 600;
+    font-size: 40rpx;
+    color: #25292D;
   }
 }
 
@@ -441,9 +465,10 @@ export default {
 }
 
 .section-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
+ font-weight: 600;
+font-size: 32rpx;
+color: #25292D;
+margin-top: 40rpx;
 }
 
 /* 网格布局 */
@@ -459,16 +484,16 @@ export default {
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  
+
   &:active {
     transform: scale(0.98);
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
   }
-  
+
   &.series-card {
     border-left: 6rpx solid #4A6FA5;
   }
-  
+
   &.track-card {
     border-left: 6rpx solid #2C4E7E;
   }
@@ -557,9 +582,10 @@ export default {
   padding: 30rpx;
   color: #666;
   font-size: 28rpx;
-  
+  opacity: 0.5;
+
   &:active {
-    opacity: 0.7;
+    opacity:1;
   }
 }
 
@@ -582,6 +608,19 @@ export default {
   color: #999;
   margin-top: 20rpx;
 }
+.chipImg{
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 4rpx;
+    
+}
+.newchip{
+  display: flex;
+  align-items: center;
+}
+.play{
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 8rpx;
+}
 </style>
-
-

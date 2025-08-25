@@ -19,7 +19,7 @@
 -- 小程序客户端配置
 INSERT INTO `sys_client` (
     `id`, 
-    `client_id`,           -- wx03df4b0ec47009cd (小程序AppID)
+    `client_id`,           -- app.VOE (小程序AppID)
     `client_key`,          -- user_xcx
     `client_secret`,       -- c504f2d547bb0d5fa743ce6a3b4dbbe2 (小程序AppSecret)
     `grant_type`,          -- xcx (授权类型)
@@ -30,7 +30,7 @@ INSERT INTO `sys_client` (
     `del_flag`             -- 0 (未删除)
 ) VALUES (
     3, 
-    'wx03df4b0ec47009cd', 
+    'wx1ef177b90f6fb543', 
     'user_xcx', 
     'c504f2d547bb0d5fa743ce6a3b4dbbe2', 
     'xcx', 
@@ -63,10 +63,10 @@ source /workspace/script/sql/update/add_xcx_client.sql
 ```javascript
 export const appConfig = {
   // 微信小程序AppID
-  wechatAppId: 'wx03df4b0ec47009cd',
+  wechatAppId: 'wx1ef177b90f6fb543',
   
   // 客户端配置
-  clientId: 'wx03df4b0ec47009cd',
+  clientId: 'wx1ef177b90f6fb543',
   clientKey: 'user_xcx',
   
   // 默认租户ID
@@ -164,7 +164,7 @@ handleLogout() {
     "data": {
       "access_token": "token值",
       "expire_in": 604800,
-      "client_id": "wx03df4b0ec47009cd"
+      "client_id": "wx1ef177b90f6fb543"
     }
   }
   ```
