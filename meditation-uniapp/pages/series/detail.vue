@@ -39,7 +39,7 @@ export default {
     this.tracks = ts.rows || ts.data || []
   },
   methods:{
-    play(id){ uni.navigateTo({ url:`/pages/player/index?trackId=${id}` }) },
+    play(id){ uni.navigateTo({ url:`/pages/player/index?id=${id}` }) },
     oss(id){ return id? `${this.$baseUrl}/system/oss/download/${id}`: '' }
   }
 }

@@ -312,19 +312,27 @@ public class FavoriteServiceImpl implements IFavoriteService {
                     case "track":
                         TrackVo track = trackMap.get(favoriteVo.getTargetId());
                         if (track != null) {
-                            fillTrackDetail(detailVo, track, categoryMap);
+                            detailVo.setTrack(track);
+                            // 设置分类
+                            if (track.getCategoryId() != null) {
+                                detailVo.setCategory(categoryMap.get(track.getCategoryId()));
+                            }
                         }
                         break;
                     case "series":
                         SeriesVo series = seriesMap.get(favoriteVo.getTargetId());
                         if (series != null) {
-                            fillSeriesDetail(detailVo, series, categoryMap);
+                            detailVo.setSeries(series);
+                            // 设置分类
+                            if (series.getCategoryId() != null) {
+                                detailVo.setCategory(categoryMap.get(series.getCategoryId()));
+                            }
                         }
                         break;
                     case "article":
                         ArticleVo article = articleMap.get(favoriteVo.getTargetId());
                         if (article != null) {
-                            fillArticleDetail(detailVo, article);
+                            detailVo.setArticle(article);
                         }
                         break;
                     default:
@@ -349,65 +357,6 @@ public class FavoriteServiceImpl implements IFavoriteService {
         return categories.stream()
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(CategoryVo::getId, c -> c, (v1, v2) -> v1));
-    }
-
-    /**
-     * 填充音频详情
-     */
-    private void fillTrackDetail(FavoriteDetailVo detailVo, TrackVo track, Map<Long, CategoryVo> categoryMap) {
-        detailVo.setTargetTitle(track.getTitle());
-        detailVo.setTargetSubtitle(track.getSubtitle());
-        detailVo.setTargetAuthor(track.getAuthor());
-        detailVo.setTargetCover(track.getCover());
-        detailVo.setTargetIntro(track.getIntro());
-        detailVo.setTargetDuration(track.getDurationSec());
-        detailVo.setAudioUrl(track.getAudio());
-        detailVo.setPlayCount(track.getPlayCount());
-        detailVo.setCategoryId(track.getCategoryId());
-        detailVo.setStatus(track.getStatus());
-
-        if (track.getCategoryId() != null) {
-            CategoryVo category = categoryMap.get(track.getCategoryId());
-            if (category != null) {
-                detailVo.setCategoryName(category.getName());
-            }
-        }
-    }
-
-    /**
-     * 填充系列详情
-     */
-    private void fillSeriesDetail(FavoriteDetailVo detailVo, SeriesVo series, Map<Long, CategoryVo> categoryMap) {
-        detailVo.setTargetTitle(series.getTitle());
-        detailVo.setTargetSubtitle(series.getSubtitle());
-        detailVo.setTargetAuthor(series.getAuthor());
-        detailVo.setTargetCover(series.getCover());
-        detailVo.setTargetBanner(series.getBanner());
-        detailVo.setTargetIntro(series.getIntro());
-        detailVo.setTargetDuration(series.getTotalDuration());
-        detailVo.setEpisodeCount(series.getEpisodeCount());
-        detailVo.setPlayCount(series.getPlayCount());
-        detailVo.setCategoryId(series.getCategoryId());
-        detailVo.setStatus(series.getStatus());
-
-        if (series.getCategoryId() != null) {
-            CategoryVo category = categoryMap.get(series.getCategoryId());
-            if (category != null) {
-                detailVo.setCategoryName(category.getName());
-            }
-        }
-    }
-
-    /**
-     * 填充文章详情
-     */
-    private void fillArticleDetail(FavoriteDetailVo detailVo, ArticleVo article) {
-        detailVo.setTargetTitle(article.getTitle());
-        detailVo.setTargetAuthor(article.getAuthor());
-        detailVo.setTargetCover(article.getCover());
-        detailVo.setTargetSummary(article.getSummary());
-        detailVo.setViewCount(article.getViewCount());
-        detailVo.setStatus(article.getStatus());
     }
 
     /**

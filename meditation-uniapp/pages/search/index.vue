@@ -110,7 +110,7 @@ export default {
       this.articles = as.rows || as.data || []
     },
     useHot(k) { this.kw = k; this.doSearch() },
-    goTrack(id) { uni.navigateTo({ url: `/pages/player/index?trackId=${id}` }) },
+    goTrack(id) { uni.navigateTo({ url: `/pages/player/index?id=${id}` }) },
     goSeries(id) { uni.navigateTo({ url: `/pages/series/detail?id=${id}` }) },
     goArticle(id) { uni.navigateTo({ url: `/pages/article/detail?id=${id}` }) },
     oss(id) { return id ? `${this.$baseUrl}/system/oss/download/${id}` : '' }

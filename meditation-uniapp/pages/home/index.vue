@@ -295,7 +295,7 @@ export default {
     goToMeditation(item) {
       // 跳转到系列详情页
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.id}`
+        url: `/pages/series/detail?id=${item.id}`
       })
     },
 

@@ -23,16 +23,16 @@
           <view 
             class="history-item" 
             v-for="(item, index) in group.items" 
-            :key="index"
+            :key="item.id"
             @click="playAudio(item)"
           >
             <image :src="item.cover" mode="aspectFill" class="item-cover"></image>
             <view class="item-info">
               <text class="item-title">{{ item.title }}</text>
-              <text class="item-author">{{ item.author }}</text>
+              <text class="item-series" v-if="item.seriesTitle">{{ item.seriesTitle }}</text>
               <view class="item-meta">
-                <text class="meta-time">{{ item.playTime }}</text>
-                <text class="meta-progress">已播放{{ item.progress }}%</text>
+                <text class="meta-time">{{ formatTime(item.lastPlayTime) }}</text>
+                <text class="meta-progress">已播放{{ item.progressPercent }}%</text>
               </view>
             </view>
             <view class="item-action" @click.stop="showMoreOptions(item)">
@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { listPlayHistory } from '@/api/play'
+import { listPlayHistoryDetail, updatePlayHistory } from '@/api/play'
 
 export default {
   data() {
@@ -80,7 +80,7 @@ export default {
     groupedHistory() {
       const groups = {}
       this.historyList.forEach(item => {
-        const dateLabel = this.formatDateLabel(item.date)
+        const dateLabel = this.formatDateLabel(item.lastPlayTime)
         if (!groups[dateLabel]) {
           groups[dateLabel] = {
             date: dateLabel,
@@ -89,7 +89,16 @@ export default {
         }
         groups[dateLabel].items.push(item)
       })
-      return Object.values(groups)
+      // 按日期排序
+      const sortedGroups = Object.keys(groups).sort((a, b) => {
+        // 今天和昨天优先
+        if (a === '今天') return -1
+        if (b === '今天') return 1
+        if (a === '昨天') return -1
+        if (b === '昨天') return 1
+        return 0
+      })
+      return sortedGroups.map(key => groups[key])
     }
   },
   
@@ -97,12 +106,14 @@ export default {
     this.loadHistory()
   },
   
+  onShow() {
+    // 页面显示时刷新列表
+    this.refreshHistory()
+  },
+  
   // 下拉刷新
   onPullDownRefresh() {
-    this.pageNum = 1
-    this.historyList = []
-    this.hasMore = true
-    this.loadHistory().finally(() => {
+    this.refreshHistory().finally(() => {
       uni.stopPullDownRefresh()
     })
   },
@@ -116,32 +127,54 @@ export default {
   },
   
   methods: {
+    // 刷新历史记录
+    async refreshHistory() {
+      this.pageNum = 1
+      this.historyList = []
+      this.hasMore = true
+      return this.loadHistory()
+    },
+    
+    // 加载播放历史
     async loadHistory() {
       if (this.loading) return
       
       try {
         this.loading = true
-        const res = await listPlayHistory({
+        const res = await listPlayHistoryDetail({
           pageNum: this.pageNum,
           pageSize: this.pageSize
         })
         
         if (res.code === 200) {
-          const { rows, total } = res.data
+          const { rows, total } = res
           
-          // 格式化数据
-          const formattedList = rows.map(item => ({
-            id: item.trackId,
-            historyId: item.historyId, // 保存历史记录ID
-            title: item.trackTitle || item.trackName,
-            author: item.author || item.artistName || '未知作者',
-            playTime: this.formatTime(item.lastPlayTime || item.createTime),
-            progress: this.calculateProgress(item.playedDuration, item.totalDuration),
-            playedDuration: item.playedDuration || 0,
-            totalDuration: item.totalDuration || 0,
-            cover: item.coverUrl || item.trackCover || '/static/images/default-cover.png',
-            date: this.formatDate(item.lastPlayTime || item.createTime)
-          }))
+          // 格式化数据 - 根据新的数据结构
+          const formattedList = rows.map(item => {
+            // 获取音频信息
+            const track = item.track || {}
+            const series = item.series || {}
+            const category = item.category || {}
+            
+            return {
+              id: item.id, // 播放历史ID
+              trackId: item.trackId,
+              title: track.title || '未知音频',
+              cover: track.cover || '/static/images/default-cover.png',
+              audioUrl: track.audio || '',
+              duration: track.durationSec || 0,
+              seriesId: track.seriesId,
+              seriesTitle: series.title || '',
+              categoryName: category.name || '',
+              progressSec: item.progressSec || 0,
+              progressPercent: item.progressPercent || 0,
+              isCompleted: item.isCompleted === '1',
+              lastPlayTime: item.lastPlayTime,
+              track: track,
+              series: series,
+              category: category
+            }
+          })
           
           if (this.pageNum === 1) {
             this.historyList = formattedList
@@ -172,25 +205,12 @@ export default {
       return `${hours}:${minutes}`
     },
     
-    // 格式化日期
-    formatDate(timestamp) {
-      if (!timestamp) return new Date().toISOString().split('T')[0]
-      const date = new Date(timestamp)
-      return date.toISOString().split('T')[0]
-    },
-    
-    // 计算播放进度
-    calculateProgress(played, total) {
-      if (!total || total === 0) return 0
-      const progress = Math.floor((played / total) * 100)
-      return Math.min(100, Math.max(0, progress))
-    },
-    
-    formatDateLabel(dateStr) {
-      if (!dateStr) return '未知日期'
+    // 格式化日期标签
+    formatDateLabel(timestamp) {
+      if (!timestamp) return '未知日期'
       
       try {
-        const date = new Date(dateStr)
+        const date = new Date(timestamp)
         const today = new Date()
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
@@ -219,18 +239,18 @@ export default {
         }
       } catch (error) {
         console.error('日期格式化错误:', error)
-        return dateStr
+        return '未知日期'
       }
     },
     
+    // 播放音频
     playAudio(item) {
       // 跳转到播放页面，传递播放进度信息
       const params = {
-        id: item.id,
+        id: item.trackId,
         title: encodeURIComponent(item.title),
-        progress: item.progress,
-        playedDuration: item.playedDuration,
-        totalDuration: item.totalDuration
+        progress: item.progressSec,
+        totalDuration: item.duration
       }
       
       const queryString = Object.keys(params)
@@ -242,9 +262,15 @@ export default {
       })
     },
     
+    // 显示更多选项
     showMoreOptions(item) {
+      const options = ['继续播放', '从头播放', '删除记录']
+      if (item.seriesId) {
+        options.push('查看系列')
+      }
+      
       uni.showActionSheet({
-        itemList: ['继续播放', '从头播放', '删除记录'],
+        itemList: options,
         success: (res) => {
           if (res.tapIndex === 0) {
             // 继续播放
@@ -252,11 +278,10 @@ export default {
           } else if (res.tapIndex === 1) {
             // 从头播放
             const params = {
-              id: item.id,
+              id: item.trackId,
               title: encodeURIComponent(item.title),
               progress: 0,
-              playedDuration: 0,
-              totalDuration: item.totalDuration
+              totalDuration: item.duration
             }
             
             const queryString = Object.keys(params)
@@ -269,28 +294,41 @@ export default {
           } else if (res.tapIndex === 2) {
             // 删除记录
             this.deleteHistory(item)
+          } else if (res.tapIndex === 3 && item.seriesId) {
+            // 查看系列
+            uni.navigateTo({
+              url: `/pages/series/detail?id=${item.seriesId}`
+            })
           }
         }
       })
     },
     
+    // 删除历史记录
     async deleteHistory(item) {
       try {
-        // 目前后端可能没有删除单条历史记录的接口
-        // 先在本地删除
-        const index = this.historyList.findIndex(h => h.id === item.id)
-        if (index > -1) {
-          this.historyList.splice(index, 1)
-          this.total--
-          
-          uni.showToast({
-            title: '已删除',
-            icon: 'success'
-          })
-        }
-        
-        // TODO: 当后端提供删除接口后，调用API删除
-        // await deletePlayHistory(item.historyId)
+        uni.showModal({
+          title: '提示',
+          content: '确定要删除这条播放记录吗？',
+          success: async (res) => {
+            if (res.confirm) {
+              // 在本地删除
+              const index = this.historyList.findIndex(h => h.id === item.id)
+              if (index > -1) {
+                this.historyList.splice(index, 1)
+                this.total--
+                
+                uni.showToast({
+                  title: '已删除',
+                  icon: 'success'
+                })
+              }
+              
+              // TODO: 当后端提供删除接口后，调用API删除
+              // await deletePlayHistory(item.id)
+            }
+          }
+        })
       } catch (error) {
         console.error('删除历史记录失败:', error)
         uni.showToast({
@@ -300,6 +338,7 @@ export default {
       }
     },
     
+    // 清空历史记录
     clearHistory() {
       uni.showModal({
         title: '提示',
@@ -307,7 +346,7 @@ export default {
         success: async (res) => {
           if (res.confirm) {
             try {
-              // 目前先在本地清空
+              // 在本地清空
               this.historyList = []
               this.total = 0
               
@@ -375,6 +414,7 @@ export default {
       color: #999999;
       margin-bottom: 20rpx;
       padding-left: 10rpx;
+      font-weight: 500;
     }
     
     .history-item {
@@ -415,10 +455,13 @@ export default {
           white-space: nowrap;
         }
         
-        .item-author {
+        .item-series {
           font-size: 26rpx;
           color: #999999;
-          margin-bottom: 12rpx;
+          margin-bottom: 8rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         
         .item-meta {
@@ -434,6 +477,7 @@ export default {
           .meta-progress {
             font-size: 24rpx;
             color: #7C3AED;
+            font-weight: 500;
           }
         }
       }
