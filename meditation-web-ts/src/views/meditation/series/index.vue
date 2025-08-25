@@ -228,25 +228,25 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="封面" prop="cover">
-              <common-upload 
+              <image-upload 
                 v-model="form.cover" 
-                upload-type="image"
                 :limit="1"
                 :file-size="5"
-                :compress-image="true"
-                :compress-target-size="300"
+                :file-type="['jpg', 'jpeg', 'png', 'gif', 'webp']"
+                :compress-support="true"
+                :compress-target-size="500"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="横幅图" prop="banner">
-              <common-upload 
+              <image-upload 
                 v-model="form.banner" 
-                upload-type="image"
                 :limit="1"
-                :file-size="5"
-                :compress-image="true"
-                :compress-target-size="500"
+                :file-size="8"
+                :file-type="['jpg', 'jpeg', 'png', 'gif', 'webp']"
+                :compress-support="true"
+                :compress-target-size="800"
               />
             </el-form-item>
           </el-col>

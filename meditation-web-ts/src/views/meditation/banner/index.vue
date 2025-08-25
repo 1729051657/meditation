@@ -175,13 +175,13 @@
         
         <!-- 第四行：图片 -->
         <el-form-item label="图片" prop="image">
-          <common-upload 
+          <image-upload 
             v-model="form.image" 
-            upload-type="image"
             :limit="1"
             :file-size="5"
-            :compress-image="true"
-            :compress-target-size="500"
+            :file-type="['jpg', 'jpeg', 'png', 'gif', 'webp']"
+            :compress-support="true"
+            :compress-target-size="800"
           />
         </el-form-item>
         

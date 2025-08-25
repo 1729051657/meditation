@@ -98,13 +98,12 @@
           <el-input v-model="form.code" placeholder="请输入分类编码" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
-          <common-upload 
+          <image-upload 
             v-model="form.icon" 
-            upload-type="image"
             :limit="1"
             :file-size="2"
-            :file-types="['png', 'jpg', 'jpeg', 'svg']"
-            :compress-image="true"
+            :file-type="['png', 'jpg', 'jpeg', 'svg', 'ico']"
+            :compress-support="true"
             :compress-target-size="100"
           />
         </el-form-item>

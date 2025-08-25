@@ -174,23 +174,23 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="封面" prop="cover">
-              <common-upload 
+              <image-upload 
                 v-model="form.cover" 
-                upload-type="image"
-                :limit="1" 
+                :limit="1"
                 :file-size="5"
-                :compress-image="true"
-                :compress-target-size="300"
+                :file-type="['jpg', 'jpeg', 'png', 'gif', 'webp']"
+                :compress-support="true"
+                :compress-target-size="500"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="音频文件" prop="audio">
-              <common-upload 
+              <file-upload 
                 v-model="form.audio" 
-                upload-type="audio"
-                :limit="1" 
+                :limit="1"
                 :file-size="50"
+                :file-type="['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac']"
               />
             </el-form-item>
           </el-col>
