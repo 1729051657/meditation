@@ -28,7 +28,10 @@ import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Collection;
+import java.util.stream.Collectors;
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * 音频播放记录Service业务层处理
@@ -54,7 +57,13 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      */
     @Override
     public PlayHistoryVo queryById(Long id){
-        return baseMapper.selectVoById(id);
+        PlayHistoryVo historyVo = baseMapper.selectVoById(id);
+        if (historyVo != null && historyVo.getTrackId() != null) {
+            // 查询并设置Track信息
+            TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
+            historyVo.setTrack(track);
+        }
+        return historyVo;
     }
 
     /**
@@ -68,6 +77,10 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     public TableDataInfo<PlayHistoryVo> queryPageList(PlayHistoryBo bo, PageQuery pageQuery) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
         Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        
+        // 批量查询并设置Track信息
+        fillTrackInfo(result.getRecords());
+        
         return TableDataInfo.build(result);
     }
 
@@ -80,7 +93,12 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     @Override
     public List<PlayHistoryVo> queryList(PlayHistoryBo bo) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
-        return baseMapper.selectVoList(lqw);
+        List<PlayHistoryVo> list = baseMapper.selectVoList(lqw);
+        
+        // 批量查询并设置Track信息
+        fillTrackInfo(list);
+        
+        return list;
     }
 
     private LambdaQueryWrapper<PlayHistory> buildQueryWrapper(PlayHistoryBo bo) {
@@ -161,6 +179,12 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
         Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
         
+        // 批量查询并设置Track信息
+        fillTrackInfo(result.getRecords());
+        
+        // 批量查询Series和Category信息
+        fillSeriesAndCategoryInfo(result.getRecords());
+        
         // 转换为详情VO
         List<PlayHistoryDetailVo> detailList = new ArrayList<>();
         for (PlayHistoryVo historyVo : result.getRecords()) {
@@ -186,6 +210,24 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (historyVo == null) {
             return null;
         }
+        
+        // 查询并设置Track信息
+        if (historyVo.getTrackId() != null) {
+            TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
+            historyVo.setTrack(track);
+            
+            // 查询Series和Category信息
+            if (track != null) {
+                if (track.getSeriesId() != null) {
+                    SeriesVo series = seriesMapper.selectVoById(track.getSeriesId());
+                    // 将series信息临时存储在track的remark字段中（仅用于传递）
+                    if (series != null) {
+                        track.setRemark(series.getTitle());
+                    }
+                }
+            }
+        }
+        
         return convertToDetailVo(historyVo);
     }
 
@@ -196,12 +238,13 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         PlayHistoryDetailVo detailVo = new PlayHistoryDetailVo();
         BeanUtils.copyProperties(historyVo, detailVo);
         
-        // 获取单集详细信息
-        TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
+        // 直接使用已经查询好的track信息，避免N+1查询
+        TrackVo track = historyVo.getTrack();
         if (track != null) {
             detailVo.setTrackTitle(track.getTitle());
-            detailVo.setTrackSubtitle(track.getSubtitle());
-            detailVo.setTrackAuthor(track.getAuthor());
+            // Track实体没有subtitle和author字段，这两个字段可以设置为null或空字符串
+            detailVo.setTrackSubtitle("");
+            detailVo.setTrackAuthor("");
             detailVo.setTrackCover(track.getCover());
             detailVo.setTrackIntro(track.getIntro());
             detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
@@ -217,23 +260,106 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
                 detailVo.setProgressPercent(Math.min(100.0, Math.round(percent * 100.0) / 100.0));
             }
             
-            // 获取系列名称
-            if (track.getSeriesId() != null) {
-                SeriesVo series = seriesMapper.selectVoById(track.getSeriesId());
-                if (series != null) {
-                    detailVo.setSeriesTitle(series.getTitle());
-                }
-            }
-            
-            // 获取分类名称
-            if (track.getCategoryId() != null) {
-                CategoryVo category = categoryMapper.selectVoById(track.getCategoryId());
-                if (category != null) {
-                    detailVo.setCategoryName(category.getName());
-                }
+            // 使用临时存储在remark中的series名称（如果有）
+            if (track.getRemark() != null && !track.getRemark().isEmpty()) {
+                detailVo.setSeriesTitle(track.getRemark());
             }
         }
         
         return detailVo;
+    }
+    
+    /**
+     * 批量填充Track信息
+     */
+    private void fillTrackInfo(List<PlayHistoryVo> historyList) {
+        if (CollUtil.isEmpty(historyList)) {
+            return;
+        }
+        
+        // 收集所有trackId
+        List<Long> trackIds = historyList.stream()
+            .map(PlayHistoryVo::getTrackId)
+            .filter(id -> id != null)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        if (CollUtil.isEmpty(trackIds)) {
+            return;
+        }
+        
+        // 批量查询Track信息
+        List<TrackVo> tracks = trackMapper.selectVoBatchIds(trackIds);
+        
+        // 构建Map以便快速查找
+        Map<Long, TrackVo> trackMap = tracks.stream()
+            .collect(Collectors.toMap(TrackVo::getId, track -> track));
+        
+        // 设置Track信息到对应的PlayHistoryVo
+        for (PlayHistoryVo historyVo : historyList) {
+            if (historyVo.getTrackId() != null) {
+                historyVo.setTrack(trackMap.get(historyVo.getTrackId()));
+            }
+        }
+    }
+    
+    /**
+     * 批量填充Series和Category信息
+     */
+    private void fillSeriesAndCategoryInfo(List<PlayHistoryVo> historyList) {
+        if (CollUtil.isEmpty(historyList)) {
+            return;
+        }
+        
+        // 收集所有seriesId和categoryId
+        List<Long> seriesIds = new ArrayList<>();
+        List<Long> categoryIds = new ArrayList<>();
+        
+        for (PlayHistoryVo historyVo : historyList) {
+            TrackVo track = historyVo.getTrack();
+            if (track != null) {
+                if (track.getSeriesId() != null) {
+                    seriesIds.add(track.getSeriesId());
+                }
+                if (track.getCategoryId() != null) {
+                    categoryIds.add(track.getCategoryId());
+                }
+            }
+        }
+        
+        // 去重
+        seriesIds = seriesIds.stream().distinct().collect(Collectors.toList());
+        categoryIds = categoryIds.stream().distinct().collect(Collectors.toList());
+        
+        // 批量查询Series信息
+        Map<Long, SeriesVo> seriesMap = new HashMap<>();
+        if (CollUtil.isNotEmpty(seriesIds)) {
+            List<SeriesVo> seriesList = seriesMapper.selectVoBatchIds(seriesIds);
+            seriesMap = seriesList.stream()
+                .collect(Collectors.toMap(SeriesVo::getId, series -> series));
+        }
+        
+        // 批量查询Category信息
+        Map<Long, CategoryVo> categoryMap = new HashMap<>();
+        if (CollUtil.isNotEmpty(categoryIds)) {
+            List<CategoryVo> categoryList = categoryMapper.selectVoBatchIds(categoryIds);
+            categoryMap = categoryList.stream()
+                .collect(Collectors.toMap(CategoryVo::getId, category -> category));
+        }
+        
+        // 将Series和Category信息临时存储在Track的remark字段中
+        for (PlayHistoryVo historyVo : historyList) {
+            TrackVo track = historyVo.getTrack();
+            if (track != null) {
+                if (track.getSeriesId() != null) {
+                    SeriesVo series = seriesMap.get(track.getSeriesId());
+                    if (series != null) {
+                        // 临时存储series名称
+                        track.setRemark(series.getTitle());
+                    }
+                }
+                // 如果需要category名称，可以使用其他字段或创建临时属性
+            }
+        }
     }
 }

@@ -149,30 +149,35 @@ export default {
         if (res.code === 200) {
           const { rows, total } = res
           
-          // 格式化数据 - 根据新的数据结构
+          // 格式化数据 - 适配新的数据结构（PlayHistoryVo包含track对象）
           const formattedList = rows.map(item => {
-            // 获取音频信息
+            // 从PlayHistoryVo中获取track信息（后端已经填充）
             const track = item.track || {}
-            const series = item.series || {}
-            const category = item.category || {}
+            
+            // 计算播放进度百分比
+            let progressPercent = 0
+            if (track.durationSec && track.durationSec > 0) {
+              progressPercent = Math.min(100, Math.round((item.progressSec * 100) / track.durationSec))
+            }
             
             return {
               id: item.id, // 播放历史ID
               trackId: item.trackId,
-              title: track.title || '未知音频',
-              cover: track.cover || '/static/images/default-cover.png',
-              audioUrl: track.audio || '',
-              duration: track.durationSec || 0,
-              seriesId: track.seriesId,
-              seriesTitle: series.title || '',
-              categoryName: category.name || '',
+              title: track.title || item.trackTitle || '未知音频',
+              cover: track.cover || item.trackCover || '/static/images/default-cover.png',
+              audioUrl: track.audio || item.audioUrl || '',
+              duration: track.durationSec || item.totalDuration || 0,
+              seriesId: track.seriesId || item.seriesId,
+              seriesTitle: item.seriesTitle || '',
+              categoryName: item.categoryName || '',
               progressSec: item.progressSec || 0,
-              progressPercent: item.progressPercent || 0,
-              isCompleted: item.isCompleted === '1',
+              progressPercent: item.progressPercent || progressPercent,
+              isCompleted: item.isCompleted === 'Y',
               lastPlayTime: item.lastPlayTime,
               track: track,
-              series: series,
-              category: category
+              // 保留原有的series和category信息（如果有）
+              series: item.series || {},
+              category: item.category || {}
             }
           })
           

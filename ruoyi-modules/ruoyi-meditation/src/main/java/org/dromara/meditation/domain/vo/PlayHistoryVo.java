@@ -75,5 +75,9 @@ public class PlayHistoryVo implements Serializable {
     @ExcelDictFormat(readConverterExp = "Y=是,N=否")
     private String isCompleted;
 
+    /**
+     * 关联的单集信息
+     */
+    private TrackVo track;
 
 }
