@@ -77,10 +77,10 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     public TableDataInfo<PlayHistoryVo> queryPageList(PlayHistoryBo bo, PageQuery pageQuery) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
         Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
-        
+
         // 批量查询并设置Track信息
         fillTrackInfo(result.getRecords());
-        
+
         return TableDataInfo.build(result);
     }
 
@@ -94,10 +94,10 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     public List<PlayHistoryVo> queryList(PlayHistoryBo bo) {
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
         List<PlayHistoryVo> list = baseMapper.selectVoList(lqw);
-        
+
         // 批量查询并设置Track信息
         fillTrackInfo(list);
-        
+
         return list;
     }
 
@@ -175,29 +175,29 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (bo.getUserId() == null) {
             bo.setUserId(LoginHelper.getUserId());
         }
-        
+
         LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
         Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
-        
+
         // 批量查询并设置Track信息
         fillTrackInfo(result.getRecords());
-        
+
         // 批量查询Series和Category信息
         fillSeriesAndCategoryInfo(result.getRecords());
-        
+
         // 转换为详情VO
         List<PlayHistoryDetailVo> detailList = new ArrayList<>();
         for (PlayHistoryVo historyVo : result.getRecords()) {
             PlayHistoryDetailVo detailVo = convertToDetailVo(historyVo);
             detailList.add(detailVo);
         }
-        
+
         Page<PlayHistoryDetailVo> detailPage = new Page<>();
         detailPage.setRecords(detailList);
         detailPage.setTotal(result.getTotal());
         detailPage.setCurrent(result.getCurrent());
         detailPage.setSize(result.getSize());
-        
+
         return TableDataInfo.build(detailPage);
     }
 
@@ -210,12 +210,12 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (historyVo == null) {
             return null;
         }
-        
+
         // 查询并设置Track信息
         if (historyVo.getTrackId() != null) {
             TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
             historyVo.setTrack(track);
-            
+
             // 查询Series和Category信息
             if (track != null) {
                 if (track.getSeriesId() != null) {
@@ -227,7 +227,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
                 }
             }
         }
-        
+
         return convertToDetailVo(historyVo);
     }
 
@@ -237,7 +237,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
     private PlayHistoryDetailVo convertToDetailVo(PlayHistoryVo historyVo) {
         PlayHistoryDetailVo detailVo = new PlayHistoryDetailVo();
         BeanUtils.copyProperties(historyVo, detailVo);
-        
+
         // 直接使用已经查询好的track信息，避免N+1查询
         TrackVo track = historyVo.getTrack();
         if (track != null) {
@@ -253,22 +253,22 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             detailVo.setCategoryId(track.getCategoryId());
             detailVo.setOrderIndex(track.getOrderIndex());
             detailVo.setStatus(track.getStatus());
-            
+
             // 计算播放进度百分比
             if (track.getDurationSec() != null && track.getDurationSec() > 0) {
                 double percent = (historyVo.getProgressSec() * 100.0) / track.getDurationSec();
                 detailVo.setProgressPercent(Math.min(100.0, Math.round(percent * 100.0) / 100.0));
             }
-            
+
             // 使用临时存储在remark中的series名称（如果有）
             if (track.getRemark() != null && !track.getRemark().isEmpty()) {
                 detailVo.setSeriesTitle(track.getRemark());
             }
         }
-        
+
         return detailVo;
     }
-    
+
     /**
      * 批量填充Track信息
      */
@@ -276,25 +276,25 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (CollUtil.isEmpty(historyList)) {
             return;
         }
-        
+
         // 收集所有trackId
         List<Long> trackIds = historyList.stream()
             .map(PlayHistoryVo::getTrackId)
             .filter(id -> id != null)
             .distinct()
             .collect(Collectors.toList());
-        
+
         if (CollUtil.isEmpty(trackIds)) {
             return;
         }
-        
+
         // 批量查询Track信息
-        List<TrackVo> tracks = trackMapper.selectVoBatchIds(trackIds);
-        
+        List<TrackVo> tracks = trackMapper.selectVoByIds(trackIds);
+
         // 构建Map以便快速查找
         Map<Long, TrackVo> trackMap = tracks.stream()
             .collect(Collectors.toMap(TrackVo::getId, track -> track));
-        
+
         // 设置Track信息到对应的PlayHistoryVo
         for (PlayHistoryVo historyVo : historyList) {
             if (historyVo.getTrackId() != null) {
@@ -302,7 +302,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             }
         }
     }
-    
+
     /**
      * 批量填充Series和Category信息
      */
@@ -310,11 +310,11 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (CollUtil.isEmpty(historyList)) {
             return;
         }
-        
+
         // 收集所有seriesId和categoryId
         List<Long> seriesIds = new ArrayList<>();
         List<Long> categoryIds = new ArrayList<>();
-        
+
         for (PlayHistoryVo historyVo : historyList) {
             TrackVo track = historyVo.getTrack();
             if (track != null) {
@@ -326,27 +326,27 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
                 }
             }
         }
-        
+
         // 去重
         seriesIds = seriesIds.stream().distinct().collect(Collectors.toList());
         categoryIds = categoryIds.stream().distinct().collect(Collectors.toList());
-        
+
         // 批量查询Series信息
         Map<Long, SeriesVo> seriesMap = new HashMap<>();
         if (CollUtil.isNotEmpty(seriesIds)) {
-            List<SeriesVo> seriesList = seriesMapper.selectVoBatchIds(seriesIds);
+            List<SeriesVo> seriesList = seriesMapper.selectVoByIds(seriesIds);
             seriesMap = seriesList.stream()
                 .collect(Collectors.toMap(SeriesVo::getId, series -> series));
         }
-        
+
         // 批量查询Category信息
         Map<Long, CategoryVo> categoryMap = new HashMap<>();
         if (CollUtil.isNotEmpty(categoryIds)) {
-            List<CategoryVo> categoryList = categoryMapper.selectVoBatchIds(categoryIds);
+            List<CategoryVo> categoryList = categoryMapper.selectVoByIds(categoryIds);
             categoryMap = categoryList.stream()
                 .collect(Collectors.toMap(CategoryVo::getId, category -> category));
         }
-        
+
         // 将Series和Category信息临时存储在Track的remark字段中
         for (PlayHistoryVo historyVo : historyList) {
             TrackVo track = historyVo.getTrack();

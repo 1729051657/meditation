@@ -101,7 +101,7 @@ public class TrackVo implements Serializable {
      */
     @ExcelProperty(value = "状态", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "0=正常,1=停用")
-    private String status;
+    private Integer status;
 
     /**
      * 备注

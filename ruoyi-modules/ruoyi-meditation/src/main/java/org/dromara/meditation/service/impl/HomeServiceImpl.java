@@ -168,17 +168,17 @@ public class HomeServiceImpl implements IHomeService {
                     seriesVo.setOrderNum(series.getOrderNum());
                     seriesVo.setStatus(series.getStatus());
                     seriesVo.setPublishTime(series.getPublishTime());
-                    
+
                     // 设置封面 - @Translation 注解会自动转换 OSS ID 为 URL
                     if (series.getCover() != null) {
                         seriesVo.setCover(series.getCover());
                     }
-                    
+
                     // 设置横幅图 - @Translation 注解会自动转换 OSS ID 为 URL
                     if (series.getBanner() != null) {
                         seriesVo.setBanner(series.getBanner());
                     }
-                    
+
                     items.add(seriesVo);
                 }
             }
@@ -243,17 +243,17 @@ public class HomeServiceImpl implements IHomeService {
                     trackVo.setStatus(track.getStatus());
                     trackVo.setSeriesId(track.getSeriesId());
                     trackVo.setCategoryId(track.getCategoryId());
-                    
+
                     // 设置封面 - @Translation 注解会自动转换 OSS ID 为 URL
                     if (track.getCover() != null) {
                         trackVo.setCover(track.getCover());
                     }
-                    
+
                     // 设置音频 - @Translation 注解会自动转换 OSS ID 为 URL
                     if (track.getAudio() != null) {
                         trackVo.setAudio(track.getAudio());
                     }
-                    
+
                     items.add(trackVo);
                 }
             }
@@ -267,7 +267,7 @@ public class HomeServiceImpl implements IHomeService {
                 item.setTitle("冥想练习" + i);
                 item.setIntro("放松身心，提升专注力");
                 item.setDurationSec(600); // 10分钟
-                item.setStatus("0");
+                item.setStatus(0);
                 item.setOrderIndex(i);
                 items.add(item);
             }
@@ -308,12 +308,12 @@ public class HomeServiceImpl implements IHomeService {
                 articleVo.setStatus(article.getStatus());
                 articleVo.setPublishTime(article.getPublishTime());
                 articleVo.setOrderNum(article.getOrderNum());
-                
+
                 // 设置封面 - @Translation 注解会自动转换 OSS ID 为 URL
                 if (article.getCover() != null) {
                     articleVo.setCover(article.getCover());
                 }
-                
+
                 items.add(articleVo);
             }
         }

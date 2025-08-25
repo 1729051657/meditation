@@ -81,7 +81,7 @@ public class TrackServiceImpl implements ITrackService {
         lqw.eq(bo.getDurationSec() != null, Track::getDurationSec, bo.getDurationSec());
         lqw.eq(StringUtils.isNotBlank(bo.getIntro()), Track::getIntro, bo.getIntro());
         lqw.eq(bo.getOrderIndex() != null, Track::getOrderIndex, bo.getOrderIndex());
-        lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Track::getStatus, bo.getStatus());
+        lqw.eq(bo.getStatus()!=null, Track::getStatus, bo.getStatus());
         lqw.eq(Track::getDelFlag, "0");
         lqw.orderByAsc(Track::getOrderIndex);
         return lqw;
