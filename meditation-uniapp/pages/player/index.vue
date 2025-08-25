@@ -78,7 +78,7 @@
             <!-- <text class="tn-icon-list"></text>
             <text class="feature-text">列表</text> -->
             <image class="w140"
-              src="/static/player/playlist-icon.png"
+              src="/static/player/list-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
           <view class="feature-btn" @click="share">

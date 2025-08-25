@@ -256,4 +256,26 @@ public class FavoriteServiceImpl implements IFavoriteService {
         
         return detailVo;
     }
+
+    /**
+     * 检查用户是否已收藏指定内容
+     */
+    @Override
+    public Boolean checkFavoriteStatus(Long targetId, String targetType) {
+        // 获取当前登录用户ID
+        Long userId = LoginHelper.getUserId();
+        if (userId == null) {
+            return false;
+        }
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Favorite> lqw = Wrappers.lambdaQuery();
+        lqw.eq(Favorite::getUserId, userId);
+        lqw.eq(Favorite::getTargetId, targetId);
+        lqw.eq(Favorite::getTargetType, targetType);
+        
+        // 查询是否存在收藏记录
+        long count = baseMapper.selectCount(lqw);
+        return count > 0;
+    }
 }

@@ -83,4 +83,13 @@ public interface IFavoriteService {
      * @return 用户收藏详情
      */
     FavoriteDetailVo queryDetailById(Long id);
+
+    /**
+     * 检查用户是否已收藏指定内容
+     *
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     * @return 是否已收藏
+     */
+    Boolean checkFavoriteStatus(Long targetId, String targetType);
 }

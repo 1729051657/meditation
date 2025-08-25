@@ -108,4 +108,17 @@ public class FavoriteController extends BaseController {
                           @PathVariable Long[] ids) {
         return toAjax(favoriteService.deleteWithValidByIds(List.of(ids), true));
     }
+
+    /**
+     * 检查用户是否已收藏指定内容
+     *
+     * @param trackId 目标ID
+     * @param type 目标类型
+     * @return 是否已收藏
+     */
+    @GetMapping("/check")
+    public R<Boolean> checkFavorite(@RequestParam Long trackId, @RequestParam String type) {
+        Boolean isFavorite = favoriteService.checkFavoriteStatus(trackId, type);
+        return R.ok(isFavorite);
+    }
 }
