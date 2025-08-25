@@ -306,17 +306,33 @@ export default {
     async loadTrack() {
       try {
         const res = await getTrackDetail(this.trackId)
-        this.track = res.data
-
-        if (this.track.audioUrl) {
-          this.audioContext.src = this.track.audioUrl
-          
-          // 如果有传递的播放进度，恢复播放位置
-          if (this.currentTime > 0) {
-            setTimeout(() => {
-              this.audioContext.seek(this.currentTime)
-            }, 100)
+        
+        if (res.code === 200 && res.data) {
+          // 映射后端返回的数据字段
+          this.track = {
+            id: res.data.id,
+            title: res.data.title || '未知音频',
+            artist: res.data.subtitle || res.data.author || '冥想音乐',
+            cover: res.data.cover || '/static/images/default-cover.jpg',
+            audioUrl: res.data.audio || res.data.audioUrl,
+            duration: res.data.durationSec || 0,
+            intro: res.data.intro || '',
+            categoryId: res.data.categoryId,
+            seriesId: res.data.seriesId
           }
+
+          if (this.track.audioUrl) {
+            this.audioContext.src = this.track.audioUrl
+            
+            // 如果有传递的播放进度，恢复播放位置
+            if (this.currentTime > 0) {
+              setTimeout(() => {
+                this.audioContext.seek(this.currentTime)
+              }, 100)
+            }
+          }
+        } else {
+          throw new Error(res.msg || '获取音频信息失败')
         }
 
         // 检查收藏状态
