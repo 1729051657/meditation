@@ -6,9 +6,7 @@
     <view class="search-bar">
       <input class="ipt" v-model="kw" placeholder="输入关键词" placeholder-color="#ADBCD1;" @confirm="doSearch" />
       <!-- <button class="btn" @click="doSearch">搜索</button> -->
-      <image class="w64"
-        src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755758697887tJvXHGQjnzvq5d990a55658db44b8b75daa516966148.png"
-        lazy-load="false" binderror="" bindload="" />
+      <tn-icon name="search" size="64" color="#79B1DA"></tn-icon>
 
     </view>
     <view class="chips" v-if="hot.length">
@@ -81,9 +79,7 @@
         </view>
       </block>
       <view class="top" v-if="false">
-        <image class="w320"
-          src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755758649928A3MmLUCt5VlTc107e6d228902441881efe851eb612dd.png"
-          mode="aspectFit|aspectFill|widthFix" lazy-load="false" binderror="" bindload="" />
+        <tn-icon name="search" size="320" color="#E0E0E0"></tn-icon>
 
       </view>
     </scroll-view>

@@ -12,9 +12,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.dromara.meditation.domain.bo.PlayHistoryBo;
 import org.dromara.meditation.domain.vo.PlayHistoryVo;
+import org.dromara.meditation.domain.vo.PlayHistoryDetailVo;
 import org.dromara.meditation.domain.PlayHistory;
 import org.dromara.meditation.mapper.PlayHistoryMapper;
+import org.dromara.meditation.mapper.TrackMapper;
+import org.dromara.meditation.mapper.SeriesMapper;
+import org.dromara.meditation.mapper.CategoryMapper;
 import org.dromara.meditation.service.IPlayHistoryService;
+import org.dromara.meditation.domain.vo.TrackVo;
+import org.dromara.meditation.domain.vo.SeriesVo;
+import org.dromara.meditation.domain.vo.CategoryVo;
+import org.dromara.common.satoken.utils.LoginHelper;
+import org.springframework.beans.BeanUtils;
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +42,9 @@ import java.util.Collection;
 public class PlayHistoryServiceImpl implements IPlayHistoryService {
 
     private final PlayHistoryMapper baseMapper;
+    private final TrackMapper trackMapper;
+    private final SeriesMapper seriesMapper;
+    private final CategoryMapper categoryMapper;
 
     /**
      * 查询音频播放记录
@@ -133,5 +146,94 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+
+    /**
+     * 分页查询播放历史详情列表
+     */
+    @Override
+    public TableDataInfo<PlayHistoryDetailVo> queryDetailPageList(PlayHistoryBo bo, PageQuery pageQuery) {
+        // 设置当前用户ID
+        if (bo.getUserId() == null) {
+            bo.setUserId(LoginHelper.getUserId());
+        }
+        
+        LambdaQueryWrapper<PlayHistory> lqw = buildQueryWrapper(bo);
+        Page<PlayHistoryVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        
+        // 转换为详情VO
+        List<PlayHistoryDetailVo> detailList = new ArrayList<>();
+        for (PlayHistoryVo historyVo : result.getRecords()) {
+            PlayHistoryDetailVo detailVo = convertToDetailVo(historyVo);
+            detailList.add(detailVo);
+        }
+        
+        Page<PlayHistoryDetailVo> detailPage = new Page<>();
+        detailPage.setRecords(detailList);
+        detailPage.setTotal(result.getTotal());
+        detailPage.setCurrent(result.getCurrent());
+        detailPage.setSize(result.getSize());
+        
+        return TableDataInfo.build(detailPage);
+    }
+
+    /**
+     * 查询播放历史详情
+     */
+    @Override
+    public PlayHistoryDetailVo queryDetailById(Long id) {
+        PlayHistoryVo historyVo = baseMapper.selectVoById(id);
+        if (historyVo == null) {
+            return null;
+        }
+        return convertToDetailVo(historyVo);
+    }
+
+    /**
+     * 转换为详情VO
+     */
+    private PlayHistoryDetailVo convertToDetailVo(PlayHistoryVo historyVo) {
+        PlayHistoryDetailVo detailVo = new PlayHistoryDetailVo();
+        BeanUtils.copyProperties(historyVo, detailVo);
+        
+        // 获取单集详细信息
+        TrackVo track = trackMapper.selectVoById(historyVo.getTrackId());
+        if (track != null) {
+            detailVo.setTrackTitle(track.getTitle());
+            detailVo.setTrackSubtitle(track.getSubtitle());
+            detailVo.setTrackAuthor(track.getAuthor());
+            detailVo.setTrackCover(track.getCover());
+            detailVo.setTrackIntro(track.getIntro());
+            detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
+            detailVo.setTotalDuration(track.getDurationSec());
+            detailVo.setSeriesId(track.getSeriesId());
+            detailVo.setCategoryId(track.getCategoryId());
+            detailVo.setOrderIndex(track.getOrderIndex());
+            detailVo.setStatus(track.getStatus());
+            
+            // 计算播放进度百分比
+            if (track.getDurationSec() != null && track.getDurationSec() > 0) {
+                double percent = (historyVo.getProgressSec() * 100.0) / track.getDurationSec();
+                detailVo.setProgressPercent(Math.min(100.0, Math.round(percent * 100.0) / 100.0));
+            }
+            
+            // 获取系列名称
+            if (track.getSeriesId() != null) {
+                SeriesVo series = seriesMapper.selectVoById(track.getSeriesId());
+                if (series != null) {
+                    detailVo.setSeriesTitle(series.getTitle());
+                }
+            }
+            
+            // 获取分类名称
+            if (track.getCategoryId() != null) {
+                CategoryVo category = categoryMapper.selectVoById(track.getCategoryId());
+                if (category != null) {
+                    detailVo.setCategoryName(category.getName());
+                }
+            }
+        }
+        
+        return detailVo;
     }
 }

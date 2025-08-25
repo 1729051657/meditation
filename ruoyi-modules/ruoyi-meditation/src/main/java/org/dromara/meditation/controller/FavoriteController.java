@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.*;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaIgnore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import org.dromara.common.idempotent.annotation.RepeatSubmit;
@@ -18,6 +19,7 @@ import org.dromara.common.core.validate.EditGroup;
 import org.dromara.common.log.enums.BusinessType;
 import org.dromara.common.excel.utils.ExcelUtil;
 import org.dromara.meditation.domain.vo.FavoriteVo;
+import org.dromara.meditation.domain.vo.FavoriteDetailVo;
 import org.dromara.meditation.domain.bo.FavoriteBo;
 import org.dromara.meditation.service.IFavoriteService;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -39,10 +41,17 @@ public class FavoriteController extends BaseController {
     /**
      * 查询用户收藏列表
      */
-    @SaCheckPermission("meditation:favorite:list")
     @GetMapping("/list")
     public TableDataInfo<FavoriteVo> list(FavoriteBo bo, PageQuery pageQuery) {
         return favoriteService.queryPageList(bo, pageQuery);
+    }
+
+    /**
+     * 查询用户收藏详情列表（包含目标详细信息）
+     */
+    @GetMapping("/detail/list")
+    public TableDataInfo<FavoriteDetailVo> detailList(FavoriteBo bo, PageQuery pageQuery) {
+        return favoriteService.queryDetailPageList(bo, pageQuery);
     }
 
     /**
@@ -61,7 +70,6 @@ public class FavoriteController extends BaseController {
      *
      * @param id 主键
      */
-    @SaCheckPermission("meditation:favorite:query")
     @GetMapping("/{id}")
     public R<FavoriteVo> getInfo(@NotNull(message = "主键不能为空")
                                      @PathVariable Long id) {
@@ -71,7 +79,6 @@ public class FavoriteController extends BaseController {
     /**
      * 新增用户收藏
      */
-    @SaCheckPermission("meditation:favorite:add")
     @Log(title = "用户收藏", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping()
@@ -95,7 +102,6 @@ public class FavoriteController extends BaseController {
      *
      * @param ids 主键串
      */
-    @SaCheckPermission("meditation:favorite:remove")
     @Log(title = "用户收藏", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public R<Void> remove(@NotEmpty(message = "主键不能为空")

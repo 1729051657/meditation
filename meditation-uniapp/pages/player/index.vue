@@ -9,9 +9,7 @@
     <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }">
     </view>
     <view class="imggo" @click="go">
-      <image class="w64"
-        src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1756090212124hHgC9NMon8Dz93aef614c75aad026b85ed225e189066.png"
-        lazy-load="false" binderror="" bindload="" />
+      <tn-icon name="left" size="64" color="#FFFFFF"></tn-icon>
 
     </view>
 
@@ -35,9 +33,7 @@
           <text class="track-title">{{ track.title }}</text>
           <text class="track-artist">{{ track.artist || '冥想音乐' }}</text>
           <view class="collect">
-            <image class="w64" @click="toggleFavorite"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755842963823hoYmdjzpgaFAe4fd7107ae99861a945d539e0078f288.png"
-              lazy-load="false" binderror="" bindload="" />
+            <tn-icon @click="toggleFavorite" :name="isFavorite ? 'like-fill' : 'like'" size="64" :color="isFavorite ? '#FF6B6B' : '#FFFFFF'"></tn-icon>
           </view>
         </view>
         <!-- 进度条 -->
@@ -190,7 +186,7 @@
 </template>
 
 <script>
-import { getTrackDetail, recordPlay } from '@/api/track'
+import { getTrack, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
 
 export default {
@@ -206,15 +202,8 @@ export default {
       audioContext: null,
       showModal: false,
       currentIndex: 0,
-      playlist: [
-        { name: '名称名称名称', duration: '10分钟' },
-        { name: '名称名称名称', duration: '10分钟' },
-        { name: '名称名910rpx', duration: '10分钟' },
-        { name: '名称名称名称', duration: '10分钟' },
-        { name: '名称名称名称', duration: '10分钟' },
-        { name: '136rpx 称名称名称', duration: '10分钟' },
-        { name: '254rpx', duration: '10分钟' }
-      ],
+      playlist: [], // 播放列表，从API获取
+      seriesId: null, // 系列ID
       selectedTime: 5, // 默认选中5分钟
       customTime: 0,   // 自定义时间
       showCustomModal: false, // 是否显示自定义模态框
@@ -239,9 +228,14 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
-    this.trackId = options.id
+    // 支持两种参数：trackId 或 id
+    this.trackId = options.trackId || options.id
+    this.seriesId = options.seriesId
     this.initAudio()
     this.loadTrack()
+    if (this.seriesId) {
+      this.loadPlaylist()
+    }
   },
   computed: {
     // 计算是否是自定义时间
@@ -283,25 +277,95 @@ export default {
 
     async loadTrack() {
       try {
-        const res = await getTrackDetail(this.trackId)
+        const res = await getTrack(this.trackId)
         this.track = res.data
+        
+        // 如果没有传seriesId，从track中获取
+        if (!this.seriesId && this.track.seriesId) {
+          this.seriesId = this.track.seriesId
+          this.loadPlaylist()
+        }
 
+        // 处理音频URL - 如果是OSS ID需要转换
         if (this.track.audioUrl) {
-          this.audioContext.src = this.track.audioUrl
+          // 如果audioUrl是数字（OSS ID），转换为URL
+          if (!isNaN(this.track.audioUrl)) {
+            this.audioContext.src = this.oss(this.track.audioUrl)
+          } else {
+            this.audioContext.src = this.track.audioUrl
+          }
+        } else if (this.track.audioId) {
+          // 兼容audioId字段
+          this.audioContext.src = this.oss(this.track.audioId)
         }
 
         // 检查收藏状态
-        const favRes = await checkFavorite(this.trackId, 'track')
-        this.isFavorite = favRes.data
+        try {
+          const favRes = await checkFavorite(this.trackId, 'track')
+          this.isFavorite = favRes.data || false
+        } catch (error) {
+          console.error('检查收藏状态失败:', error)
+          this.isFavorite = false
+        }
 
         // 记录播放
         recordPlay(this.trackId)
+        
+        // 更新当前索引
+        if (this.playlist.length > 0) {
+          this.currentIndex = this.playlist.findIndex(item => item.id == this.trackId)
+        }
       } catch (error) {
+        console.error('加载音频失败:', error)
         uni.showToast({
           title: '加载失败',
           icon: 'none'
         })
       }
+    },
+    
+    // 加载播放列表
+    async loadPlaylist() {
+      if (!this.seriesId) return
+      
+      try {
+        const res = await listTracks({
+          seriesId: this.seriesId,
+          status: 0,
+          orderByColumn: 'order_index',
+          isAsc: 'asc',
+          pageNum: 1,
+          pageSize: 100
+        })
+        
+        const tracks = res.rows || res.data || []
+        this.playlist = tracks.map(item => ({
+          id: item.id,
+          name: item.title,
+          duration: this.formatDuration(item.durationSec)
+        }))
+        
+        // 更新当前索引
+        if (this.trackId) {
+          this.currentIndex = this.playlist.findIndex(item => item.id == this.trackId)
+        }
+      } catch (error) {
+        console.error('加载播放列表失败:', error)
+      }
+    },
+    
+    // 格式化时长
+    formatDuration(seconds) {
+      if (!seconds) return '0分钟'
+      const minutes = Math.ceil(seconds / 60)
+      return `${minutes}分钟`
+    },
+    
+    // OSS文件转URL
+    oss(id) {
+      if (!id) return ''
+      const baseUrl = this.$baseUrl || 'https://thoughtadmin.bawutech.com/prod-api/'
+      return `${baseUrl}system/oss/download/${id}`
     },
 
     togglePlay() {

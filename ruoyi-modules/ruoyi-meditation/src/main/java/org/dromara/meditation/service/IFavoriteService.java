@@ -1,6 +1,7 @@
 package org.dromara.meditation.service;
 
 import org.dromara.meditation.domain.vo.FavoriteVo;
+import org.dromara.meditation.domain.vo.FavoriteDetailVo;
 import org.dromara.meditation.domain.bo.FavoriteBo;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
 import org.dromara.common.mybatis.core.page.PageQuery;
@@ -65,4 +66,21 @@ public interface IFavoriteService {
      * @return 是否删除成功
      */
     Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+
+    /**
+     * 分页查询用户收藏详情列表（包含目标详细信息）
+     *
+     * @param bo        查询条件
+     * @param pageQuery 分页参数
+     * @return 用户收藏详情分页列表
+     */
+    TableDataInfo<FavoriteDetailVo> queryDetailPageList(FavoriteBo bo, PageQuery pageQuery);
+
+    /**
+     * 查询用户收藏详情（包含目标详细信息）
+     *
+     * @param id 主键
+     * @return 用户收藏详情
+     */
+    FavoriteDetailVo queryDetailById(Long id);
 }
