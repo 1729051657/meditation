@@ -175,7 +175,14 @@
         
         <!-- 第四行：图片 -->
         <el-form-item label="图片" prop="image">
-          <image-upload v-model="form.image" :limit="1"/>
+          <common-upload 
+            v-model="form.image" 
+            upload-type="image"
+            :limit="1"
+            :file-size="5"
+            :compress-image="true"
+            :compress-target-size="500"
+          />
         </el-form-item>
         
         <!-- 第五行：链接目标 -->

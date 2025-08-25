@@ -98,7 +98,15 @@
           <el-input v-model="form.code" placeholder="请输入分类编码" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
-          <image-upload v-model="form.icon" :limit="1" />
+          <common-upload 
+            v-model="form.icon" 
+            upload-type="image"
+            :limit="1"
+            :file-size="2"
+            :file-types="['png', 'jpg', 'jpeg', 'svg']"
+            :compress-image="true"
+            :compress-target-size="100"
+          />
         </el-form-item>
         <el-form-item label="简介" prop="description">
           <el-input v-model="form.description" placeholder="请输入简介" />

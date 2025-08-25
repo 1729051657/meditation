@@ -25,6 +25,9 @@ import HighLight from '@highlightjs/vue-plugin';
 import 'virtual:svg-icons-register';
 import ElementIcons from '@/plugins/svgicon';
 
+// 全局组件
+import GlobalComponents from '@/plugins/components';
+
 // permission control
 import './permission';
 
@@ -46,6 +49,7 @@ const app = createApp(App);
 
 app.use(HighLight);
 app.use(ElementIcons);
+app.use(GlobalComponents);
 app.use(router);
 app.use(store);
 app.use(i18n);
