@@ -46,3 +46,18 @@ nbdist/
 !*/build/*.xml
 
 .flattened-pom.xml
+
+######################################################################
+# Security & Sensitive Data
+*.env
+*.env.local
+*.env.production
+*.env.development
+config/application-*.yml
+config/application-*.properties
+**/application-*.yml
+**/application-*.properties
+**/meditation_bak.sql
+**/meditation_bak_*.sql
+**/*backup*.sql
+**/*bak*.sql
