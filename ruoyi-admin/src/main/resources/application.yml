@@ -52,7 +52,7 @@ user:
 # Spring配置
 spring:
   application:
-    name: RuoYi-Vue-Plus
+    name: 冥想后台管理
   threads:
     # 开启虚拟线程 仅jdk21可用
     virtual:
