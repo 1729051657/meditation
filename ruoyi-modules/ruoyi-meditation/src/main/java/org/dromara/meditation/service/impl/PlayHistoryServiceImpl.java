@@ -204,7 +204,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             detailVo.setTrackAuthor(track.getAuthor());
             detailVo.setTrackCover(track.getCover());
             detailVo.setTrackIntro(track.getIntro());
-            detailVo.setAudioUrl(track.getAudioUrl());
+            detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
             detailVo.setTotalDuration(track.getDurationSec());
             detailVo.setSeriesId(track.getSeriesId());
             detailVo.setCategoryId(track.getCategoryId());

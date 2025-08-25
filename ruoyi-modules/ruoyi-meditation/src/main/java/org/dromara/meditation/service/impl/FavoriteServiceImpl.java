@@ -206,7 +206,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 detailVo.setTargetCover(track.getCover());
                 detailVo.setTargetIntro(track.getIntro());
                 detailVo.setTargetDuration(track.getDurationSec());
-                detailVo.setAudioUrl(track.getAudioUrl());
+                detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
                 detailVo.setPlayCount(track.getPlayCount());
                 detailVo.setCategoryId(track.getCategoryId());
                 detailVo.setStatus(track.getStatus());

@@ -5,6 +5,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.Date;
+import org.dromara.common.translation.annotation.Translation;
+import org.dromara.common.translation.constant.TransConstant;
 
 /**
  * 用户收藏详情视图对象
@@ -38,12 +40,14 @@ public class FavoriteDetailVo extends FavoriteVo {
     /**
      * 目标封面
      */
-    private String targetCover;
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private Long targetCover;
 
     /**
      * 目标横幅（系列专用）
      */
-    private String targetBanner;
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private Long targetBanner;
 
     /**
      * 目标简介
@@ -78,7 +82,8 @@ public class FavoriteDetailVo extends FavoriteVo {
     /**
      * 音频URL - 单集专用
      */
-    private String audioUrl;
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private Long audioUrl;
 
     /**
      * 分类ID

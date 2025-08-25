@@ -41,7 +41,6 @@ public class PlayHistoryController extends BaseController {
     /**
      * 查询音频播放记录列表
      */
-    @SaCheckPermission("meditation:playHistory:list")
     @GetMapping("/list")
     public TableDataInfo<PlayHistoryVo> list(PlayHistoryBo bo, PageQuery pageQuery) {
         return playHistoryService.queryPageList(bo, pageQuery);
@@ -50,7 +49,6 @@ public class PlayHistoryController extends BaseController {
     /**
      * 查询播放历史详情列表（包含单集详细信息）
      */
-    @SaIgnore
     @GetMapping("/detail/list")
     public TableDataInfo<PlayHistoryDetailVo> detailList(PlayHistoryBo bo, PageQuery pageQuery) {
         return playHistoryService.queryDetailPageList(bo, pageQuery);
@@ -72,7 +70,6 @@ public class PlayHistoryController extends BaseController {
      *
      * @param id 主键
      */
-    @SaCheckPermission("meditation:playHistory:query")
     @GetMapping("/{id}")
     public R<PlayHistoryVo> getInfo(@NotNull(message = "主键不能为空")
                                      @PathVariable Long id) {
@@ -82,7 +79,6 @@ public class PlayHistoryController extends BaseController {
     /**
      * 新增音频播放记录
      */
-    @SaCheckPermission("meditation:playHistory:add")
     @Log(title = "音频播放记录", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping()

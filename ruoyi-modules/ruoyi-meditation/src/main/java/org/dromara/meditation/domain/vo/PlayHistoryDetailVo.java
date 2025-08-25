@@ -5,6 +5,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.Date;
+import org.dromara.common.translation.annotation.Translation;
+import org.dromara.common.translation.constant.TransConstant;
 
 /**
  * 播放历史详情视图对象
@@ -38,7 +40,8 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     /**
      * 单集封面
      */
-    private String trackCover;
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private Long trackCover;
 
     /**
      * 单集简介
@@ -48,7 +51,8 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     /**
      * 音频URL
      */
-    private String audioUrl;
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private Long audioUrl;
 
     /**
      * 总时长（秒）
