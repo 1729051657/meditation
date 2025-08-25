@@ -49,8 +49,6 @@ public class ArticleVo implements Serializable {
     /**
      * 封面文件id（sys_oss.oss_id）
      */
-    @ExcelProperty(value = "封面文件id", converter = ExcelDictConvert.class)
-    @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
     @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long cover;
 

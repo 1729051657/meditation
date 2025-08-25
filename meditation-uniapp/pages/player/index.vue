@@ -9,7 +9,9 @@
     <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }">
     </view>
     <view class="imggo" @click="go">
-      <tn-icon name="left" size="64" color="#FFFFFF"></tn-icon>
+      <image class="w64"
+        src="/static/player/back-arrow.png"
+        lazy-load="false" binderror="" bindload="" />
 
     </view>
 
@@ -33,7 +35,9 @@
           <text class="track-title">{{ track.title }}</text>
           <text class="track-artist">{{ track.artist || '冥想音乐' }}</text>
           <view class="collect">
-            <tn-icon @click="toggleFavorite" :name="isFavorite ? 'like-fill' : 'like'" size="64" :color="isFavorite ? '#FF6B6B' : '#FFFFFF'"></tn-icon>
+            <image class="w64" @click="toggleFavorite"
+              src="/static/player/favorite-icon.png"
+              lazy-load="false" binderror="" bindload="" />
           </view>
         </view>
         <!-- 进度条 -->
@@ -66,7 +70,7 @@
               :style="{ color: isFavorite ? '#ef4444' : '#6B7280' }"></text>
             <text class="feature-text">收藏</text> -->
             <image class="w72"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755843485258En21GcZ17B9gadf295beb3f3ee975af8672cb46409f1.png"
+              src="/static/player/playlist-icon.png"
               lazy-load="false" binderror="" bindload="" />
 
           </view>
@@ -74,14 +78,14 @@
             <!-- <text class="tn-icon-list"></text>
             <text class="feature-text">列表</text> -->
             <image class="w140"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755843561221KAeMI4d0Fvzdb07dd1a364a83bdc6c99e7d5e09510a2.png"
+              src="/static/player/playlist-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
           <view class="feature-btn" @click="share">
-            <!-- <text class="tn-icon-share"></text>
+            <!-- <text class="tn-icon-list"></text>
             <text class="feature-text">分享</text> -->
             <image class="w72"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755843633473Bqn1b9qNgof7d783fc205660866c24080089d2f9ca2c.png"
+              src="/static/player/share-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
         </view>
@@ -106,12 +110,12 @@
               <view class="song-name" :class="{ song: index === currentIndex }">{{ item.name }}</view>
             </view>
             <image class="w56"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755847898305VhP0ejwQ1BpUcf7a9d5915d6277a02a4125c26c2c4b8.png"
+              src="/static/player/play-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
           <view class="playlist-img">
             <image class="w32"
-              src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1755848032634RdnYr76e4Es2d783fc205660866c24080089d2f9ca2c.png"
+              src="/static/player/time-icon.png"
               lazy-load="false" binderror="" bindload="" />
             <view class="time">
               10分钟
@@ -130,7 +134,7 @@
         <view class="header-title">定时器</view>
         <view class="close-icon" @click="closeTimer">
           <image class="w32"
-            src="https://xc-obs-shwg-ssmwl-01.bawutech.com:443/travel-1756088299065evuipLOb7sNW1cde2600d40e47e989f15a77377d4097.png"
+            src="/static/player/close-icon.png"
             mode="aspectFit|aspectFill|widthFix" lazy-load="false" binderror="" bindload="" />
           结束定时
         </view>
@@ -186,7 +190,7 @@
 </template>
 
 <script>
-import { getTrack, recordPlay, listTracks } from '@/api/track'
+import { getTrackDetail, recordPlay } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
 
 export default {
@@ -202,8 +206,15 @@ export default {
       audioContext: null,
       showModal: false,
       currentIndex: 0,
-      playlist: [], // 播放列表，从API获取
-      seriesId: null, // 系列ID
+      playlist: [
+        { name: '名称名称名称', duration: '10分钟' },
+        { name: '名称名称名称', duration: '10分钟' },
+        { name: '名称名910rpx', duration: '10分钟' },
+        { name: '名称名称名称', duration: '10分钟' },
+        { name: '名称名称名称', duration: '10分钟' },
+        { name: '136rpx 称名称名称', duration: '10分钟' },
+        { name: '254rpx', duration: '10分钟' }
+      ],
       selectedTime: 5, // 默认选中5分钟
       customTime: 0,   // 自定义时间
       showCustomModal: false, // 是否显示自定义模态框
@@ -228,14 +239,9 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
-    // 支持两种参数：trackId 或 id
-    this.trackId = options.trackId || options.id
-    this.seriesId = options.seriesId
+    this.trackId = options.id
     this.initAudio()
     this.loadTrack()
-    if (this.seriesId) {
-      this.loadPlaylist()
-    }
   },
   computed: {
     // 计算是否是自定义时间
@@ -277,95 +283,25 @@ export default {
 
     async loadTrack() {
       try {
-        const res = await getTrack(this.trackId)
+        const res = await getTrackDetail(this.trackId)
         this.track = res.data
-        
-        // 如果没有传seriesId，从track中获取
-        if (!this.seriesId && this.track.seriesId) {
-          this.seriesId = this.track.seriesId
-          this.loadPlaylist()
-        }
 
-        // 处理音频URL - 如果是OSS ID需要转换
         if (this.track.audioUrl) {
-          // 如果audioUrl是数字（OSS ID），转换为URL
-          if (!isNaN(this.track.audioUrl)) {
-            this.audioContext.src = this.oss(this.track.audioUrl)
-          } else {
-            this.audioContext.src = this.track.audioUrl
-          }
-        } else if (this.track.audioId) {
-          // 兼容audioId字段
-          this.audioContext.src = this.oss(this.track.audioId)
+          this.audioContext.src = this.track.audioUrl
         }
 
         // 检查收藏状态
-        try {
-          const favRes = await checkFavorite(this.trackId, 'track')
-          this.isFavorite = favRes.data || false
-        } catch (error) {
-          console.error('检查收藏状态失败:', error)
-          this.isFavorite = false
-        }
+        const favRes = await checkFavorite(this.trackId, 'track')
+        this.isFavorite = favRes.data
 
         // 记录播放
         recordPlay(this.trackId)
-        
-        // 更新当前索引
-        if (this.playlist.length > 0) {
-          this.currentIndex = this.playlist.findIndex(item => item.id == this.trackId)
-        }
       } catch (error) {
-        console.error('加载音频失败:', error)
         uni.showToast({
           title: '加载失败',
           icon: 'none'
         })
       }
-    },
-    
-    // 加载播放列表
-    async loadPlaylist() {
-      if (!this.seriesId) return
-      
-      try {
-        const res = await listTracks({
-          seriesId: this.seriesId,
-          status: 0,
-          orderByColumn: 'order_index',
-          isAsc: 'asc',
-          pageNum: 1,
-          pageSize: 100
-        })
-        
-        const tracks = res.rows || res.data || []
-        this.playlist = tracks.map(item => ({
-          id: item.id,
-          name: item.title,
-          duration: this.formatDuration(item.durationSec)
-        }))
-        
-        // 更新当前索引
-        if (this.trackId) {
-          this.currentIndex = this.playlist.findIndex(item => item.id == this.trackId)
-        }
-      } catch (error) {
-        console.error('加载播放列表失败:', error)
-      }
-    },
-    
-    // 格式化时长
-    formatDuration(seconds) {
-      if (!seconds) return '0分钟'
-      const minutes = Math.ceil(seconds / 60)
-      return `${minutes}分钟`
-    },
-    
-    // OSS文件转URL
-    oss(id) {
-      if (!id) return ''
-      const baseUrl = this.$baseUrl || 'https://thoughtadmin.bawutech.com/prod-api/'
-      return `${baseUrl}system/oss/download/${id}`
     },
 
     togglePlay() {

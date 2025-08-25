@@ -15,7 +15,7 @@
               
            
               
-            <tn-icon name="apps" size="32" color="#79B1DA" class="chipImg"></tn-icon>
+            <image :src="getCategoryIcon(category.name, category.id)" class="chipImg"></image>
               
             {{ category.name }}
              </view>
@@ -225,6 +225,32 @@ export default {
         return currentCategory ? currentCategory.name : '分类'
       }
       return '分类'
+    },
+
+    // 根据分类名称获取对应的图标
+    getCategoryIcon(categoryName, categoryId) {
+      // 基础图标映射
+      const iconMap = {
+        '情绪调节': '/static/category/emotion-regulation@2x.png',
+        '提升专注': '/static/category/improve-focus@2x.png',
+        '改善睡眠': '/static/category/improve-sleep@2x.png',
+        '放松减压': '/static/category/relax-stress@2x.png'
+      }
+      
+      // 如果分类被选中，返回对应的选中状态图标
+      if (categoryId === this.currentCategoryId) {
+        // 根据分类名称返回对应的选中状态图标
+        const selectedIconMap = {
+          '情绪调节': '/static/home/emotion-regulation@2x.png',
+          '提升专注': '/static/home/improve-focus@2x.png',
+          '改善睡眠': '/static/home/improve-sleep@2x.png',
+          '放松减压': '/static/home/relax-stress@2x.png'
+        }
+        return selectedIconMap[categoryName] || iconMap[categoryName] || '/static/images/category/category-icon.png'
+      }
+      
+      // 未选中状态返回基础图标
+      return iconMap[categoryName] || '/static/images/category/category-icon.png'
     }
   },
   onReachBottom() {
