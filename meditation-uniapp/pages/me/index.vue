@@ -22,12 +22,12 @@
       <!-- 第一行卡片 -->
       <view class="card-row">
         <view class="card-item" @click="goToFavorites">
-          <image src="/static/me/favorites@3x.png" class="card-icon"></image>
+          <tn-icon name="like-fill" size="60" color="#79B1DA" class="card-icon"></tn-icon>
           <text class="card-text">我的收藏</text>
         </view>
         
         <view class="card-item" @click="goToRecent">
-          <image src="/static/me/recent@3x.png" class="card-icon"></image>
+          <tn-icon name="time-fill" size="60" color="#79B1DA" class="card-icon"></tn-icon>
           <text class="card-text">最近播放</text>
         </view>
       </view>
@@ -38,19 +38,19 @@
       <!-- 常见问题 -->
       <view class="menu-item" @click="goToFAQ">
         <view class="menu-left">
-          <image src="/static/me/faq@3x.png" class="menu-icon"></image>
+          <tn-icon name="help-fill" size="48" color="#79B1DA" class="menu-icon"></tn-icon>
           <text class="menu-text">常见问题</text>
         </view>
-        <image src="/static/me/arrow@3x.png" class="menu-arrow"></image>
+        <tn-icon name="right" size="32" color="#C0C0C0"></tn-icon>
       </view>
       
       <!-- 退出登录 -->
       <view class="menu-item" @click="goToLogout">
         <view class="menu-left">
-          <image src="/static/me/logout@3x.png" class="menu-icon"></image>
+          <tn-icon name="logout" size="48" color="#79B1DA" class="menu-icon"></tn-icon>
           <text class="menu-text">退出登录</text>
         </view>
-        <image src="/static/me/arrow@3x.png" class="menu-arrow"></image>
+        <tn-icon name="right" size="32" color="#C0C0C0"></tn-icon>
       </view>
     </view>
   </view>
@@ -264,8 +264,6 @@ export default {
       }
       
       .card-icon {
-        width: 56rpx;
-        height: 56rpx;
         margin-bottom: 16rpx;
       }
       
