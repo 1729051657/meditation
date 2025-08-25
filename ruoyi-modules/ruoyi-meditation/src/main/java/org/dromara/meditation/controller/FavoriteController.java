@@ -121,4 +121,17 @@ public class FavoriteController extends BaseController {
         Boolean isFavorite = favoriteService.checkFavoriteStatus(trackId, type);
         return R.ok(isFavorite);
     }
+    
+    /**
+     * 检查用户是否已收藏指定内容（新接口）
+     *
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     * @return 是否已收藏
+     */
+    @GetMapping("/check/status")
+    public R<Boolean> checkFavoriteStatus(@RequestParam Long targetId, @RequestParam String targetType) {
+        Boolean isFavorite = favoriteService.checkFavoriteStatus(targetId, targetType);
+        return R.ok(isFavorite);
+    }
 }
