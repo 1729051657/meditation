@@ -1,3 +1,5 @@
+import { TrackVO } from '../track/types';
+
 export interface PlayHistoryVO {
   /**
    * 主键
@@ -33,6 +35,11 @@ export interface PlayHistoryVO {
    * 是否已听完（Y是 N否）
    */
   isCompleted: string;
+
+  /**
+   * 关联的单集信息
+   */
+  track?: TrackVO;
 
 }
 
