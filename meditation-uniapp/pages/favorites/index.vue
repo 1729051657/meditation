@@ -37,20 +37,20 @@
           class="favorite-item" 
           v-for="(item, index) in favoritesList" 
           :key="item.id"
-          :class="{ 'item-playing': currentPlaying && currentPlaying.id === item.id }"
+          :class="{ 'item-playing': currentPlaying && currentPlaying.id === item.targetId }"
           @click="playAudio(item)"
         >
           <image :src="item.cover" mode="aspectFill" class="item-cover"></image>
           <view class="item-info">
             <text class="item-title">{{ item.title }}</text>
-            <text class="item-author">{{ item.author }}</text>
+            <text class="item-subtitle" v-if="item.subtitle">{{ item.subtitle }}</text>
             <view class="item-meta">
-              <text class="meta-duration">{{ item.duration }}</text>
-              <text class="meta-plays">{{ item.plays }}次播放</text>
+              <text class="meta-duration">{{ formatDuration(item.duration) }}</text>
+              <text class="meta-category" v-if="item.categoryName">{{ item.categoryName }}</text>
             </view>
           </view>
           <view class="item-action" @click.stop="toggleFavorite(item, index)">
-            <text class="tn-icon-like-fill" :style="{ color: item.isFavorite !== false ? '#FF6B6B' : '#999' }"></text>
+            <text class="tn-icon-like-fill" style="color: #FF6B6B"></text>
           </view>
         </view>
       </view>
@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { listFavoritesDetail, removeFavorite, addFavorite } from '@/api/favorite'
+import { listFavoritesDetail, removeFavorite } from '@/api/favorite'
 import SleepTimer from '@/components/SleepTimer/index.vue'
 
 export default {
@@ -84,11 +84,11 @@ export default {
       pageSize: 20,
       total: 0,
       hasMore: true,
-      backgroundAudioManager: null, // 背景音频管理器
-      currentPlaying: null, // 当前播放的音频
-      isPlaying: false, // 是否正在播放
-      sleepTimer: null, // 定时关闭定时器
-      sleepTime: 0 // 定时关闭剩余时间（秒）
+      backgroundAudioManager: null,
+      currentPlaying: null,
+      isPlaying: false,
+      sleepTimer: null,
+      sleepTime: 0
     }
   },
   
@@ -98,28 +98,23 @@ export default {
   },
   
   onShow() {
-    // 页面显示时检查播放状态
+    // 页面显示时刷新列表和检查播放状态
+    this.refreshFavorites()
     this.checkPlayingStatus()
   },
   
   onUnload() {
-    // 页面卸载时清理定时器
     if (this.sleepTimer) {
       clearInterval(this.sleepTimer)
     }
   },
   
-  // 下拉刷新
   onPullDownRefresh() {
-    this.pageNum = 1
-    this.favoritesList = []
-    this.hasMore = true
-    this.loadFavorites().finally(() => {
+    this.refreshFavorites().finally(() => {
       uni.stopPullDownRefresh()
     })
   },
   
-  // 上拉加载更多
   onReachBottom() {
     if (this.hasMore && !this.loading) {
       this.pageNum++
@@ -133,32 +128,27 @@ export default {
       // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
       this.backgroundAudioManager = uni.getBackgroundAudioManager()
       
-      // 监听播放事件
       this.backgroundAudioManager.onPlay(() => {
         console.log('背景音频开始播放')
         this.isPlaying = true
       })
       
-      // 监听暂停事件
       this.backgroundAudioManager.onPause(() => {
         console.log('背景音频暂停')
         this.isPlaying = false
       })
       
-      // 监听停止事件
       this.backgroundAudioManager.onStop(() => {
         console.log('背景音频停止')
         this.isPlaying = false
         this.currentPlaying = null
       })
       
-      // 监听播放结束
       this.backgroundAudioManager.onEnded(() => {
         console.log('背景音频播放结束')
         this.playNext()
       })
       
-      // 监听错误
       this.backgroundAudioManager.onError((res) => {
         console.error('背景音频播放错误:', res)
         uni.showToast({
@@ -170,9 +160,7 @@ export default {
       // #endif
       
       // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-      // 非小程序环境使用普通音频上下文
       this.backgroundAudioManager = uni.createInnerAudioContext()
-      // 设置类似的事件监听
       // #endif
     },
     
@@ -185,12 +173,20 @@ export default {
       }
     },
     
+    // 刷新收藏列表
+    async refreshFavorites() {
+      this.pageNum = 1
+      this.favoritesList = []
+      this.hasMore = true
+      return this.loadFavorites()
+    },
+    
+    // 加载收藏列表
     async loadFavorites() {
       if (this.loading) return
       
       try {
         this.loading = true
-        // 使用详情接口，只查询音频类型的收藏
         const res = await listFavoritesDetail({
           pageNum: this.pageNum,
           pageSize: this.pageSize,
@@ -198,21 +194,52 @@ export default {
         })
         
         if (res.code === 200) {
-          const { rows, total } = res.data
+          const { rows, total } = res
           
-          // 格式化数据
-          const formattedList = rows.map(item => ({
-            id: item.targetId,
-            title: item.targetTitle || '未知音频',
-            author: item.targetAuthor || '未知作者',
-            duration: this.formatDuration(item.targetDuration || 0),
-            plays: item.playCount || 0,
-            cover: item.targetCover || '/static/images/default-cover.png',
-            audioUrl: item.audioUrl, // 音频URL
-            favoriteId: item.id, // 收藏记录ID
-            isFavorite: true, // 标记为已收藏
-            categoryName: item.categoryName || '默认分类'
-          }))
+          // 格式化数据 - 根据新的数据结构
+          const formattedList = rows.map(item => {
+            // 根据targetType获取对应的数据
+            let targetData = {}
+            let cover = '/static/images/default-cover.png'
+            let audioUrl = ''
+            let duration = 0
+            
+            if (item.targetType === 'track' && item.track) {
+              // 音频类型
+              targetData = item.track
+              cover = targetData.cover || cover
+              audioUrl = targetData.audio || ''
+              duration = targetData.durationSec || 0
+            } else if (item.targetType === 'series' && item.series) {
+              // 系列类型
+              targetData = item.series
+              cover = targetData.cover || cover
+              duration = targetData.recommendDuration || 0
+            } else if (item.targetType === 'article' && item.article) {
+              // 文章类型
+              targetData = item.article
+              cover = targetData.cover || cover
+            }
+            
+            return {
+              id: item.id, // 收藏记录ID
+              targetId: item.targetId,
+              targetType: item.targetType,
+              title: targetData.title || '未知标题',
+              subtitle: targetData.subtitle || '',
+              duration: duration,
+              cover: cover,
+              audioUrl: audioUrl,
+              categoryName: item.category?.name || '',
+              categoryId: item.category?.id,
+              track: item.track,
+              series: item.series,
+              article: item.article,
+              playCount: item.playCount || 0,
+              viewCount: item.viewCount || 0,
+              createTime: item.createTime
+            }
+          })
           
           if (this.pageNum === 1) {
             this.favoritesList = formattedList
@@ -244,8 +271,24 @@ export default {
     
     // 播放音频
     playAudio(item) {
+      // 只处理音频类型
+      if (item.targetType !== 'track') {
+        if (item.targetType === 'series') {
+          // 跳转到系列详情页
+          uni.navigateTo({
+            url: `/pages/series/detail?id=${item.targetId}`
+          })
+        } else if (item.targetType === 'article') {
+          // 跳转到文章详情页
+          uni.navigateTo({
+            url: `/pages/article/detail?id=${item.targetId}`
+          })
+        }
+        return
+      }
+      
       // 如果点击的是当前正在播放的音频
-      if (this.currentPlaying && this.currentPlaying.id === item.id) {
+      if (this.currentPlaying && this.currentPlaying.targetId === item.targetId) {
         if (this.isPlaying) {
           this.pauseAudio()
         } else {
@@ -260,7 +303,7 @@ export default {
       // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
       // 小程序使用背景音频管理器
       this.backgroundAudioManager.title = item.title
-      this.backgroundAudioManager.singer = item.author
+      this.backgroundAudioManager.singer = item.subtitle || '冥想音乐'
       this.backgroundAudioManager.coverImgUrl = item.cover
       this.backgroundAudioManager.src = item.audioUrl
       // #endif
@@ -268,7 +311,7 @@ export default {
       // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
       // 非小程序环境跳转到播放页面
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.id}&title=${item.title}`
+        url: `/pages/player/index?id=${item.targetId}&title=${encodeURIComponent(item.title)}`
       })
       // #endif
     },
@@ -291,86 +334,67 @@ export default {
     playNext() {
       if (!this.favoritesList.length) return
       
-      const currentIndex = this.favoritesList.findIndex(item => 
-        this.currentPlaying && item.id === this.currentPlaying.id
+      // 只播放音频类型
+      const audioList = this.favoritesList.filter(item => item.targetType === 'track')
+      if (!audioList.length) return
+      
+      const currentIndex = audioList.findIndex(item => 
+        this.currentPlaying && item.targetId === this.currentPlaying.targetId
       )
       
       let nextIndex = currentIndex + 1
-      if (nextIndex >= this.favoritesList.length) {
+      if (nextIndex >= audioList.length) {
         nextIndex = 0 // 循环播放
       }
       
-      this.playAudio(this.favoritesList[nextIndex])
+      this.playAudio(audioList[nextIndex])
     },
     
     // 跳转到播放器页面
     goToPlayer() {
-      if (this.currentPlaying) {
+      if (this.currentPlaying && this.currentPlaying.targetType === 'track') {
         uni.navigateTo({
-          url: `/pages/player/index?id=${this.currentPlaying.id}&title=${this.currentPlaying.title}`
+          url: `/pages/player/index?id=${this.currentPlaying.targetId}&title=${encodeURIComponent(this.currentPlaying.title)}`
         })
       }
     },
     
-    // 切换收藏状态
+    // 切换收藏状态（取消收藏）
     async toggleFavorite(item, index) {
       try {
-        if (item.isFavorite) {
-          // 取消收藏
-          uni.showModal({
-            title: '提示',
-            content: '确定要取消收藏吗？',
-            success: async (res) => {
-              if (res.confirm) {
-                uni.showLoading({
-                  title: '正在取消...'
-                })
+        uni.showModal({
+          title: '提示',
+          content: '确定要取消收藏吗？',
+          success: async (res) => {
+            if (res.confirm) {
+              uni.showLoading({
+                title: '正在取消...'
+              })
+              
+              const result = await removeFavorite(item.id)
+              
+              if (result.code === 200) {
+                // 从列表中移除
+                this.favoritesList.splice(index, 1)
+                this.total--
                 
-                const result = await removeFavorite(item.favoriteId, 'track')
-                
-                if (result.code === 200) {
-                  // 从列表中移除
-                  this.favoritesList.splice(index, 1)
-                  this.total--
-                  
-                  // 如果正在播放这首歌，停止播放
-                  if (this.currentPlaying && this.currentPlaying.id === item.id) {
-                    this.backgroundAudioManager.stop()
-                    this.currentPlaying = null
-                  }
-                  
-                  uni.hideLoading()
-                  uni.showToast({
-                    title: '已取消收藏',
-                    icon: 'success'
-                  })
-                } else {
-                  throw new Error(result.msg || '取消收藏失败')
+                // 如果正在播放这首歌，停止播放
+                if (this.currentPlaying && this.currentPlaying.targetId === item.targetId) {
+                  this.backgroundAudioManager.stop()
+                  this.currentPlaying = null
                 }
+                
+                uni.hideLoading()
+                uni.showToast({
+                  title: '已取消收藏',
+                  icon: 'success'
+                })
+              } else {
+                throw new Error(result.msg || '取消收藏失败')
               }
             }
-          })
-        } else {
-          // 添加收藏（一般不会出现这种情况，因为列表都是已收藏的）
-          uni.showLoading({
-            title: '正在收藏...'
-          })
-          
-          const result = await addFavorite(item.id, 'track')
-          
-          if (result.code === 200) {
-            item.isFavorite = true
-            item.favoriteId = result.data.id
-            
-            uni.hideLoading()
-            uni.showToast({
-              title: '收藏成功',
-              icon: 'success'
-            })
-          } else {
-            throw new Error(result.msg || '收藏失败')
           }
-        }
+        })
       } catch (error) {
         console.error('操作失败:', error)
         uni.hideLoading()
@@ -379,63 +403,6 @@ export default {
           icon: 'none'
         })
       }
-    },
-    
-    // 设置定时关闭
-    setSleepTimer(minutes) {
-      // 清除之前的定时器
-      if (this.sleepTimer) {
-        clearInterval(this.sleepTimer)
-      }
-      
-      if (minutes <= 0) {
-        this.sleepTime = 0
-        uni.showToast({
-          title: '已取消定时关闭',
-          icon: 'none'
-        })
-        return
-      }
-      
-      this.sleepTime = minutes * 60 // 转换为秒
-      
-      uni.showToast({
-        title: `将在${minutes}分钟后关闭`,
-        icon: 'none'
-      })
-      
-      // 每秒更新一次剩余时间
-      this.sleepTimer = setInterval(() => {
-        this.sleepTime--
-        
-        if (this.sleepTime <= 0) {
-          // 时间到，停止播放
-          clearInterval(this.sleepTimer)
-          this.sleepTimer = null
-          
-          if (this.backgroundAudioManager) {
-            this.backgroundAudioManager.stop()
-          }
-          
-          uni.showToast({
-            title: '定时关闭',
-            icon: 'none'
-          })
-        }
-      }, 1000)
-    },
-    
-    // 显示定时关闭选项
-    showSleepTimerOptions() {
-      const options = ['15分钟', '30分钟', '60分钟', '90分钟', '取消定时']
-      const values = [15, 30, 60, 90, 0]
-      
-      uni.showActionSheet({
-        itemList: options,
-        success: (res) => {
-          this.setSleepTimer(values[res.tapIndex])
-        }
-      })
     },
     
     // 定时器开始事件
@@ -617,23 +584,26 @@ export default {
         white-space: nowrap;
       }
       
-      .item-author {
+      .item-subtitle {
         font-size: 26rpx;
         color: #999999;
-        margin-bottom: 12rpx;
+        margin-bottom: 8rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       
       .item-meta {
         display: flex;
         align-items: center;
+        gap: 20rpx;
         
         .meta-duration {
           font-size: 24rpx;
           color: #7C3AED;
-          margin-right: 20rpx;
         }
         
-        .meta-plays {
+        .meta-category {
           font-size: 24rpx;
           color: #BBBBBB;
         }
@@ -645,7 +615,6 @@ export default {
       
       text {
         font-size: 40rpx;
-        color: #FF6B6B;
       }
     }
   }
