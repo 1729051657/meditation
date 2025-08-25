@@ -1,5 +1,8 @@
 <template>
   <view class="series-detail">
+      <!-- 导航栏 -->
+    <tn-nav-bar :alpha="true">
+    </tn-nav-bar>
     <view class="header">
       <text class="title">{{ series && series.title ? series.title : '' }}</text>
       <text class="sub">系列 · {{ series && series.episodeCount ? series.episodeCount : 0 }}</text>

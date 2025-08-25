@@ -1,8 +1,10 @@
 <template>
+  <!-- 头部 -->
   <view class="home-page">
+    <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }"></view>
     <!-- 背景图 -->
     <image src="/static/home/background@3x.png" class="background-image" mode="widthFix"></image>
-    
+
     <!-- 顶部区域 -->
     <view class="header-section">
       <!-- 问候语和用户状态 -->
@@ -12,7 +14,7 @@
           <text class="status-text">已登录</text>
         </view>
       </view>
-      
+
       <!-- 搜索图标 -->
       <view class="search-icon" @click="goToSearch">
         <tn-icon name="search" size="20" color="#333"></tn-icon>
@@ -21,38 +23,27 @@
 
     <!-- 功能按钮区域 -->
     <view class="feature-section">
-              <view 
-          v-for="category in categories" 
-          :key="category.id"
-          class="feature-item" 
-          @click="goToCategory(category.code)"
-        >
-          <view class="feature-icon-wrapper">
-            <image :src="category.icon || categoryIconMap[category.code] || '/static/images/default-category.png'" class="feature-icon" mode="aspectFit"></image>
-            <text class="feature-text">{{ category.name }}</text>
-          </view>
+      <view v-for="category in categories" :key="category.id" class="feature-item" @click="goToCategory(category.code)">
+        <view class="feature-icon-wrapper">
+          <image :src="category.icon || categoryIconMap[category.code] || '/static/images/default-category.png'"
+            class="feature-icon" mode="aspectFit"></image>
+          <text class="feature-text">{{ category.name }}</text>
         </view>
+      </view>
     </view>
 
     <!-- 冥想练习区域 -->
     <view class="meditation-section" v-if="meditationSlots.length > 0">
       <view class="section-header">
         <text class="section-title">冥想练习</text>
-        <view class="section-more" @click="goToMore('meditation')">
-          <uni-icons type="right" size="16" color="#999"></uni-icons>
-        </view>
       </view>
-      
+
       <scroll-view class="meditation-cards" scroll-x :show-scrollbar="false" enhanced>
         <view class="meditation-card-list">
-          <view 
-            v-for="(item, index) in meditationSlots" 
-            :key="item.id"
-            class="meditation-card"
+          <view v-for="(item, index) in meditationSlots" :key="item.id" class="meditation-card"
             :class="index === 0 ? 'card-basic' : 'card-advanced'"
             :style="item.cover ? `background-image: url(${item.cover}); background-size: cover; background-position: center;` : ''"
-            @click="goToMeditation(item)"
-          >
+            @click="goToMeditation(item)">
             <view class="card-content">
               <text class="card-title">{{ item.title }}</text>
               <text class="card-subtitle" v-if="item.subtitle">{{ item.subtitle }}</text>
@@ -76,15 +67,11 @@
       <view class="section-header">
         <text class="section-title">冥想推荐</text>
       </view>
-      
+
       <scroll-view class="recommend-cards" scroll-x :show-scrollbar="false" enhanced>
         <view class="recommend-card-list">
-          <view 
-            v-for="item in recommendItems" 
-            :key="item.id"
-            class="recommend-card-wrapper"
-            @click="goToRecommend(item)"
-          >
+          <view v-for="item in recommendItems" :key="item.id" class="recommend-card-wrapper"
+            @click="goToRecommend(item)">
             <view class="recommend-card">
               <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
               <view class="duration-tag">{{ Math.round(item.durationSec / 60) || 15 }}分钟</view>
@@ -97,20 +84,16 @@
 
     <!-- 冥想知识区域 -->
     <view class="knowledge-section" v-if="knowledgeItems.length > 0">
-      <view class="section-header">
+      <view class="section-header" @click="goToMore('knowledge')">
         <text class="section-title">冥想知识</text>
-        <view class="section-more" @click="goToMore('knowledge')">
+        <view class="section-more">
           <uni-icons type="right" size="16" color="#999"></uni-icons>
         </view>
       </view>
-      
+
       <view class="knowledge-list">
-        <view 
-          v-for="item in knowledgeItems.slice(0, 3)" 
-          :key="item.id"
-          class="knowledge-item"
-          @click="goToKnowledge(item)"
-        >
+        <view v-for="item in knowledgeItems.slice(0, 3)" :key="item.id" class="knowledge-item"
+          @click="goToKnowledge(item)">
           <image :src="item.cover || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
           <view class="knowledge-content">
             <text class="knowledge-title">{{ item.title }}</text>
@@ -128,6 +111,8 @@ import { getHomeData } from '@/api/home'
 export default {
   data() {
     return {
+      navHeight: "", // 导航栏高度
+      statusBarHeight: '', // 状态栏高度
       greeting: '', // 问候语
       categories: [], // 功能分类
       meditationSlots: [], // 冥想练习推荐位
@@ -145,24 +130,37 @@ export default {
       }
     }
   },
-  
+
   onLoad() {
     this.loadHomeData()
     this.checkLoginStatus()
+    //获取手机系统的信息 里面有状态栏高度和设备型号
+    let {
+      statusBarHeight,
+      system
+    } = uni.getSystemInfoSync()
+    // 注意返回的单位是px 不是rpx
+    console.log('状态栏高度是', statusBarHeight + 'px', '设备型号是', system);
+    this.statusBarHeight = statusBarHeight
+    // 而导航栏的高度则 = 状态栏的高度 + 判断机型的值（是ios就+40，否则+44）
+    // 这个高度刚好和胶囊对齐
+    this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
+    console.log(this.navHeight, "导航栏高度");
+
   },
-  
+
   onPullDownRefresh() {
     this.loadHomeData().finally(() => {
       uni.stopPullDownRefresh()
     })
   },
-  
+
   methods: {
     // 检查登录状态
     checkLoginStatus() {
       const token = uni.getStorageSync('meditation_token')
       const userInfo = uni.getStorageSync('meditation_user_info')
-      
+
       if (token && userInfo) {
         // 检查token是否过期
         if (this.isTokenExpired(token)) {
@@ -171,7 +169,7 @@ export default {
           this.autoRelogin()
           return
         }
-        
+
         console.log('用户已登录:', userInfo)
         this.isLoggedIn = true
         // 可以在这里更新UI显示登录状态
@@ -181,7 +179,7 @@ export default {
         // 可以在这里显示登录提示或引导
       }
     },
-    
+
     // 检查token是否过期
     isTokenExpired(token) {
       try {
@@ -201,37 +199,37 @@ export default {
         return true
       }
     },
-    
+
     // 自动重新登录
     async autoRelogin() {
       try {
         console.log('开始自动重新登录...')
-        
+
         // 显示加载提示
         uni.showLoading({
           title: '重新登录中...',
           mask: true
         })
-        
+
         // 调用store中的wxLogin方法
         await this.$store.dispatch('user/wxLogin')
-        
+
         // 隐藏加载提示
         uni.hideLoading()
-        
+
         console.log('自动重新登录成功')
         this.isLoggedIn = true
-        
+
         // 重新加载首页数据
         this.loadHomeData()
-        
+
       } catch (error) {
         // 隐藏加载提示
         uni.hideLoading()
-        
+
         console.error('自动重新登录失败:', error)
         this.isLoggedIn = false
-        
+
         // 显示登录失败提示
         uni.showToast({
           title: '登录失败，请重试',
@@ -240,27 +238,27 @@ export default {
         })
       }
     },
-    
+
     // 加载首页数据
     async loadHomeData() {
       try {
         const res = await getHomeData()
-        
+
         if (res.code === 200 && res.data) {
           const data = res.data
-          
+
           // 设置问候语
           this.greeting = data.greeting || '您好'
-          
+
           // 设置功能分类
           this.categories = data.categoryVoList || []
-          
+
           // 设置冥想练习 - 使用 seriesVoList 作为冥想练习数据
           this.meditationSlots = data.seriesVoList || []
-          
+
           // 设置推荐内容 - 使用 trackVoList 作为推荐内容
           this.recommendItems = data.trackVoList || []
-          
+
           // 设置知识内容 - 使用 articleVoList 作为知识内容
           this.knowledgeItems = data.articleVoList || []
         }
@@ -272,29 +270,35 @@ export default {
         })
       }
     },
-    
+
     // 跳转到搜索页
     goToSearch() {
       uni.navigateTo({
         url: '/pages/search/index'
       })
     },
-    
+
     // 跳转到分类
     goToCategory(type) {
       uni.navigateTo({
         url: `/pages/category/index?type=${type}`
       })
     },
-    
+    // 跳转到列表
+    goToMore(type) {
+      uni.navigateTo({
+        url: `/pages/list/list`
+      })
+    },
+
     // 跳转到冥想详情
     goToMeditation(item) {
       // 跳转到系列详情页
       uni.navigateTo({
-        url: `/pages/series/detail?id=${item.id}`
+        url: `/pages/player/index?id=${item.id}`
       })
     },
-    
+
     // 跳转到推荐详情
     goToRecommend(item) {
       // 跳转到播放器页面
@@ -302,7 +306,7 @@ export default {
         url: `/pages/player/index?id=${item.id}&type=track`
       })
     },
-    
+
     // 跳转到知识详情
     goToKnowledge(item) {
       // 跳转到文章详情页
@@ -310,19 +314,19 @@ export default {
         url: `/pages/article/detail?id=${item.id}`
       })
     },
-    
+
     // 查看更多
-    goToMore(type) {
-      if (type === 'meditation') {
-        uni.navigateTo({
-          url: '/pages/series/index'
-        })
-      } else if (type === 'knowledge') {
-        uni.navigateTo({
-          url: '/pages/article/index'
-        })
-      }
-    }
+    // goToMore(type) {
+    //   if (type === 'meditation') {
+    //     uni.navigateTo({
+    //       url: '/pages/series/index'
+    //     })
+    //   } else if (type === 'knowledge') {
+    //     uni.navigateTo({
+    //       url: '/pages/article/index'
+    //     })
+    //   }
+    // }
   }
 }
 </script>
@@ -357,6 +361,7 @@ export default {
   font-size: 36rpx;
   font-weight: 500;
   color: #fff;
+
 }
 
 .nav-search {
@@ -371,8 +376,8 @@ export default {
 
 /* 顶部区域 */
 .header-section {
-  padding: 40rpx 30rpx 30rpx;
-  padding-top: calc(var(--status-bar-height) + 60rpx);
+  padding: 0 30rpx;
+
   position: relative;
   z-index: 1;
   display: flex;
@@ -425,12 +430,12 @@ export default {
   padding: 40rpx 30rpx 60rpx;
   position: relative;
   z-index: 1;
-  
+
   .feature-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    
+
     .feature-icon-wrapper {
       width: 150rpx;
       height: 180rpx;
@@ -442,18 +447,19 @@ export default {
       justify-content: center;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
-      
+      opacity: 0.7;
+
       &:active {
         transform: scale(0.95);
         box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
       }
-      
+
       .feature-icon {
         width: 88rpx;
         height: 88rpx;
         margin-bottom: 10rpx;
       }
-      
+
       .feature-text {
         font-size: 28rpx;
         color: #333;
@@ -467,25 +473,27 @@ export default {
 /* 通用区块样式 */
 .section-header {
   display: flex;
-  justify-content: space-between;
+
   align-items: center;
   padding: 0 30rpx;
   margin-bottom: 30rpx;
-  
+
   .section-title {
-    font-size: 36rpx;
+    font-size: 32rpx;
     font-weight: 600;
-    color: #333;
+    color: #25292D;
   }
-  
+
   .section-more {
     display: flex;
     align-items: center;
-    padding: 8rpx 16rpx;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 20rpx;
+    // padding: 8rpx 16rpx;
+    // background: rgba(0, 0, 0, 0.05);
+    // border-radius: 20rpx;
     transition: all 0.3s ease;
-    
+    justify-content: flex-start;
+    margin-left: 4rpx;
+
     &:active {
       background: rgba(0, 0, 0, 0.1);
     }
@@ -497,15 +505,15 @@ export default {
   margin-bottom: 50rpx;
   position: relative;
   z-index: 1;
-  
+
   .meditation-cards {
     padding-left: 30rpx;
-    
+
     .meditation-card-list {
       display: flex;
       gap: 30rpx;
       padding-right: 30rpx;
-      
+
       .meditation-card {
         flex-shrink: 0;
         width: 500rpx;
@@ -515,15 +523,15 @@ export default {
         overflow: hidden;
         background-size: cover;
         background-position: center;
-        
+
         &.card-basic {
           background-color: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
         }
-        
+
         &.card-advanced {
           background-color: linear-gradient(135deg, #4A6FA5 0%, #2C4E7E 100%);
         }
-        
+
         &::before {
           content: '';
           position: absolute;
@@ -531,17 +539,17 @@ export default {
           left: 0;
           right: 0;
           bottom: 0;
-          background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%);
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%);
           z-index: 1;
         }
-        
+
         .card-content {
           position: absolute;
           top: 32rpx;
           left: 32rpx;
           right: 32rpx;
           z-index: 2;
-          
+
           .card-title {
             font-size: 48rpx;
             font-weight: 600;
@@ -550,7 +558,7 @@ export default {
             margin-bottom: 8rpx;
             text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
           }
-          
+
           .card-subtitle {
             font-size: 28rpx;
             color: rgba(255, 255, 255, 0.9);
@@ -558,7 +566,7 @@ export default {
             text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
           }
         }
-        
+
         .card-bottom-bar {
           position: absolute;
           bottom: 24rpx;
@@ -573,19 +581,19 @@ export default {
           align-items: center;
           padding: 0 32rpx;
           z-index: 2;
-          
+
           .card-duration {
             display: flex;
             align-items: center;
             gap: 12rpx;
-            
+
             .duration-text {
               font-size: 28rpx;
               color: #fff;
               font-weight: 500;
             }
           }
-          
+
           .card-play {
             width: 60rpx;
             height: 60rpx;
@@ -595,10 +603,10 @@ export default {
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(10rpx);
-            
+
             .play-icon {
-				width: 60rpx;
-				height: 60rpx;
+              width: 60rpx;
+              height: 60rpx;
             }
           }
         }
@@ -612,15 +620,15 @@ export default {
   margin-bottom: 50rpx;
   position: relative;
   z-index: 1;
-  
+
   .recommend-cards {
     padding-left: 30rpx;
-    
+
     .recommend-card-list {
       display: flex;
       gap: 24rpx;
       padding-right: 30rpx;
-      
+
       .recommend-card-wrapper {
         display: flex;
         flex-direction: column;
@@ -637,12 +645,12 @@ export default {
         overflow: hidden;
         box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
-        
+
         &:active {
           transform: scale(0.98);
           box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
         }
-        
+
         .recommend-image {
           width: 100%;
           height: 200rpx;
@@ -662,7 +670,7 @@ export default {
           backdrop-filter: blur(1px);
         }
       }
-      
+
       .recommend-title {
         font-size: 26rpx;
         color: #333;
@@ -684,20 +692,19 @@ export default {
   margin-bottom: 40rpx;
   position: relative;
   z-index: 1;
-  
+
   .knowledge-list {
     padding: 0 30rpx;
     display: flex;
     flex-direction: column;
     gap: 20rpx;
-    
+
     .knowledge-item {
       display: flex;
-      background: #fff;
+      // background: #fff;
       border-radius: 16rpx;
-      padding: 20rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-      
+      // box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+
       .knowledge-image {
         width: 120rpx;
         height: 120rpx;
@@ -705,13 +712,13 @@ export default {
         flex-shrink: 0;
         margin-right: 20rpx;
       }
-      
+
       .knowledge-content {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        
+
         .knowledge-title {
           font-size: 28rpx;
           color: #333;
@@ -723,7 +730,7 @@ export default {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        
+
         .knowledge-desc {
           font-size: 24rpx;
           color: #999;
@@ -737,4 +744,44 @@ export default {
     }
   }
 }
+
+// 导航栏高度
+.topNav {
+  height: 100rpx;
+
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+}
+
+.nav-left {
+  font-size: 36rpx;
+  font-weight: 600;
+
+  margin-right: 30rpx;
+  font-style: italic;
+}
+
+.nav-search input {
+  width: 60%;
+  height: 62rpx;
+  border-radius: 30rpx;
+  padding-left: 25rpx;
+  background-color: #f0f8ffa6;
+  box-sizing: border-box;
+}
+
+.placClass {
+  font-size: 24rpx;
+  color: #fff;
+}
+
+.w24 {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+
 </style>
