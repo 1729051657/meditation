@@ -49,8 +49,13 @@ public class ArticleVo implements Serializable {
     /**
      * 封面文件id（sys_oss.oss_id）
      */
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long cover;
+
+    /**
+     * 封面文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "cover")
+    private String coverUrl;
 
 
     /**

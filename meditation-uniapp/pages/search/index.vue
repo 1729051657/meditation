@@ -59,21 +59,21 @@
     <scroll-view class="list" scroll-y>
       <block v-if="tab === 'track'">
         <view class="item" v-for="t in tracks" :key="t.id" @click="goTrack(t.id)">
-          <image :src="oss(t.cover)" class="cover" />
+          <image :src="oss(t.coverUrl)" class="cover" />
           <view class="title">{{ t.title }}</view>
           <view class="sub">{{ Math.ceil((t.durationSec || 0) / 60) }}分钟</view>
         </view>
       </block>
       <block v-else-if="tab === 'series'">
         <view class="item" v-for="s in series" :key="s.id" @click="goSeries(s.id)">
-          <image :src="oss(s.cover)" class="cover" />
+          <image :src="oss(s.coverUrl)" class="cover" />
           <view class="title">{{ s.title }}</view>
           <view class="sub">系列 · {{ s.episodeCount }}</view>
         </view>
       </block>
       <block v-else>
         <view class="item" v-for="a in articles" :key="a.id" @click="goArticle(a.id)">
-          <image :src="oss(a.cover)" class="cover" />
+          <image :src="oss(a.coverUrl)" class="cover" />
           <view class="title">{{ a.title }}</view>
           <view class="sub">{{ a.summary }}</view>
         </view>

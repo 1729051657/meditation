@@ -33,8 +33,8 @@ export const listFavoritesWithDetails = async (params) => {
                 author: trackRes.data.author || '未知作者',
                 duration: trackRes.data.durationSec || 0,
                 playCount: trackRes.data.playCount || 0,
-                coverUrl: trackRes.data.cover,
-                trackCover: trackRes.data.cover,
+                coverUrl: trackRes.data.coverUrl,
+                trackCover: trackRes.data.coverUrl,
                 audioUrl: trackRes.data.audioUrl || trackRes.data.audioId
               }
             }
@@ -50,8 +50,8 @@ export const listFavoritesWithDetails = async (params) => {
                 episodeCount: seriesRes.data.episodeCount || 0,
                 totalDuration: seriesRes.data.totalDuration || 0,
                 playCount: seriesRes.data.playCount || 0,
-                coverUrl: seriesRes.data.cover,
-                seriesCover: seriesRes.data.cover
+                coverUrl: seriesRes.data.coverUrl,
+                seriesCover: seriesRes.data.coverUrl
               }
             }
           } else if (item.targetType === 'article') {
@@ -65,8 +65,8 @@ export const listFavoritesWithDetails = async (params) => {
                 author: articleRes.data.author || '未知作者',
                 summary: articleRes.data.summary,
                 viewCount: articleRes.data.viewCount || 0,
-                coverUrl: articleRes.data.cover,
-                articleCover: articleRes.data.cover
+                coverUrl: articleRes.data.coverUrl,
+                articleCover: articleRes.data.coverUrl
               }
             }
           }

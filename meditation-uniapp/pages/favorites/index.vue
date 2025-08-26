@@ -207,18 +207,18 @@ export default {
             if (item.targetType === 'track' && item.track) {
               // 音频类型
               targetData = item.track
-              cover = targetData.cover || cover
-              audioUrl = targetData.audio || ''
+              cover = targetData.coverUrl || cover
+              audioUrl = targetData.audioUrl || ''
               duration = targetData.durationSec || 0
             } else if (item.targetType === 'series' && item.series) {
               // 系列类型
               targetData = item.series
-              cover = targetData.cover || cover
+              cover = targetData.coverUrl || cover
               duration = targetData.recommendDuration || 0
             } else if (item.targetType === 'article' && item.article) {
               // 文章类型
               targetData = item.article
-              cover = targetData.cover || cover
+              cover = targetData.coverUrl || cover
             }
             
             return {

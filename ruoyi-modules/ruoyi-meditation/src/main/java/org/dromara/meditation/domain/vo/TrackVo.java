@@ -61,8 +61,13 @@ public class TrackVo implements Serializable {
      */
     @ExcelProperty(value = "封面文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long cover;
+
+    /**
+     * 封面文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "cover")
+    private String coverUrl;
 
 
     /**
@@ -70,8 +75,13 @@ public class TrackVo implements Serializable {
      */
     @ExcelProperty(value = "音频文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long audio;
+
+    /**
+     * 音频文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "audio")
+    private String audioUrl;
 
 
     /**

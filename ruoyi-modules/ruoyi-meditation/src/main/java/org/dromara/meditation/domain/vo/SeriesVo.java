@@ -64,8 +64,13 @@ public class SeriesVo implements Serializable {
      */
     @ExcelProperty(value = "封面文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long cover;
+
+    /**
+     * 封面文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "cover")
+    private String coverUrl;
 
 
     /**
@@ -73,8 +78,13 @@ public class SeriesVo implements Serializable {
      */
     @ExcelProperty(value = "横幅图文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long banner;
+
+    /**
+     * 横幅图文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "banner")
+    private String bannerUrl;
 
 
     /**

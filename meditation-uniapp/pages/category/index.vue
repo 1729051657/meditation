@@ -41,7 +41,7 @@
               </view>
             </view>
             <view class="series-image-wrapper">
-              <image :src="s.cover" class="series-cover" mode="aspectFill" />
+              <image :src="s.coverUrl" class="series-cover" mode="aspectFill" />
             </view>
            
           </view>
@@ -58,7 +58,7 @@
       <view class="tracks-grid">
         <view class="track-card" v-for="t in tracks" :key="t.id" @click="playTrack(t)">
           <view class="track-image-wrapper">
-            <image :src="t.cover" class="track-cover" mode="aspectFill" />
+            <image :src="t.coverUrl" class="track-cover" mode="aspectFill" />
             <view class="duration-badge">{{ Math.ceil((t.durationSec || 0) / 60) }}分钟</view>
             <view class="track-title-overlay">{{ t.title }}</view>
           </view>

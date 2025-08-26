@@ -4,7 +4,7 @@
     <tn-nav-bar :alpha="true">
     </tn-nav-bar>
     <text class="title">{{ article && article.title ? article.title : '' }}</text>
-    <image class="cover" :src="oss(article && article.cover ? article.cover : '')" mode="aspectFill" />
+    <image class="cover" :src="oss(article && article.coverUrl ? article.coverUrl : '')" mode="aspectFill" />
     <view class="p24">
       <rich-text :nodes="article && article.content ? article.content : ''"></rich-text>
     </view>
