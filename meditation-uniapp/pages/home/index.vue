@@ -25,7 +25,7 @@
     <view class="feature-section">
       <view v-for="category in categories" :key="category.id" class="feature-item" @click="goToCategory(category.code)">
         <view class="feature-icon-wrapper">
-          <image :src="category.iconUrl || categoryIconMap[category.code] || '/static/images/default-category.png'"
+          <image :src="category.icon || categoryIconMap[category.code] || '/static/images/default-category.png'"
             class="feature-icon" mode="aspectFit"></image>
           <text class="feature-text">{{ category.name }}</text>
         </view>
