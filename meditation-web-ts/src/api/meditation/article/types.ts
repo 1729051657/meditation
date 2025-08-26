@@ -17,6 +17,11 @@ export interface ArticleVO {
   cover: string;
 
   /**
+   * 封面文件URL
+   */
+  coverUrl?: string;
+
+  /**
    * 摘要
    */
   summary: string;

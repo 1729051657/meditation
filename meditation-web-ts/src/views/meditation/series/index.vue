@@ -72,9 +72,9 @@
         </el-table-column>
         <el-table-column label="标题" align="center" prop="title" />
         <el-table-column label="副标题" align="center" prop="subtitle" />
-        <el-table-column label="封面" align="center" prop="cover">
+        <el-table-column label="封面" align="center" prop="coverUrl">
           <template #default="scope">
-            <image-preview :src="scope.row.cover" :width="50" :height="50"/>
+            <image-preview :src="scope.row.coverUrl" :width="50" :height="50"/>
           </template>
         </el-table-column>
         <el-table-column label="简介" align="center" prop="intro" :show-overflow-tooltip="true" />
