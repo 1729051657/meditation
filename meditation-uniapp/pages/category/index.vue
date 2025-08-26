@@ -328,7 +328,7 @@ export default {
     // 播放单集
     playTrack(track) {
       uni.navigateTo({
-        url: `/pages/player/index?id=${track.id}`
+        url: `/pages/player/index?id=${track.id}&categoryId=${this.currentCategoryId}`
       })
     },
 

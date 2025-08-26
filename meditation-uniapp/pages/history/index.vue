@@ -258,6 +258,11 @@ export default {
         totalDuration: item.duration
       }
       
+      // 如果有系列ID，也传递过去
+      if (item.seriesId) {
+        params.seriesId = item.seriesId
+      }
+      
       const queryString = Object.keys(params)
         .map(key => `${key}=${params[key]}`)
         .join('&')
@@ -287,6 +292,11 @@ export default {
               title: encodeURIComponent(item.title),
               progress: 0,
               totalDuration: item.duration
+            }
+            
+            // 如果有系列ID，也传递过去
+            if (item.seriesId) {
+              params.seriesId = item.seriesId
             }
             
             const queryString = Object.keys(params)
