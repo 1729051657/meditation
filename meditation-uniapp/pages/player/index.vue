@@ -270,61 +270,83 @@ export default {
 
   methods: {
     initAudio() {
-      this.audioContext = uni.createInnerAudioContext()
-      
-      // 设置自动播放为false，需要用户手动触发
-      this.audioContext.autoplay = false
+      try {
+        this.audioContext = uni.createInnerAudioContext()
+        
+        // 设置自动播放为false，需要用户手动触发
+        this.audioContext.autoplay = false
+        
+        // 设置音频播放模式（确保在后台也能播放）
+        // #ifdef MP-WEIXIN
+        this.audioContext.obeyMuteSwitch = false // 不遵循系统静音开关
+        // #endif
 
-      this.audioContext.onPlay(() => {
-        console.log('音频开始播放')
-        this.playing = true
-        this.startProgressTracking()
-      })
+        this.audioContext.onPlay(() => {
+          console.log('音频开始播放')
+          this.playing = true
+          this.startProgressTracking()
+        })
 
-      this.audioContext.onPause(() => {
-        console.log('音频暂停')
-        this.playing = false
-        this.stopProgressTracking()
-      })
+        this.audioContext.onPause(() => {
+          console.log('音频暂停')
+          this.playing = false
+          this.stopProgressTracking()
+        })
 
-      this.audioContext.onTimeUpdate(() => {
-        this.currentTime = this.audioContext.currentTime
-        this.duration = this.audioContext.duration
-        if (this.duration > 0) {
-          this.progress = (this.currentTime / this.duration) * 100
-        }
-      })
+        this.audioContext.onTimeUpdate(() => {
+          this.currentTime = this.audioContext.currentTime
+          this.duration = this.audioContext.duration
+          if (this.duration > 0) {
+            this.progress = (this.currentTime / this.duration) * 100
+          }
+        })
 
-      this.audioContext.onEnded(() => {
-        console.log('音频播放结束')
-        this.playing = false
-        this.markAsCompleted()
-        this.next()
-      })
-      
-      this.audioContext.onError((error) => {
-        console.error('音频播放错误:', error)
-        this.playing = false
+        this.audioContext.onEnded(() => {
+          console.log('音频播放结束')
+          this.playing = false
+          this.markAsCompleted()
+          this.next()
+        })
+        
+        this.audioContext.onError((error) => {
+          console.error('音频播放错误:', error)
+          this.playing = false
+          let errorMsg = '播放出错'
+          if (error && error.errMsg) {
+            errorMsg = error.errMsg
+          }
+          uni.showToast({
+            title: errorMsg,
+            icon: 'none'
+          })
+        })
+        
+        this.audioContext.onCanplay(() => {
+          console.log('音频可以播放，时长:', this.audioContext.duration)
+        })
+        
+        this.audioContext.onWaiting(() => {
+          console.log('音频加载中...')
+        })
+        
+        console.log('音频上下文初始化成功')
+      } catch (error) {
+        console.error('初始化音频上下文失败:', error)
         uni.showToast({
-          title: '播放出错',
+          title: '音频初始化失败',
           icon: 'none'
         })
-      })
-      
-      this.audioContext.onCanplay(() => {
-        console.log('音频可以播放，时长:', this.audioContext.duration)
-      })
-      
-      this.audioContext.onWaiting(() => {
-        console.log('音频加载中...')
-      })
+      }
     },
 
     async loadTrack() {
       try {
+        console.log('开始加载音频，trackId:', this.trackId)
         const res = await getTrackDetail(this.trackId)
+        console.log('API响应:', res)
         
         if (res.code === 200 && res.data) {
+          console.log('音频数据:', res.data)
           // 映射后端返回的数据字段
           this.track = {
             id: res.data.id,
@@ -337,6 +359,7 @@ export default {
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
+          console.log('处理后的音频信息:', this.track)
           
           // 设置seriesId和categoryId如果没有传入
           if (!this.seriesId && res.data.seriesId) {
@@ -347,6 +370,7 @@ export default {
           }
 
           if (this.track.audioUrl) {
+            console.log('设置音频源:', this.track.audioUrl)
             this.audioContext.src = this.track.audioUrl
             
             // 如果有传递的播放进度，恢复播放位置
@@ -355,6 +379,12 @@ export default {
                 this.audioContext.seek(this.currentTime)
               }, 100)
             }
+          } else {
+            console.error('音频URL为空')
+            uni.showToast({
+              title: '音频地址无效',
+              icon: 'none'
+            })
           }
         } else {
           throw new Error(res.msg || '获取音频信息失败')
@@ -464,13 +494,25 @@ export default {
       if (this.playing) {
         this.audioContext.pause()
       } else {
-        this.audioContext.play().catch(error => {
+        // UniApp的play方法在某些环境下不返回Promise，需要兼容处理
+        try {
+          const playResult = this.audioContext.play()
+          if (playResult && typeof playResult.catch === 'function') {
+            playResult.catch(error => {
+              console.error('播放失败:', error)
+              uni.showToast({
+                title: '播放失败',
+                icon: 'none'
+              })
+            })
+          }
+        } catch (error) {
           console.error('播放失败:', error)
           uni.showToast({
             title: '播放失败',
             icon: 'none'
           })
-        })
+        }
       }
     },
 
@@ -594,7 +636,24 @@ export default {
         
         // 延迟一下再播放，确保音频加载
         setTimeout(() => {
-          this.audioContext.play()
+          try {
+            const playResult = this.audioContext.play()
+            if (playResult && typeof playResult.catch === 'function') {
+              playResult.catch(error => {
+                console.error('播放失败:', error)
+                uni.showToast({
+                  title: '播放失败',
+                  icon: 'none'
+                })
+              })
+            }
+          } catch (error) {
+            console.error('播放失败:', error)
+            uni.showToast({
+              title: '播放失败',
+              icon: 'none'
+            })
+          }
         }, 100)
       }
       

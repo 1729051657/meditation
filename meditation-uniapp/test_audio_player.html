@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频播放测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #7C3AED;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #6B2FD6;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .warning {
+            color: orange;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音频播放测试工具</h1>
+        
+        <div class="test-section">
+            <div class="test-title">1. 测试音频URL</div>
+            <input type="text" id="audioUrl" placeholder="输入音频URL (支持 http/https)" 
+                   value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">
+            <button onclick="testAudioUrl()">测试URL有效性</button>
+            <button onclick="loadAudio()">加载音频</button>
+            <div id="urlStatus" class="status"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">2. 原生HTML5音频播放器</div>
+            <audio id="htmlAudio" controls style="width: 100%;"></audio>
+            <button onclick="playHtmlAudio()">播放</button>
+            <button onclick="pauseHtmlAudio()">暂停</button>
+            <button onclick="resetHtmlAudio()">重置</button>
+            <div id="htmlStatus" class="status"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">3. JavaScript Audio API 测试</div>
+            <button onclick="createAudioContext()">创建Audio对象</button>
+            <button onclick="playJsAudio()">播放</button>
+            <button onclick="pauseJsAudio()">暂停</button>
+            <button onclick="getAudioInfo()">获取音频信息</button>
+            <div id="jsStatus" class="status"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">4. 事件监听日志</div>
+            <button onclick="clearLogs()">清空日志</button>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">5. 播放诊断</div>
+            <button onclick="runDiagnostics()">运行完整诊断</button>
+            <div id="diagnosticResult" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        let jsAudio = null;
+        let logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push({ message: logEntry, type });
+            updateLogDisplay();
+            console.log(logEntry);
+        }
+
+        function updateLogDisplay() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = logs.slice(-50).map(entry => {
+                let className = '';
+                if (entry.type === 'error') className = 'error';
+                else if (entry.type === 'success') className = 'success';
+                else if (entry.type === 'warning') className = 'warning';
+                return `<div class="log-entry ${className}">${entry.message}</div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            logs = [];
+            updateLogDisplay();
+        }
+
+        async function testAudioUrl() {
+            const url = document.getElementById('audioUrl').value;
+            const statusDiv = document.getElementById('urlStatus');
+            
+            if (!url) {
+                statusDiv.innerHTML = '<span class="error">请输入音频URL</span>';
+                return;
+            }
+
+            statusDiv.innerHTML = '正在测试URL...';
+            log(`测试URL: ${url}`);
+
+            try {
+                // 尝试HEAD请求
+                const response = await fetch(url, { method: 'HEAD', mode: 'cors' });
+                const contentType = response.headers.get('content-type');
+                const contentLength = response.headers.get('content-length');
+                
+                let status = `<div class="success">✓ URL可访问</div>`;
+                status += `<div>状态码: ${response.status}</div>`;
+                status += `<div>内容类型: ${contentType || '未知'}</div>`;
+                status += `<div>文件大小: ${contentLength ? (parseInt(contentLength) / 1024 / 1024).toFixed(2) + ' MB' : '未知'}</div>`;
+                
+                if (contentType && !contentType.includes('audio')) {
+                    status += `<div class="warning">⚠️ 警告: 内容类型不是音频格式</div>`;
+                    log('警告: 内容类型不是音频格式', 'warning');
+                }
+                
+                statusDiv.innerHTML = status;
+                log('URL测试成功', 'success');
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">✗ URL测试失败: ${error.message}</div>`;
+                statusDiv.innerHTML += `<div class="warning">注意: 可能存在跨域问题，但音频可能仍可播放</div>`;
+                log(`URL测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        function loadAudio() {
+            const url = document.getElementById('audioUrl').value;
+            if (!url) {
+                alert('请输入音频URL');
+                return;
+            }
+
+            // 加载到HTML5播放器
+            const htmlAudio = document.getElementById('htmlAudio');
+            htmlAudio.src = url;
+            htmlAudio.load();
+            log(`已加载音频到HTML5播放器: ${url}`);
+
+            // 创建JS Audio对象
+            createAudioContext();
+            if (jsAudio) {
+                jsAudio.src = url;
+                log(`已加载音频到JS Audio对象: ${url}`);
+            }
+        }
+
+        function playHtmlAudio() {
+            const audio = document.getElementById('htmlAudio');
+            if (!audio.src) {
+                alert('请先加载音频');
+                return;
+            }
+            
+            audio.play().then(() => {
+                document.getElementById('htmlStatus').innerHTML = '<span class="success">正在播放</span>';
+                log('HTML5音频播放成功', 'success');
+            }).catch(error => {
+                document.getElementById('htmlStatus').innerHTML = `<span class="error">播放失败: ${error.message}</span>`;
+                log(`HTML5音频播放失败: ${error.message}`, 'error');
+            });
+        }
+
+        function pauseHtmlAudio() {
+            const audio = document.getElementById('htmlAudio');
+            audio.pause();
+            document.getElementById('htmlStatus').innerHTML = '已暂停';
+            log('HTML5音频已暂停');
+        }
+
+        function resetHtmlAudio() {
+            const audio = document.getElementById('htmlAudio');
+            audio.src = '';
+            audio.load();
+            document.getElementById('htmlStatus').innerHTML = '已重置';
+            log('HTML5音频已重置');
+        }
+
+        function createAudioContext() {
+            try {
+                jsAudio = new Audio();
+                
+                // 添加事件监听
+                jsAudio.addEventListener('loadstart', () => log('事件: loadstart - 开始加载'));
+                jsAudio.addEventListener('loadedmetadata', () => log('事件: loadedmetadata - 元数据已加载'));
+                jsAudio.addEventListener('loadeddata', () => log('事件: loadeddata - 数据已加载'));
+                jsAudio.addEventListener('canplay', () => log('事件: canplay - 可以播放', 'success'));
+                jsAudio.addEventListener('canplaythrough', () => log('事件: canplaythrough - 可以流畅播放', 'success'));
+                jsAudio.addEventListener('play', () => log('事件: play - 开始播放', 'success'));
+                jsAudio.addEventListener('pause', () => log('事件: pause - 暂停'));
+                jsAudio.addEventListener('ended', () => log('事件: ended - 播放结束'));
+                jsAudio.addEventListener('error', (e) => {
+                    const error = e.target.error;
+                    let errorMsg = '未知错误';
+                    if (error) {
+                        switch(error.code) {
+                            case 1: errorMsg = 'MEDIA_ERR_ABORTED - 用户中止'; break;
+                            case 2: errorMsg = 'MEDIA_ERR_NETWORK - 网络错误'; break;
+                            case 3: errorMsg = 'MEDIA_ERR_DECODE - 解码错误'; break;
+                            case 4: errorMsg = 'MEDIA_ERR_SRC_NOT_SUPPORTED - 不支持的格式'; break;
+                        }
+                    }
+                    log(`事件: error - ${errorMsg}`, 'error');
+                });
+                jsAudio.addEventListener('waiting', () => log('事件: waiting - 缓冲中', 'warning'));
+                jsAudio.addEventListener('stalled', () => log('事件: stalled - 停滞', 'warning'));
+                
+                document.getElementById('jsStatus').innerHTML = '<span class="success">Audio对象已创建</span>';
+                log('JavaScript Audio对象创建成功', 'success');
+                
+                // 如果已有URL，自动加载
+                const url = document.getElementById('audioUrl').value;
+                if (url) {
+                    jsAudio.src = url;
+                    log(`自动加载音频: ${url}`);
+                }
+            } catch (error) {
+                document.getElementById('jsStatus').innerHTML = `<span class="error">创建失败: ${error.message}</span>`;
+                log(`创建Audio对象失败: ${error.message}`, 'error');
+            }
+        }
+
+        function playJsAudio() {
+            if (!jsAudio) {
+                alert('请先创建Audio对象');
+                return;
+            }
+            
+            if (!jsAudio.src) {
+                alert('请先加载音频');
+                return;
+            }
+            
+            const playPromise = jsAudio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    document.getElementById('jsStatus').innerHTML = '<span class="success">正在播放</span>';
+                    log('JS Audio播放成功', 'success');
+                }).catch(error => {
+                    document.getElementById('jsStatus').innerHTML = `<span class="error">播放失败: ${error.message}</span>`;
+                    log(`JS Audio播放失败: ${error.message}`, 'error');
+                    
+                    // 提供解决方案
+                    if (error.name === 'NotAllowedError') {
+                        log('提示: 浏览器阻止了自动播放，需要用户交互', 'warning');
+                    }
+                });
+            }
+        }
+
+        function pauseJsAudio() {
+            if (!jsAudio) {
+                alert('请先创建Audio对象');
+                return;
+            }
+            jsAudio.pause();
+            document.getElementById('jsStatus').innerHTML = '已暂停';
+            log('JS Audio已暂停');
+        }
+
+        function getAudioInfo() {
+            if (!jsAudio) {
+                alert('请先创建Audio对象');
+                return;
+            }
+            
+            const info = {
+                源地址: jsAudio.src || '未设置',
+                时长: jsAudio.duration ? `${jsAudio.duration.toFixed(2)}秒` : '未知',
+                当前时间: `${jsAudio.currentTime.toFixed(2)}秒`,
+                音量: `${(jsAudio.volume * 100).toFixed(0)}%`,
+                静音: jsAudio.muted ? '是' : '否',
+                播放状态: jsAudio.paused ? '暂停' : '播放中',
+                就绪状态: ['未初始化', '元数据', '当前数据', '未来数据', '足够数据'][jsAudio.readyState],
+                网络状态: ['空闲', '加载中', '无源'][jsAudio.networkState],
+                缓冲区: jsAudio.buffered.length > 0 ? 
+                    `${jsAudio.buffered.start(0).toFixed(2)}s - ${jsAudio.buffered.end(0).toFixed(2)}s` : '无'
+            };
+            
+            let statusHtml = '<div style="text-align: left;">';
+            for (const [key, value] of Object.entries(info)) {
+                statusHtml += `<div><strong>${key}:</strong> ${value}</div>`;
+            }
+            statusHtml += '</div>';
+            
+            document.getElementById('jsStatus').innerHTML = statusHtml;
+            log('获取音频信息成功');
+        }
+
+        async function runDiagnostics() {
+            const resultDiv = document.getElementById('diagnosticResult');
+            resultDiv.innerHTML = '正在运行诊断...';
+            log('开始运行完整诊断', 'info');
+            
+            const url = document.getElementById('audioUrl').value;
+            if (!url) {
+                resultDiv.innerHTML = '<span class="error">请先输入音频URL</span>';
+                return;
+            }
+            
+            let results = [];
+            
+            // 1. 测试URL
+            try {
+                const response = await fetch(url, { method: 'HEAD', mode: 'cors' });
+                results.push('✓ URL可访问');
+            } catch (error) {
+                results.push(`✗ URL访问失败 (可能是跨域): ${error.message}`);
+            }
+            
+            // 2. 测试Audio对象
+            try {
+                const testAudio = new Audio();
+                testAudio.src = url;
+                
+                await new Promise((resolve, reject) => {
+                    testAudio.addEventListener('canplay', () => {
+                        results.push('✓ Audio对象可以加载音频');
+                        resolve();
+                    });
+                    testAudio.addEventListener('error', (e) => {
+                        results.push(`✗ Audio对象加载失败: ${e.target.error ? e.target.error.message : '未知错误'}`);
+                        reject();
+                    });
+                    
+                    // 设置超时
+                    setTimeout(() => {
+                        results.push('⚠️ 加载超时（10秒）');
+                        reject();
+                    }, 10000);
+                    
+                    testAudio.load();
+                });
+                
+                // 尝试播放
+                try {
+                    await testAudio.play();
+                    results.push('✓ 可以播放音频');
+                    testAudio.pause();
+                } catch (playError) {
+                    results.push(`⚠️ 播放失败 (可能需要用户交互): ${playError.message}`);
+                }
+                
+            } catch (error) {
+                // 错误已在上面处理
+            }
+            
+            // 3. 检查浏览器支持
+            results.push('');
+            results.push('浏览器支持情况:');
+            results.push(`Audio API: ${typeof Audio !== 'undefined' ? '✓ 支持' : '✗ 不支持'}`);
+            results.push(`Promise: ${typeof Promise !== 'undefined' ? '✓ 支持' : '✗ 不支持'}`);
+            
+            // 4. 检查音频格式支持
+            const audio = new Audio();
+            const formats = {
+                'MP3': 'audio/mpeg',
+                'OGG': 'audio/ogg',
+                'WAV': 'audio/wav',
+                'AAC': 'audio/aac',
+                'WebM': 'audio/webm'
+            };
+            
+            results.push('');
+            results.push('音频格式支持:');
+            for (const [format, mime] of Object.entries(formats)) {
+                const canPlay = audio.canPlayType(mime);
+                results.push(`${format}: ${canPlay || '不支持'}`);
+            }
+            
+            // 显示结果
+            resultDiv.innerHTML = results.map(r => {
+                if (r.includes('✓')) return `<div class="success">${r}</div>`;
+                if (r.includes('✗')) return `<div class="error">${r}</div>`;
+                if (r.includes('⚠️')) return `<div class="warning">${r}</div>`;
+                return `<div>${r}</div>`;
+            }).join('');
+            
+            log('诊断完成', 'info');
+        }
+
+        // 页面加载时自动创建Audio对象
+        window.onload = () => {
+            log('页面加载完成');
+            createAudioContext();
+        };
+    </script>
+</body>
+</html>
