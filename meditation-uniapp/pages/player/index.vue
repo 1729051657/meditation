@@ -17,7 +17,7 @@
 
     <!-- 背景 -->
     <view class="bg-container">
-      <image :src="track.cover || '/static/images/default-cover.jpg'" mode="aspectFill" class="bg-image"></image>
+      <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="bg-image"></image>
       <view class="bg-overlay"></view>
     </view>
 
@@ -25,7 +25,7 @@
     <view class="main-content">
       <!-- 封面 -->
       <!-- <view class="cover-container">
-        <image :src="track.cover || '/static/images/default-cover.jpg'" mode="aspectFill" class="cover-image"></image>
+        <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="cover-image"></image>
       </view> -->
 
 
@@ -313,8 +313,8 @@ export default {
             id: res.data.id,
             title: res.data.title || '未知音频',
             artist: res.data.subtitle || res.data.author || '冥想音乐',
-            cover: res.data.cover || '/static/images/default-cover.jpg',
-            audioUrl: res.data.audio || res.data.audioUrl,
+            cover: res.data.coverUrl || '/static/images/default-cover.jpg',
+            audioUrl: res.data.audioUrl || res.data.audio,
             duration: res.data.durationSec || 0,
             intro: res.data.intro || '',
             categoryId: res.data.categoryId,

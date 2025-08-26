@@ -7,12 +7,12 @@
       <text class="title">{{ series && series.title ? series.title : '' }}</text>
       <text class="sub">系列 · {{ series && series.episodeCount ? series.episodeCount : 0 }}</text>
     </view>
-    <image class="banner" :src="oss(series && series.banner ? series.banner : (series && series.cover ? series.cover : ''))" mode="aspectFill" />
+    <image class="banner" :src="oss(series && series.bannerUrl ? series.bannerUrl : (series && series.coverUrl ? series.coverUrl : ''))" mode="aspectFill" />
     <view class="intro">{{ series && series.intro ? series.intro : '' }}</view>
     <view class="list">
       <view class="item" v-for="t in tracks" :key="t.id" @click="play(t.id)">
         <view class="left">
-          <image :src="oss(t.cover)" class="cover" />
+          <image :src="oss(t.coverUrl)" class="cover" />
         </view>
         <view class="right">
           <view class="t-title">{{ t.title }}</view>

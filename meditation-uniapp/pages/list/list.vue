@@ -7,7 +7,7 @@
         <view class="knowledge-section">
             <view class="knowledge-list">
                 <view v-for="item in knowledgeItems" :key="item.id" class="knowledge-item" @click="goToKnowledge(item)">
-                    <image :src="item.cover || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
+                    <image :src="item.coverUrl || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
                     <view class="knowledge-content">
                         <text class="knowledge-title">{{ item.title }}</text>
                         <text class="knowledge-desc" v-if="item.summary">{{ item.summary }}</text>

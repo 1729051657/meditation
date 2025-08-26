@@ -25,7 +25,7 @@
     <view class="feature-section">
       <view v-for="category in categories" :key="category.id" class="feature-item" @click="goToCategory(category.code)">
         <view class="feature-icon-wrapper">
-          <image :src="category.icon || categoryIconMap[category.code] || '/static/images/default-category.png'"
+          <image :src="category.iconUrl || categoryIconMap[category.code] || '/static/images/default-category.png'"
             class="feature-icon" mode="aspectFit"></image>
           <text class="feature-text">{{ category.name }}</text>
         </view>
@@ -42,7 +42,7 @@
         <view class="meditation-card-list">
           <view v-for="(item, index) in meditationSlots" :key="item.id" class="meditation-card"
             :class="index === 0 ? 'card-basic' : 'card-advanced'"
-            :style="item.cover ? `background-image: url(${item.cover}); background-size: cover; background-position: center;` : ''"
+            :style="item.coverUrl ? `background-image: url(${item.coverUrl}); background-size: cover; background-position: center;` : ''"
             @click="goToMeditation(item)">
             <view class="card-content">
               <text class="card-title">{{ item.title }}</text>
@@ -73,7 +73,7 @@
           <view v-for="item in recommendItems" :key="item.id" class="recommend-card-wrapper"
             @click="goToRecommend(item)">
             <view class="recommend-card">
-              <image :src="item.cover || defaultCover" class="recommend-image" mode="aspectFill"></image>
+              <image :src="item.coverUrl || defaultCover" class="recommend-image" mode="aspectFill"></image>
               <view class="duration-tag">{{ Math.round(item.durationSec / 60) || 15 }}分钟</view>
             </view>
             <text class="recommend-title">{{ item.title }}</text>
@@ -94,7 +94,7 @@
       <view class="knowledge-list">
         <view v-for="item in knowledgeItems.slice(0, 3)" :key="item.id" class="knowledge-item"
           @click="goToKnowledge(item)">
-          <image :src="item.cover || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
+          <image :src="item.coverUrl || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
           <view class="knowledge-content">
             <text class="knowledge-title">{{ item.title }}</text>
             <text class="knowledge-desc" v-if="item.summary">{{ item.summary }}</text>

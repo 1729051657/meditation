@@ -123,8 +123,8 @@ function processPlayHistoryData(item) {
     id: item.id, // 播放历史ID
     trackId: item.trackId,
     title: track.title || item.trackTitle || '未知音频',
-    cover: track.cover || item.trackCover || '/static/images/default-cover.png',
-    audioUrl: track.audio || item.audioUrl || '',
+    cover: track.coverUrl || item.trackCoverUrl || '/static/images/default-cover.png',
+    audioUrl: track.audioUrl || item.audioUrl || '',
     duration: track.durationSec || item.totalDuration || 0,
     seriesId: track.seriesId || item.seriesId,
     seriesTitle: item.seriesTitle || track.remark || '', // 从remark中获取series名称（临时方案）
