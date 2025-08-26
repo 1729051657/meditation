@@ -73,7 +73,7 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" v-if="series.length === 0 && tracks.length === 0 && !seriesHasMore && !tracksHasMore">
+    <view class="empty-state" v-if="series.length === 0 && tracks.length === 0 && !loading">
       <tn-icon name="empty" size="80" color="#ccc"></tn-icon>
       <text class="empty-text">暂无内容</text>
     </view>
@@ -96,24 +96,55 @@ export default {
       tracksPageNum: 1, // 单集分页
       seriesHasMore: true, // 系列是否还有更多
       tracksHasMore: true, // 单集是否还有更多
-      loading: false
+      loading: false,
+      pageSize: 10 // 每页数据量
+    }
+  },
+  computed: {
+    hasMore() {
+      return this.seriesHasMore || this.tracksHasMore
     }
   },
   async onLoad(query) {
+    console.log('页面加载，参数:', query)
     await this.loadCategoryData()
+  },
+  
+  onShow() {
+    console.log('页面显示')
+    // 页面显示时可以刷新数据
   },
   methods: {
     // 加载分类数据
     async loadCategoryData() {
       try {
+        console.log('开始加载分类数据...')
         const res = await listCategories({ status: 0 })
-        this.categories = res.rows || res.data || []
+        console.log('分类数据响应:', res)
+        
+        // 兼容不同的响应格式
+        if (res.rows) {
+          this.categories = res.rows
+        } else if (res.data && Array.isArray(res.data)) {
+          this.categories = res.data
+        } else if (res.data && res.data.rows) {
+          this.categories = res.data.rows
+        } else {
+          this.categories = []
+        }
+        
+        console.log('解析后的分类数据:', this.categories)
 
         if (this.categories.length > 0) {
           this.currentCategoryId = this.categories[0].id
+          console.log('设置当前分类ID:', this.currentCategoryId)
           // 默认加载第一个分类的系列和单集数据
-          this.loadSeriesList(true)
-          this.loadTracksList(true)
+          await Promise.all([
+            this.loadSeriesList(true),
+            this.loadTracksList(true)
+          ])
+        } else {
+          console.log('没有可用的分类数据')
         }
       } catch (error) {
         console.error('加载分类数据失败:', error)
@@ -131,26 +162,67 @@ export default {
         this.series = [];
         this.seriesHasMore = true
       }
-      if (!this.seriesHasMore || this.loading) return
+      if (!this.seriesHasMore || (this.loading && !reset)) return
 
       this.loading = true
       try {
-        const res = await listSeries({
+        console.log('加载系列列表，分类ID:', this.currentCategoryId)
+        const params = {
           categoryId: this.currentCategoryId,
-          status: 0,
+          status: '0', // 注意：SeriesBo中status是String类型
           pageNum: this.seriesPageNum,
-          pageSize: 10
+          pageSize: this.pageSize
+        }
+        console.log('系列请求参数:', params)
+        
+        const res = await listSeries(params)
+        console.log('系列数据响应:', res)
+        
+        // 兼容不同的响应格式
+        let rows = []
+        if (res.rows) {
+          rows = res.rows
+        } else if (res.data && Array.isArray(res.data)) {
+          rows = res.data
+        } else if (res.data && res.data.rows) {
+          rows = res.data.rows
+        }
+        
+        console.log('解析后的系列数据:', rows)
+        
+        // 处理封面URL
+        rows = rows.map(item => {
+          // 如果没有coverUrl但有cover，可能需要构建URL
+          if (!item.coverUrl && item.cover) {
+            // 这里可能需要根据实际情况构建URL
+            console.log('系列缺少coverUrl，cover ID:', item.cover)
+          }
+          // 确保有默认封面
+          if (!item.coverUrl) {
+            item.coverUrl = '/static/images/default-cover.png'
+          }
+          return item
         })
-        const rows = res.rows || res.data || []
-        this.series = this.series.concat(rows)
-        this.seriesHasMore = rows.length >= 10
-        if (this.seriesHasMore) this.seriesPageNum += 1
+        
+        if (reset) {
+          this.series = rows
+        } else {
+          this.series = this.series.concat(rows)
+        }
+        
+        // 判断是否还有更多数据
+        this.seriesHasMore = rows.length >= this.pageSize
+        if (this.seriesHasMore) {
+          this.seriesPageNum += 1
+        }
+        
+        console.log('当前系列数据总数:', this.series.length, '还有更多:', this.seriesHasMore)
       } catch (error) {
         console.error('加载系列列表失败:', error)
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        })
+        this.seriesHasMore = false
+        if (reset) {
+          this.series = []
+        }
       } finally {
         this.loading = false
       }
@@ -163,42 +235,96 @@ export default {
         this.tracks = [];
         this.tracksHasMore = true
       }
-      if (!this.tracksHasMore || this.loading) return
+      if (!this.tracksHasMore || (this.loading && !reset)) return
 
       this.loading = true
       try {
-        const res = await listTracks({
+        console.log('加载单集列表，分类ID:', this.currentCategoryId)
+        const params = {
           categoryId: this.currentCategoryId,
-          status: 0,
+          status: 0, // TrackBo中status是Integer类型
           pageNum: this.tracksPageNum,
-          pageSize: 10
+          pageSize: this.pageSize
+        }
+        console.log('单集请求参数:', params)
+        
+        const res = await listTracks(params)
+        console.log('单集数据响应:', res)
+        
+        // 兼容不同的响应格式
+        let rows = []
+        if (res.rows) {
+          rows = res.rows
+        } else if (res.data && Array.isArray(res.data)) {
+          rows = res.data
+        } else if (res.data && res.data.rows) {
+          rows = res.data.rows
+        }
+        
+        console.log('解析后的单集数据:', rows)
+        
+        // 处理封面URL和音频URL
+        rows = rows.map(item => {
+          // 如果没有coverUrl但有cover，可能需要构建URL
+          if (!item.coverUrl && item.cover) {
+            console.log('单集缺少coverUrl，cover ID:', item.cover)
+          }
+          // 如果没有audioUrl但有audio，可能需要构建URL
+          if (!item.audioUrl && item.audio) {
+            console.log('单集缺少audioUrl，audio ID:', item.audio)
+          }
+          // 确保有默认封面
+          if (!item.coverUrl) {
+            item.coverUrl = '/static/images/default-cover.png'
+          }
+          return item
         })
-        const rows = res.rows || res.data || []
-        this.tracks = this.tracks.concat(rows)
-        this.tracksHasMore = rows.length >= 10
-        if (this.tracksHasMore) this.tracksPageNum += 1
+        
+        if (reset) {
+          this.tracks = rows
+        } else {
+          this.tracks = this.tracks.concat(rows)
+        }
+        
+        // 判断是否还有更多数据
+        this.tracksHasMore = rows.length >= this.pageSize
+        if (this.tracksHasMore) {
+          this.tracksPageNum += 1
+        }
+        
+        console.log('当前单集数据总数:', this.tracks.length, '还有更多:', this.tracksHasMore)
       } catch (error) {
         console.error('加载单集列表失败:', error)
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        })
+        this.tracksHasMore = false
+        if (reset) {
+          this.tracks = []
+        }
       } finally {
         this.loading = false
       }
     },
 
     // 切换分类
-    switchCategory(id) {
+    async switchCategory(id) {
+      if (this.currentCategoryId === id) {
+        console.log('分类未改变，不重新加载')
+        return
+      }
+      
+      console.log('切换分类，从', this.currentCategoryId, '到', id)
       this.currentCategoryId = id
+      
+      // 重置分页参数
       this.seriesPageNum = 1
       this.tracksPageNum = 1
       this.seriesHasMore = true
       this.tracksHasMore = true
 
       // 重新加载系列和单集数据
-      this.loadSeriesList(true)
-      this.loadTracksList(true)
+      await Promise.all([
+        this.loadSeriesList(true),
+        this.loadTracksList(true)
+      ])
     },
 
     // 播放系列
@@ -217,6 +343,22 @@ export default {
 
     goBack() { uni.navigateBack() },
     goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) },
+    
+    // 加载更多
+    async loadMore() {
+      console.log('点击加载更多')
+      // 同时加载系列和单集的下一页
+      const promises = []
+      if (this.seriesHasMore) {
+        promises.push(this.loadSeriesList())
+      }
+      if (this.tracksHasMore) {
+        promises.push(this.loadTracksList())
+      }
+      if (promises.length > 0) {
+        await Promise.all(promises)
+      }
+    },
 
     // 获取当前分类名称
     getCurrentCategoryName() {
@@ -263,10 +405,13 @@ export default {
     }
   },
 
-  onPullDownRefresh() {
+  async onPullDownRefresh() {
     // 刷新时重新加载所有数据
-    this.loadSeriesList(true)
-    this.loadTracksList(true)
+    console.log('下拉刷新触发')
+    await Promise.all([
+      this.loadSeriesList(true),
+      this.loadTracksList(true)
+    ])
     uni.stopPullDownRefresh()
   }
 }
