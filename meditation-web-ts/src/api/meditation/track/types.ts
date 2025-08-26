@@ -25,9 +25,19 @@ export interface TrackVO {
   cover: string;
 
   /**
+   * 封面文件URL
+   */
+  coverUrl?: string;
+
+  /**
    * 音频文件id（sys_oss.oss_id）
    */
   audio: string;
+
+  /**
+   * 音频文件URL
+   */
+  audioUrl?: string;
 
   /**
    * 时长（秒）

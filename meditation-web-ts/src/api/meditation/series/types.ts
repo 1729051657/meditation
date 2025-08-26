@@ -27,9 +27,19 @@ export interface SeriesVO {
   cover: string;
 
   /**
+   * 封面文件URL
+   */
+  coverUrl?: string;
+
+  /**
    * 横幅图文件id（sys_oss.oss_id）
    */
   banner: string;
+
+  /**
+   * 横幅图文件URL
+   */
+  bannerUrl?: string;
 
   /**
    * 简介
