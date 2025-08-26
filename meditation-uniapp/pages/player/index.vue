@@ -66,26 +66,19 @@
         <!-- 其他功能 -->
         <view class="feature-section">
           <view class="feature-btn" @click="openModal">
-            <!-- <text :class="isFavorite ? 'tn-icon-like-fill' : 'tn-icon-like'"
-              :style="{ color: isFavorite ? '#ef4444' : '#6B7280' }"></text>
-            <text class="feature-text">收藏</text> -->
             <image class="w72"
               src="/static/player/playlist-icon.png"
               lazy-load="false" binderror="" bindload="" />
 
           </view>
           <view class="feature-btn">
-            <!-- <text class="tn-icon-list"></text>
-            <text class="feature-text">列表</text> -->
             <image class="w140"
-              src="/static/player/list-icon.png"
+              src="/static/player/play-pause-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
           <view class="feature-btn" @click="share">
-            <!-- <text class="tn-icon-list"></text>
-            <text class="feature-text">分享</text> -->
             <image class="w72"
-              src="/static/player/share-icon.png"
+              src="/static/player/timer-icon.png"
               lazy-load="false" binderror="" bindload="" />
           </view>
         </view>

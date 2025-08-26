@@ -133,7 +133,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (bo.getLastPlayTime() == null) {
             bo.setLastPlayTime(new Date());
         }
-        
+
         PlayHistory add = MapstructUtils.convert(bo, PlayHistory.class);
         validEntityBeforeSave(add);
         boolean flag = baseMapper.insert(add) > 0;
@@ -155,7 +155,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
         if (bo.getLastPlayTime() == null) {
             bo.setLastPlayTime(new Date());
         }
-        
+
         // 如果前端没有传递播放次数，则自动+1
         if (bo.getPlayCount() == null) {
             // 查询当前记录的播放次数
@@ -166,7 +166,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
                 bo.setPlayCount(1);
             }
         }
-        
+
         PlayHistory update = MapstructUtils.convert(bo, PlayHistory.class);
         validEntityBeforeSave(update);
         return baseMapper.updateById(update) > 0;
@@ -275,7 +275,7 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             detailVo.setTrackAuthor("");
             detailVo.setTrackCover(track.getCover());
             detailVo.setTrackIntro(track.getIntro());
-            detailVo.setAudioUrl(track.getAudio()); // 使用audio字段
+            detailVo.setAudioUrl(track.getAudioUrl()); // 使用audio字段
             detailVo.setTotalDuration(track.getDurationSec());
             detailVo.setSeriesId(track.getSeriesId());
             detailVo.setCategoryId(track.getCategoryId());
