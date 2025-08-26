@@ -191,7 +191,7 @@
 
 <script>
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
-import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
+import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
 import { addPlayHistory, updatePlayHistory } from '@/api/play'
 
 export default {
@@ -241,6 +241,10 @@ export default {
     this.trackId = options.id
     this.seriesId = options.seriesId || null
     this.categoryId = options.categoryId || null
+    
+    // 重置收藏状态
+    this.isFavorite = false
+    this.favoriteId = null
     
     // 如果有传递播放进度，恢复播放进度
     if (options.progress) {
@@ -364,14 +368,7 @@ export default {
         }
 
         // 检查收藏状态
-        try {
-          const favRes = await checkFavorite(this.trackId, 'track')
-          if (favRes.code === 200) {
-            this.isFavorite = favRes.data
-          }
-        } catch (error) {
-          console.error('检查收藏状态失败:', error)
-        }
+        await this.checkFavoriteStatus(this.trackId)
 
         // 添加播放历史记录
         this.addToPlayHistory()
@@ -625,12 +622,45 @@ export default {
     // 检查收藏状态
     async checkFavoriteStatus(trackId) {
       try {
-        const res = await checkFavorite(trackId, 'track')
-        if (res.code === 200) {
-          this.isFavorite = res.data
+        console.log('检查收藏状态, trackId:', trackId)
+        
+        // 先检查是否收藏
+        const checkRes = await checkFavorite(trackId, 'track')
+        console.log('收藏状态检查结果:', checkRes)
+        
+        if (checkRes.code === 200) {
+          this.isFavorite = checkRes.data === true || checkRes.data === 'true' || checkRes.data === 1
+          console.log('是否已收藏:', this.isFavorite)
+          
+          // 如果已收藏，获取收藏记录ID
+          if (this.isFavorite) {
+            const listRes = await listFavorites({
+              targetId: trackId,
+              targetType: 'track',
+              pageNum: 1,
+              pageSize: 1
+            })
+            console.log('收藏列表结果:', listRes)
+            
+            if (listRes.code === 200 && listRes.rows && listRes.rows.length > 0) {
+              this.favoriteId = listRes.rows[0].id
+              console.log('收藏记录ID (rows):', this.favoriteId)
+            } else if (listRes.code === 200 && listRes.data && listRes.data.length > 0) {
+              this.favoriteId = listRes.data[0].id
+              console.log('收藏记录ID (data):', this.favoriteId)
+            } else {
+              console.warn('已收藏但未找到收藏记录ID')
+              this.favoriteId = null
+            }
+          } else {
+            this.favoriteId = null
+            console.log('未收藏，清空favoriteId')
+          }
         }
       } catch (error) {
         console.error('检查收藏状态失败:', error)
+        this.isFavorite = false
+        this.favoriteId = null
       }
     },
 
@@ -641,30 +671,64 @@ export default {
 
     async toggleFavorite() {
       try {
+        console.log('切换收藏状态, 当前状态:', this.isFavorite, 'favoriteId:', this.favoriteId, 'trackId:', this.trackId)
+        
         uni.showLoading({
           title: this.isFavorite ? '取消收藏中...' : '收藏中...'
         })
         
-        if (this.isFavorite && this.favoriteId) {
+        if (this.isFavorite) {
           // 取消收藏
-          const res = await removeFavorite(this.favoriteId)
-          if (res.code === 200) {
-            this.isFavorite = false
-            this.favoriteId = null
-            uni.hideLoading()
-            uni.showToast({
-              title: '已取消收藏',
-              icon: 'success'
+          if (!this.favoriteId) {
+            // 如果没有favoriteId，先获取
+            const listRes = await listFavorites({
+              targetId: this.trackId,
+              targetType: 'track',
+              pageNum: 1,
+              pageSize: 1
             })
+            
+            if (listRes.code === 200) {
+              if (listRes.rows && listRes.rows.length > 0) {
+                this.favoriteId = listRes.rows[0].id
+              } else if (listRes.data && listRes.data.length > 0) {
+                this.favoriteId = listRes.data[0].id
+              }
+            }
+          }
+          
+          if (this.favoriteId) {
+            console.log('取消收藏, favoriteId:', this.favoriteId)
+            const res = await removeFavorite(this.favoriteId)
+            console.log('取消收藏结果:', res)
+            
+            if (res.code === 200) {
+              this.isFavorite = false
+              this.favoriteId = null
+              console.log('收藏已取消')
+              
+              uni.hideLoading()
+              uni.showToast({
+                title: '已取消收藏',
+                icon: 'success'
+              })
+            } else {
+              throw new Error(res.msg || '取消收藏失败')
+            }
           } else {
-            throw new Error(res.msg || '取消收藏失败')
+            throw new Error('未找到收藏记录')
           }
         } else {
           // 添加收藏
           const res = await addFavorite(this.trackId, 'track')
+          console.log('添加收藏结果:', res)
+          
           if (res.code === 200) {
             this.isFavorite = true
-            this.favoriteId = res.data?.id || null
+            // 尝试从不同的响应格式中获取ID
+            this.favoriteId = res.data?.id || res.data || res.id || null
+            console.log('新收藏记录ID:', this.favoriteId)
+            
             uni.hideLoading()
             uni.showToast({
               title: '收藏成功',
