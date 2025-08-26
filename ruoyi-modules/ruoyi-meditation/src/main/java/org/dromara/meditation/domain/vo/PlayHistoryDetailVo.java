@@ -45,7 +45,7 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     /**
      * 单集封面URL
      */
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "trackCover")
     private String trackCoverUrl;
 
     /**
@@ -61,7 +61,7 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     /**
      * 音频URL
      */
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "audio")
     private String audioUrl;
 
     /**

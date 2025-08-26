@@ -65,7 +65,7 @@ public class CategoryVo implements Serializable {
     /**
      * 图标文件URL
      */
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "icon")
     private String iconUrl;
 
     /**
