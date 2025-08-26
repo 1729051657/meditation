@@ -60,12 +60,12 @@
         <el-table-column label="主键" align="center" prop="id" v-if="false" />
         <el-table-column label="所属系列" align="center" prop="seriesId">
           <template #default="scope">
-            <span>{{ seriesList.find(s => s.id == scope.row.seriesId)?.title || scope.row.seriesId }}</span>
+            <span>{{ (seriesList || []).find(s => s.id == scope.row.seriesId)?.title || scope.row.seriesId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="分类" align="center" prop="categoryId">
           <template #default="scope">
-            <span>{{ categoryList.find(c => c.id == scope.row.categoryId)?.name || scope.row.categoryId }}</span>
+            <span>{{ (categoryList || []).find(c => c.id == scope.row.categoryId)?.name || scope.row.categoryId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="标题" align="center" prop="title" />
@@ -181,6 +181,10 @@
                 :file-type="['jpg', 'jpeg', 'png', 'gif', 'webp']"
                 :compress-support="true"
                 :compress-target-size="500"
+                :show-file-list="true"
+                :auto-upload="false"
+                :disabled="false"
+                accept=".jpg,.jpeg,.png,.gif,.webp"
               />
             </el-form-item>
           </el-col>
@@ -191,6 +195,11 @@
                 :limit="1"
                 :file-size="50"
                 :file-type="['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac']"
+                :show-file-list="true"
+                :auto-upload="false"
+                :disabled="false"
+                accept=".mp3,.wav,.ogg,.aac,.m4a,.flac"
+                @error="handleFileUploadError"
               />
             </el-form-item>
           </el-col>
@@ -255,7 +264,7 @@ const initFormData: TrackForm = {
   durationSec: undefined,
   intro: undefined,
   orderIndex: undefined,
-  status: undefined,
+  status: '0', // 默认启用，注意这里是字符串类型
   remark: undefined
 }
 const data = reactive<PageData<TrackForm, TrackQuery>>({
@@ -282,8 +291,14 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
     categoryId: [
       { required: true, message: "分类不能为空", trigger: "blur" }
     ],
+    title: [
+      { required: true, message: "标题不能为空", trigger: "blur" }
+    ],
     cover: [
       { required: true, message: "封面不能为空", trigger: "blur" }
+    ],
+    audio: [
+      { required: true, message: "音频文件不能为空", trigger: "blur" }
     ],
     durationSec: [
       { required: true, message: "时长不能为空", trigger: "blur" }
@@ -294,9 +309,10 @@ const data = reactive<PageData<TrackForm, TrackQuery>>({
     orderIndex: [
       { required: true, message: "系列排序不能为空", trigger: "blur" }
     ],
-    remark: [
-      { required: true, message: "备注不能为空", trigger: "blur" }
+    status: [
+      { required: true, message: "状态不能为空", trigger: "change" }
     ]
+    // 备注字段移除必填验证，允许为空
   }
 });
 
@@ -320,6 +336,11 @@ const cancel = () => {
 /** 表单重置 */
 const reset = () => {
   form.value = {...initFormData};
+  // 确保状态字段正确设置
+  form.value.status = '0';
+  // 确保文件字段有正确的初始值
+  form.value.cover = undefined;
+  form.value.audio = undefined;
   trackFormRef.value?.resetFields();
 }
 
@@ -353,8 +374,25 @@ const handleAdd = () => {
 const handleUpdate = async (row?: TrackVO) => {
   reset();
   const _id = row?.id || ids.value[0]
-  const res = await getTrack(_id);
-  Object.assign(form.value, res.data);
+  try {
+    const res = await getTrack(_id);
+    if (res.data) {
+      // 确保所有字段都正确赋值，特别是封面和音频文件
+      form.value = {
+        ...res.data,
+        // 确保状态字段有值，如果没有则默认为启用
+        status: res.data.status || '0',
+        // 确保封面和音频字段有值，避免undefined导致的组件错误
+        cover: res.data.cover || undefined,
+        audio: res.data.audio || undefined
+      };
+      console.log('修改表单数据:', form.value); // 调试用
+    }
+  } catch (error) {
+    console.error('获取单集信息失败:', error);
+    proxy?.$modal.msgError('获取单集信息失败');
+    return;
+  }
   dialog.visible = true;
   dialog.title = "修改冥想单集";
 }
@@ -402,6 +440,12 @@ const getSeriesList = async () => {
 const getCategoryList = async () => {
   const res = await listCategory();
   categoryList.value = res.data;
+}
+
+/** 处理文件上传错误 */
+const handleFileUploadError = (error: any) => {
+  console.error('文件上传错误:', error);
+  proxy?.$modal.msgError('文件上传失败，请重试');
 }
 
 onMounted(() => {

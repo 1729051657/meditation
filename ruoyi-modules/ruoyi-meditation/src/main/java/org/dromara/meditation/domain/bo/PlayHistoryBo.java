@@ -30,7 +30,6 @@ public class PlayHistoryBo extends BaseEntity {
     /**
      * 用户ID
      */
-    @NotNull(message = "用户ID不能为空", groups = { AddGroup.class, EditGroup.class })
     private Long userId;
 
     /**
@@ -48,13 +47,11 @@ public class PlayHistoryBo extends BaseEntity {
     /**
      * 最后播放时间
      */
-    @NotNull(message = "最后播放时间不能为空", groups = { AddGroup.class, EditGroup.class })
     private Date lastPlayTime;
 
     /**
      * 播放次数
      */
-    @NotNull(message = "播放次数不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer playCount;
 
     /**

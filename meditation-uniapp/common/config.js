@@ -9,7 +9,7 @@ import { STORAGE_KEYS, DEFAULT_VALUES } from './constants.js'
 const envConfig = {
   // 开发环境
   development: {
-    baseUrl: 'https://thoughtadmin.bawutech.com/prod-api/',
+    baseUrl: 'http://localhost:8080',
     debug: true
   },
   // 测试环境

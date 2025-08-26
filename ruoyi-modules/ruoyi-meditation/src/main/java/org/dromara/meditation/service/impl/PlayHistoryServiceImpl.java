@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import cn.hutool.core.collection.CollUtil;
+import java.util.Date;
 
 /**
  * 音频播放记录Service业务层处理
@@ -122,6 +123,17 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      */
     @Override
     public Boolean insertByBo(PlayHistoryBo bo) {
+        // 设置默认值
+        if (bo.getUserId() == null) {
+            bo.setUserId(LoginHelper.getUserId());
+        }
+        if (bo.getPlayCount() == null) {
+            bo.setPlayCount(1);
+        }
+        if (bo.getLastPlayTime() == null) {
+            bo.setLastPlayTime(new Date());
+        }
+        
         PlayHistory add = MapstructUtils.convert(bo, PlayHistory.class);
         validEntityBeforeSave(add);
         boolean flag = baseMapper.insert(add) > 0;
@@ -139,6 +151,22 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
      */
     @Override
     public Boolean updateByBo(PlayHistoryBo bo) {
+        // 设置最后播放时间
+        if (bo.getLastPlayTime() == null) {
+            bo.setLastPlayTime(new Date());
+        }
+        
+        // 如果前端没有传递播放次数，则自动+1
+        if (bo.getPlayCount() == null) {
+            // 查询当前记录的播放次数
+            PlayHistory currentHistory = baseMapper.selectById(bo.getId());
+            if (currentHistory != null) {
+                bo.setPlayCount(currentHistory.getPlayCount() + 1);
+            } else {
+                bo.setPlayCount(1);
+            }
+        }
+        
         PlayHistory update = MapstructUtils.convert(bo, PlayHistory.class);
         validEntityBeforeSave(update);
         return baseMapper.updateById(update) > 0;

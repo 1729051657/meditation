@@ -77,13 +77,12 @@ public class TrackBo extends BaseEntity {
     /**
      * 状态（0正常 1停用）
      */
-    @NotBlank(message = "状态不能为空", groups = { AddGroup.class, EditGroup.class })
+    @NotNull(message = "状态不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer status = 0;
 
     /**
      * 备注
      */
-    @NotBlank(message = "备注不能为空", groups = { AddGroup.class, EditGroup.class })
     private String remark;
 
 
