@@ -42,11 +42,5 @@ public class Favorite extends TenantEntity {
      */
     private Long targetId;
 
-    /**
-     * 删除标志（0代表存在 1代表删除）
-     */
-    @TableLogic
-    private String delFlag;
-
 
 }
