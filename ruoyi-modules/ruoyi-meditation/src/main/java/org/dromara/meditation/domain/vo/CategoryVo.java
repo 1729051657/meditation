@@ -60,8 +60,13 @@ public class CategoryVo implements Serializable {
      */
     @ExcelProperty(value = "图标文件id", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "s=ys_oss.oss_id")
-    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private Long icon;
+
+    /**
+     * 图标文件URL
+     */
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
+    private String iconUrl;
 
     /**
      * 简介

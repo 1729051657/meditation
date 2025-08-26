@@ -38,10 +38,15 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     private String trackAuthor;
 
     /**
-     * 单集封面
+     * 单集封面ID
+     */
+    private Long trackCover;
+
+    /**
+     * 单集封面URL
      */
     @Translation(type = TransConstant.OSS_ID_TO_URL)
-    private Long trackCover;
+    private String trackCoverUrl;
 
     /**
      * 单集简介
@@ -49,10 +54,15 @@ public class PlayHistoryDetailVo extends PlayHistoryVo {
     private String trackIntro;
 
     /**
+     * 音频ID
+     */
+    private Long audio;
+
+    /**
      * 音频URL
      */
     @Translation(type = TransConstant.OSS_ID_TO_URL)
-    private Long audioUrl;
+    private String audioUrl;
 
     /**
      * 总时长（秒）

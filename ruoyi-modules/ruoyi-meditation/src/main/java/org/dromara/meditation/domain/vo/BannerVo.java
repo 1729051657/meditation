@@ -53,9 +53,9 @@ public class BannerVo implements Serializable {
     private Long image;
 
     /**
-     * 图片文件id（sys_oss.oss_id）Url
+     * 图片文件URL
      */
-    @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "image")
+    @Translation(type = TransConstant.OSS_ID_TO_URL)
     private String imageUrl;
     /**
      * 链接类型（0无 1外链URL 2内容跳转）
