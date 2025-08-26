@@ -190,16 +190,11 @@ export default {
         
         console.log('解析后的系列数据:', rows)
         
-        // 处理封面URL
+        // 处理封面URL（如果需要）
         rows = rows.map(item => {
-          // 如果没有coverUrl但有cover，可能需要构建URL
+          // 如果没有coverUrl但有cover，记录日志
           if (!item.coverUrl && item.cover) {
-            // 这里可能需要根据实际情况构建URL
             console.log('系列缺少coverUrl，cover ID:', item.cover)
-          }
-          // 确保有默认封面
-          if (!item.coverUrl) {
-            item.coverUrl = '/static/images/default-cover.png'
           }
           return item
         })
@@ -263,19 +258,15 @@ export default {
         
         console.log('解析后的单集数据:', rows)
         
-        // 处理封面URL和音频URL
+        // 处理封面URL和音频URL（如果需要）
         rows = rows.map(item => {
-          // 如果没有coverUrl但有cover，可能需要构建URL
+          // 如果没有coverUrl但有cover，记录日志
           if (!item.coverUrl && item.cover) {
             console.log('单集缺少coverUrl，cover ID:', item.cover)
           }
-          // 如果没有audioUrl但有audio，可能需要构建URL
+          // 如果没有audioUrl但有audio，记录日志
           if (!item.audioUrl && item.audio) {
             console.log('单集缺少audioUrl，audio ID:', item.audio)
-          }
-          // 确保有默认封面
-          if (!item.coverUrl) {
-            item.coverUrl = '/static/images/default-cover.png'
           }
           return item
         })
