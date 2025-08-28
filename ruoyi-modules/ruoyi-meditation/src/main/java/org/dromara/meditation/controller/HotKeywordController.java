@@ -39,7 +39,6 @@ public class HotKeywordController extends BaseController {
     /**
      * 查询热搜关键词列表
      */
-    @SaCheckPermission("meditation:hotKeyword:list")
     @GetMapping("/list")
     public TableDataInfo<HotKeywordVo> list(HotKeywordBo bo, PageQuery pageQuery) {
         return hotKeywordService.queryPageList(bo, pageQuery);

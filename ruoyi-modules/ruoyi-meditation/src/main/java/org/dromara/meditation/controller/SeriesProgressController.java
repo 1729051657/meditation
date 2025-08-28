@@ -39,7 +39,6 @@ public class SeriesProgressController extends BaseController {
     /**
      * 查询系列学习进度列表
      */
-    @SaCheckPermission("meditation:seriesProgress:list")
     @GetMapping("/list")
     public TableDataInfo<SeriesProgressVo> list(SeriesProgressBo bo, PageQuery pageQuery) {
         return seriesProgressService.queryPageList(bo, pageQuery);
@@ -71,7 +70,6 @@ public class SeriesProgressController extends BaseController {
     /**
      * 新增系列学习进度
      */
-    @SaCheckPermission("meditation:seriesProgress:add")
     @Log(title = "系列学习进度", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping()

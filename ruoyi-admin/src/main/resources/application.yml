@@ -67,9 +67,9 @@ spring:
   servlet:
     multipart:
       # 单个文件大小
-      max-file-size: 10MB
+      max-file-size: 500MB
       # 设置总上传的文件大小
-      max-request-size: 20MB
+      max-request-size: 1024MB
   mvc:
     # 设置静态资源路径 防止所有请求都去查静态资源
     static-path-pattern: /static/**
@@ -212,10 +212,11 @@ springdoc:
 # 防止XSS攻击
 xss:
   # 过滤开关
-  enabled: true
+  enabled: false
   # 排除链接（多个用逗号分隔）
   excludeUrls:
     - /system/notice
+    - /meditation/article
 
 # 全局线程池相关配置
 # 如使用JDK21请直接使用虚拟线程 不要开启此配置

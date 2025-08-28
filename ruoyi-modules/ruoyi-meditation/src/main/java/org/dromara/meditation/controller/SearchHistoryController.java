@@ -39,7 +39,6 @@ public class SearchHistoryController extends BaseController {
     /**
      * 查询搜索历史列表
      */
-    @SaCheckPermission("meditation:searchHistory:list")
     @GetMapping("/list")
     public TableDataInfo<SearchHistoryVo> list(SearchHistoryBo bo, PageQuery pageQuery) {
         return searchHistoryService.queryPageList(bo, pageQuery);
@@ -71,7 +70,6 @@ public class SearchHistoryController extends BaseController {
     /**
      * 新增搜索历史
      */
-    @SaCheckPermission("meditation:searchHistory:add")
     @Log(title = "搜索历史", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping()

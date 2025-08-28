@@ -34,7 +34,7 @@ defineProps({
   }
 });
 
-const title = ref('RuoYi-Vue-Plus');
+const title = ref('冥想后台管理');
 const settingsStore = useSettingsStore();
 const sideTheme = computed(() => settingsStore.sideTheme);
 </script>
