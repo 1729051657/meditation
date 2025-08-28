@@ -40,13 +40,11 @@ public class SearchHistoryBo extends BaseEntity {
     /**
      * 搜索次数
      */
-    @NotNull(message = "搜索次数不能为空", groups = { AddGroup.class, EditGroup.class })
     private Integer times;
 
     /**
      * 最后搜索时间
      */
-    @NotNull(message = "最后搜索时间不能为空", groups = { AddGroup.class, EditGroup.class })
     private Date lastTime;
 
 

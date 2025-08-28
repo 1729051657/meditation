@@ -1,5 +1,8 @@
 package org.dromara.meditation.service.impl;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.unit.DataUnit;
+import lombok.Data;
 import org.dromara.common.core.utils.MapstructUtils;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -91,6 +94,7 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
     public Boolean insertByBo(SearchHistoryBo bo) {
         SearchHistory add = MapstructUtils.convert(bo, SearchHistory.class);
         validEntityBeforeSave(add);
+        add.setLastTime(DateUtil.date());
         boolean flag = baseMapper.insert(add) > 0;
         if (flag) {
             bo.setId(add.getId());
