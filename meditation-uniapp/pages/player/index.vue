@@ -89,12 +89,6 @@
             <!-- 显示倒计时 -->
             <text v-if="sleepTimerRemaining > 0" class="timer-countdown">{{ formatTimerRemaining }}</text>
           </view>
-          <view class="feature-btn" @click="togglePlayMode">
-            <image class="w72" 
-              :src="playModeIcon" 
-              lazy-load="false" 
-              :title="playModeName" />
-          </view>
         </view>
       </view>
     </view>
