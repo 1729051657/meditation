@@ -72,8 +72,11 @@
               :src="playing ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'"
               lazy-load="false" binderror="" bindload="" />
           </view>
-          <view class="feature-btn" >
-            <image class="w72" src="" lazy-load="false" binderror="" bindload="" />
+          <view class="feature-btn" @click="togglePlayMode">
+            <image class="w72" 
+              :src="playModeIcon" 
+              lazy-load="false" 
+              :title="playModeName" />
           </view>
         </view>
       </view>
@@ -205,6 +208,7 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
+      playMode: 'list', // 播放模式: list(列表循环), single(单曲循环), random(随机播放)
     }
   },
 
@@ -234,8 +238,43 @@ export default {
     if (options.progress) {
       this.currentTime = parseInt(options.progress) || 0
     }
+    
+    // 如果是从迷你播放器跳转过来的（resume参数），不重新初始化音频
+    if (options.resume === 'true') {
+      // 只同步当前播放状态
+      const audioContext = uni.getBackgroundAudioManager()
+      if (audioContext && audioContext.src) {
+        this.audioContext = audioContext
+        this.playing = !audioContext.paused
+        this.currentTime = audioContext.currentTime || 0
+        this.duration = audioContext.duration || 0
+        if (this.duration > 0) {
+          this.progress = (this.currentTime / this.duration) * 100
+        }
+        // 设置音轨信息
+        this.track = {
+          title: audioContext.title || '未知音频',
+          coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.jpg',
+          audioUrl: audioContext.src
+        }
+        // 如果正在播放，开始进度跟踪
+        if (this.playing) {
+          this.startProgressTracking()
+        }
+        // 加载播放列表
+        this.loadPlaylist()
+        // 检查收藏状态
+        this.checkFavoriteStatus(this.trackId)
+        return
+      }
+    }
 
-
+    // 恢复播放模式设置
+    const savedPlayMode = uni.getStorageSync('playMode')
+    if (savedPlayMode && ['list', 'single', 'random'].includes(savedPlayMode)) {
+      this.playMode = savedPlayMode
+    }
+    
     // this.loadTrack()
     this.loadPlaylist()
     this.initAudio()
@@ -244,6 +283,27 @@ export default {
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
+    },
+    
+    // 播放模式图标
+    playModeIcon() {
+      const icons = {
+        'list': '/static/player/mode-list.png',
+        'single': '/static/player/mode-single.png',
+        'random': '/static/player/mode-random.png'
+      }
+      // 如果没有对应图标，使用播放列表图标作为默认
+      return icons[this.playMode] || '/static/player/playlist-icon.png'
+    },
+    
+    // 播放模式名称
+    playModeName() {
+      const names = {
+        'list': '列表循环',
+        'single': '单曲循环',
+        'random': '随机播放'
+      }
+      return names[this.playMode] || '列表循环'
     }
   },
   onUnload() {
@@ -298,10 +358,8 @@ export default {
       // 设置自动播放为false，需要用户手动触发
       this.audioContext.autoplay = false
       
-      // 设置后台播放相关属性
-      this.audioContext.epname = '冥想空间' // 专辑名称
-      this.audioContext.singer = '冥想音乐' // 歌手名称
-      this.audioContext.coverImgUrl = '/static/images/default-cover.jpg' // 默认封面
+      // 注意：这里不设置默认值，等待 loadTrack 时设置具体信息
+      // 避免覆盖已有的音频信息
 
       this.audioContext.onPlay(() => {
         console.log('音频开始播放')
@@ -327,7 +385,24 @@ export default {
         console.log('音频播放结束')
         this.playing = false
         this.markAsCompleted()
-        this.next()
+        
+        // 根据播放模式决定下一步
+        if (this.playMode === 'single') {
+          // 单曲循环：重新播放当前曲目
+          console.log('单曲循环模式')
+          this.audioContext.seek(0)
+          setTimeout(() => {
+            this.audioContext.play()
+          }, 100)
+        } else if (this.playMode === 'random') {
+          // 随机播放
+          console.log('随机播放模式')
+          this.playRandom()
+        } else {
+          // 列表循环（默认）
+          console.log('列表循环模式')
+          this.next()
+        }
       })
 
       this.audioContext.onError((error) => {
@@ -392,13 +467,33 @@ export default {
           }
 
           if (this.track.audioUrl) {
-            console.log(this.track.audioUrl)
+            console.log('设置音频信息:', this.track)
+            
+            // 根据文档，title 是必填项，必须在设置 src 之前设置
+            // 先停止当前播放（如果有）
+            if (this.audioContext.src) {
+              this.audioContext.stop()
+            }
+            
+            // 按照文档要求的顺序设置属性
+            this.audioContext.title = this.track.title || '冥想音频' // 必填
+            this.audioContext.epname = '冥想空间' // 专辑名，选填
+            this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
+            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
+            
+            // 最后设置 src，这会触发音频加载
             this.audioContext.src = this.track.audioUrl
-            this.audioContext.title = this.track.title || '冥想音频'
-            this.audioContext.singer = this.track.artist || '冥想音乐'
-            this.audioContext.epname = '冥想空间'
-            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg'
-            console.log(this.audioContext, this.track.audioUrl)
+            
+            console.log('音频信息设置完成:', {
+              src: this.audioContext.src,
+              title: this.audioContext.title,
+              singer: this.audioContext.singer,
+              coverImgUrl: this.audioContext.coverImgUrl
+            })
+            
+            // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
+            uni.setStorageSync('currentTrackId', this.trackId)
+            
             // 如果有传递的播放进度，恢复播放位置
             if (this.currentTime > 0) {
               setTimeout(() => {
@@ -534,6 +629,9 @@ export default {
           this.audioContext.offPrev()
           this.audioContext.offNext()
           // 注意：不要清空 src，避免 invalid BackgroundAudioManager.src 错误
+          
+          // 清除存储的当前音轨ID
+          uni.removeStorageSync('currentTrackId')
         } catch (error) {
           console.error('清理音频资源时出错:', error)
         }
@@ -601,13 +699,62 @@ export default {
         return
       }
 
-      if (this.currentIndex < this.playlist.length - 1) {
-        this.currentIndex++
+      if (this.playMode === 'random') {
+        // 随机播放模式
+        this.playRandom()
       } else {
-        this.currentIndex = 0
+        // 列表循环或单曲循环模式
+        if (this.currentIndex < this.playlist.length - 1) {
+          this.currentIndex++
+        } else {
+          this.currentIndex = 0
+        }
+        this.playTrackAtIndex(this.currentIndex)
       }
-
+    },
+    
+    // 随机播放
+    playRandom() {
+      if (this.playlist.length <= 1) {
+        // 只有一首歌时，重新播放
+        this.playTrackAtIndex(0)
+        return
+      }
+      
+      // 生成一个不同于当前索引的随机索引
+      let randomIndex
+      do {
+        randomIndex = Math.floor(Math.random() * this.playlist.length)
+      } while (randomIndex === this.currentIndex)
+      
+      this.currentIndex = randomIndex
       this.playTrackAtIndex(this.currentIndex)
+    },
+    
+    // 切换播放模式
+    togglePlayMode() {
+      const modes = ['list', 'single', 'random']
+      const currentModeIndex = modes.indexOf(this.playMode)
+      const nextModeIndex = (currentModeIndex + 1) % modes.length
+      this.playMode = modes[nextModeIndex]
+      
+      // 保存播放模式到本地
+      uni.setStorageSync('playMode', this.playMode)
+      
+      // 显示提示
+      const modeNames = {
+        'list': '列表循环',
+        'single': '单曲循环',
+        'random': '随机播放'
+      }
+      
+      uni.showToast({
+        title: modeNames[this.playMode],
+        icon: 'none',
+        duration: 1500
+      })
+      
+      console.log('切换播放模式:', this.playMode)
     },
 
     // 加载播放列表
@@ -688,8 +835,17 @@ export default {
        console.log(track)
       // 设置新的音频源并播放
       if (track.audioUrl) {
-        this.audioContext.title = track.name
+        // 按照文档要求的顺序设置属性
+        this.audioContext.title = track.name || '冥想音频' // 必填
+        this.audioContext.epname = '冥想空间' // 专辑名
+        this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
+        this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
+        
+        // 最后设置 src
         this.audioContext.src = track.audioUrl
+        
+        // 保存当前播放的音轨ID
+        uni.setStorageSync('currentTrackId', track.id)
         
         this.currentTime = 0
         this.progress = 0
