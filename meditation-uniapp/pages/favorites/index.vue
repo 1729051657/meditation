@@ -32,25 +32,33 @@
       </view>
       
       <!-- 收藏列表 -->
-      <view class="favorites-list" v-if="favoritesList.length > 0">
+      <view class="favorites-grid" v-if="favoritesList.length > 0">
         <view 
-          class="favorite-item" 
+          class="favorite-card" 
           v-for="(item, index) in favoritesList" 
           :key="item.id"
-          :class="{ 'item-playing': currentPlaying && currentPlaying.id === item.targetId }"
+          :class="{ 'card-playing': currentPlaying && currentPlaying.targetId === item.targetId }"
           @click="playAudio(item)"
         >
-          <image :src="item.cover" mode="aspectFill" class="item-cover"></image>
-          <view class="item-info">
-            <text class="item-title">{{ item.title }}</text>
-            <text class="item-subtitle" v-if="item.subtitle">{{ item.subtitle }}</text>
-            <view class="item-meta">
-              <text class="meta-duration">{{ formatDuration(item.duration) }}</text>
-              <text class="meta-category" v-if="item.categoryName">{{ item.categoryName }}</text>
+          <view class="card-image-wrapper">
+            <image :src="item.cover" mode="aspectFill" class="card-image"></image>
+            <!-- 播放中标识 -->
+            <view class="playing-overlay" v-if="currentPlaying && currentPlaying.targetId === item.targetId">
+              <view class="playing-icon">
+                <view class="wave" v-for="i in 3" :key="i"></view>
+              </view>
+            </view>
+            <!-- 时长标签 -->
+            <view class="duration-badge">{{ formatDuration(item.duration) }}</view>
+            <!-- 收藏按钮 -->
+            <view class="favorite-btn" @click.stop="toggleFavorite(item, index)">
+              <text class="tn-icon-like-fill"></text>
             </view>
           </view>
-          <view class="item-action" @click.stop="toggleFavorite(item, index)">
-            <text class="tn-icon-like-fill" style="color: #FF6B6B"></text>
+          <view class="card-content">
+            <text class="card-title">{{ item.title }}</text>
+            <text class="card-subtitle" v-if="item.subtitle">{{ item.subtitle }}</text>
+            <text class="card-category" v-if="item.categoryName">{{ item.categoryName }}</text>
           </view>
         </view>
       </view>
@@ -531,92 +539,163 @@ export default {
   }
 }
 
-.favorites-list {
+.favorites-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
   padding: 20rpx;
   padding-bottom: 140rpx; // 为播放条留出空间
   
-  .favorite-item {
-    display: flex;
-    align-items: center;
+  .favorite-card {
+    width: calc(50% - 10rpx);
     background: #FFFFFF;
     border-radius: 20rpx;
-    padding: 20rpx;
-    margin-bottom: 20rpx;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     position: relative;
     
-    &.item-playing {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(168, 85, 247, 0.05));
-      border: 2rpx solid #7C3AED;
-      
-      .item-title {
-        color: #7C3AED;
-        font-weight: 600;
-      }
+    &.card-playing {
+      box-shadow: 0 8rpx 24rpx rgba(124, 58, 237, 0.3);
+      transform: scale(1.02);
     }
     
     &:active {
       transform: scale(0.98);
-      box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
     }
     
-    .item-cover {
-      width: 120rpx;
-      height: 120rpx;
-      border-radius: 16rpx;
-      flex-shrink: 0;
-    }
-    
-    .item-info {
-      flex: 1;
-      margin-left: 24rpx;
-      display: flex;
-      flex-direction: column;
+    .card-image-wrapper {
+      width: 100%;
+      height: 340rpx;
+      position: relative;
+      overflow: hidden;
       
-      .item-title {
-        font-size: 30rpx;
-        color: #333333;
-        font-weight: 500;
-        margin-bottom: 8rpx;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      .card-image {
+        width: 100%;
+        height: 100%;
+        display: block;
       }
       
-      .item-subtitle {
-        font-size: 26rpx;
-        color: #999999;
-        margin-bottom: 8rpx;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      
-      .item-meta {
+      // 播放中遮罩
+      .playing-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(124, 58, 237, 0.8);
         display: flex;
         align-items: center;
-        gap: 20rpx;
+        justify-content: center;
         
-        .meta-duration {
-          font-size: 24rpx;
-          color: #7C3AED;
+        .playing-icon {
+          display: flex;
+          align-items: flex-end;
+          height: 60rpx;
+          gap: 8rpx;
+          
+          .wave {
+            width: 8rpx;
+            background: #fff;
+            border-radius: 4rpx;
+            animation: waveAnimation 1.2s ease-in-out infinite;
+            
+            &:nth-child(1) {
+              height: 30rpx;
+              animation-delay: 0s;
+            }
+            
+            &:nth-child(2) {
+              height: 50rpx;
+              animation-delay: 0.2s;
+            }
+            
+            &:nth-child(3) {
+              height: 40rpx;
+              animation-delay: 0.4s;
+            }
+          }
+        }
+      }
+      
+      // 时长标签
+      .duration-badge {
+        position: absolute;
+        top: 16rpx;
+        left: 16rpx;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 8rpx 16rpx;
+        border-radius: 20rpx;
+        font-size: 24rpx;
+        backdrop-filter: blur(10rpx);
+      }
+      
+      // 收藏按钮
+      .favorite-btn {
+        position: absolute;
+        top: 16rpx;
+        right: 16rpx;
+        width: 60rpx;
+        height: 60rpx;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10rpx);
+        
+        text {
+          font-size: 32rpx;
+          color: #FF6B6B;
         }
         
-        .meta-category {
-          font-size: 24rpx;
-          color: #BBBBBB;
+        &:active {
+          transform: scale(0.9);
         }
       }
     }
     
-    .item-action {
-      padding: 10rpx;
+    .card-content {
+      padding: 20rpx;
       
-      text {
-        font-size: 40rpx;
+      .card-title {
+        font-size: 28rpx;
+        color: #333333;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 8rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .card-subtitle {
+        font-size: 24rpx;
+        color: #999999;
+        display: block;
+        margin-bottom: 8rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .card-category {
+        font-size: 22rpx;
+        color: #7C3AED;
+        display: block;
       }
     }
+  }
+}
+
+@keyframes waveAnimation {
+  0%, 100% {
+    height: 30rpx;
+  }
+  50% {
+    height: 60rpx;
   }
 }
 
