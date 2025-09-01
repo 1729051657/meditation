@@ -260,20 +260,10 @@ export default {
     
     // 播放音频
     playAudio(item) {
-      // 获取所有历史记录（扁平化）
-      const allHistory = []
-      this.historyGroups.forEach(group => {
-        allHistory.push(...group.items)
-      })
-      
-      // 准备列表数据
-      const listData = encodeURIComponent(JSON.stringify(allHistory))
-      
-      // 跳转到播放页面，传递历史列表和播放进度信息
+      // 跳转到播放页面，传递播放进度信息
       const params = {
         id: item.trackId,
         source: 'history',
-        list: listData,
         progress: item.progressSec
       }
       
@@ -306,19 +296,9 @@ export default {
             this.playAudio(item)
           } else if (res.tapIndex === 1) {
             // 从头播放
-            // 获取所有历史记录（扁平化）
-            const allHistory = []
-            this.historyGroups.forEach(group => {
-              allHistory.push(...group.items)
-            })
-            
-            // 准备列表数据
-            const listData = encodeURIComponent(JSON.stringify(allHistory))
-            
             const params = {
               id: item.trackId,
               source: 'history',
-              list: listData,
               progress: 0  // 从头开始播放
             }
             

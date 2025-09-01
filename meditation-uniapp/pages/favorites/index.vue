@@ -288,15 +288,9 @@ export default {
         return
       }
       
-      // 获取所有音频类型的收藏
-      const audioFavorites = this.favoritesList.filter(fav => fav.targetType === 'track')
-      
-      // 准备列表数据
-      const listData = encodeURIComponent(JSON.stringify(audioFavorites))
-      
-      // 跳转到播放器页面，传递收藏列表
+      // 跳转到播放器页面
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.targetId}&source=favorites&list=${listData}`
+        url: `/pages/player/index?id=${item.targetId}&source=favorites`
       })
     },
     
