@@ -4,6 +4,9 @@ import cn.dev33.satoken.annotation.SaIgnore;
 import lombok.RequiredArgsConstructor;
 import org.dromara.common.core.domain.R;
 import org.dromara.common.web.core.BaseController;
+import org.dromara.meditation.domain.vo.ContactInfoVo;
+import org.dromara.meditation.domain.vo.FaqDataVo;
+import org.dromara.meditation.domain.vo.FaqQuestionVo;
 import org.dromara.system.domain.vo.SysDictDataVo;
 import org.dromara.system.service.ISysConfigService;
 import org.dromara.system.service.ISysDictTypeService;
@@ -12,9 +15,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * FAQ常见问题控制器
@@ -38,36 +40,40 @@ public class FaqController extends BaseController {
      */
     @SaIgnore
     @GetMapping("/data")
-    public R<Map<String, Object>> getFaqData() {
-        Map<String, Object> result = new HashMap<>();
+    public R<FaqDataVo> getFaqData() {
+        FaqDataVo result = new FaqDataVo();
         
         // 获取小程序联系方式配置
-        // 假设配置键名为：miniapp.contact.email 和 miniapp.contact.phone
+        ContactInfoVo contactInfo = new ContactInfoVo();
         String contactEmail = configService.selectConfigByKey("miniapp.contact.email");
         String contactPhone = configService.selectConfigByKey("miniapp.contact.phone");
         String contactWechat = configService.selectConfigByKey("miniapp.contact.wechat");
+        String contactQQ = configService.selectConfigByKey("miniapp.contact.qq");
+        String contactAddress = configService.selectConfigByKey("miniapp.contact.address");
         
-        Map<String, String> contactInfo = new HashMap<>();
-        contactInfo.put("email", contactEmail != null ? contactEmail : "");
-        contactInfo.put("phone", contactPhone != null ? contactPhone : "");
-        contactInfo.put("wechat", contactWechat != null ? contactWechat : "");
-        result.put("contactInfo", contactInfo);
+        contactInfo.setEmail(contactEmail != null ? contactEmail : "");
+        contactInfo.setPhone(contactPhone != null ? contactPhone : "");
+        contactInfo.setWechat(contactWechat != null ? contactWechat : "");
+        contactInfo.setQq(contactQQ != null ? contactQQ : "");
+        contactInfo.setAddress(contactAddress != null ? contactAddress : "");
+        result.setContactInfo(contactInfo);
         
         // 获取FAQ问题字典数据
         // 假设字典类型为：miniapp_faq_questions
         List<SysDictDataVo> faqList = dictTypeService.selectDictDataByType("miniapp_faq_questions");
         
         // 将字典数据转换为FAQ格式
-        List<Map<String, Object>> questions = faqList.stream().map(dict -> {
-            Map<String, Object> faq = new HashMap<>();
-            faq.put("question", dict.getDictLabel());  // 字典标签作为问题
-            faq.put("answer", dict.getRemark());        // 备注作为答案
-            faq.put("sort", dict.getDictSort());        // 排序
-            faq.put("expanded", false);                 // 默认折叠状态
+        List<FaqQuestionVo> questions = faqList.stream().map(dict -> {
+            FaqQuestionVo faq = new FaqQuestionVo();
+            faq.setId(dict.getDictValue());           // 字典值作为ID
+            faq.setQuestion(dict.getDictLabel());     // 字典标签作为问题
+            faq.setAnswer(dict.getRemark());          // 备注作为答案
+            faq.setSort(dict.getDictSort());          // 排序
+            faq.setExpanded(false);                   // 默认折叠状态
             return faq;
-        }).toList();
+        }).collect(Collectors.toList());
         
-        result.put("questions", questions);
+        result.setQuestions(questions);
         
         return R.ok(result);
     }
@@ -78,8 +84,8 @@ public class FaqController extends BaseController {
      */
     @SaIgnore
     @GetMapping("/contact")
-    public R<Map<String, String>> getContactInfo() {
-        Map<String, String> contactInfo = new HashMap<>();
+    public R<ContactInfoVo> getContactInfo() {
+        ContactInfoVo contactInfo = new ContactInfoVo();
         
         // 获取小程序联系方式配置
         String contactEmail = configService.selectConfigByKey("miniapp.contact.email");
@@ -88,11 +94,11 @@ public class FaqController extends BaseController {
         String contactQQ = configService.selectConfigByKey("miniapp.contact.qq");
         String contactAddress = configService.selectConfigByKey("miniapp.contact.address");
         
-        contactInfo.put("email", contactEmail != null ? contactEmail : "support@meditation.com");
-        contactInfo.put("phone", contactPhone != null ? contactPhone : "400-123-4567");
-        contactInfo.put("wechat", contactWechat != null ? contactWechat : "");
-        contactInfo.put("qq", contactQQ != null ? contactQQ : "");
-        contactInfo.put("address", contactAddress != null ? contactAddress : "");
+        contactInfo.setEmail(contactEmail != null ? contactEmail : "support@meditation.com");
+        contactInfo.setPhone(contactPhone != null ? contactPhone : "400-123-4567");
+        contactInfo.setWechat(contactWechat != null ? contactWechat : "");
+        contactInfo.setQq(contactQQ != null ? contactQQ : "");
+        contactInfo.setAddress(contactAddress != null ? contactAddress : "");
         
         return R.ok(contactInfo);
     }
@@ -103,22 +109,22 @@ public class FaqController extends BaseController {
      */
     @SaIgnore
     @GetMapping("/questions")
-    public R<List<Map<String, Object>>> getFaqQuestions() {
+    public R<List<FaqQuestionVo>> getFaqQuestions() {
         // 获取FAQ问题字典数据
         List<SysDictDataVo> faqList = dictTypeService.selectDictDataByType("miniapp_faq_questions");
         
         // 将字典数据转换为FAQ格式
-        List<Map<String, Object>> questions = faqList.stream()
+        List<FaqQuestionVo> questions = faqList.stream()
             .sorted((a, b) -> Integer.compare(a.getDictSort(), b.getDictSort())) // 按排序字段排序
             .map(dict -> {
-                Map<String, Object> faq = new HashMap<>();
-                faq.put("id", dict.getDictCode());          // 字典值作为ID
-                faq.put("question", dict.getDictLabel());   // 字典标签作为问题
-                faq.put("answer", dict.getRemark());         // 备注作为答案
-                faq.put("sort", dict.getDictSort());        // 排序
-                faq.put("expanded", false);                 // 默认折叠状态
+                FaqQuestionVo faq = new FaqQuestionVo();
+                faq.setId(dict.getDictValue());          // 字典值作为ID
+                faq.setQuestion(dict.getDictLabel());    // 字典标签作为问题
+                faq.setAnswer(dict.getRemark());         // 备注作为答案
+                faq.setSort(dict.getDictSort());         // 排序
+                faq.setExpanded(false);                  // 默认折叠状态
                 return faq;
-            }).toList();
+            }).collect(Collectors.toList());
         
         return R.ok(questions);
     }
