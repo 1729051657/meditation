@@ -144,7 +144,7 @@
 				}
 			},
 
-			async doSearch() {
+						async doSearch() {
 				if (!this.kw.trim()) {
 					uni.showToast({
 						title: '请输入搜索关键词',
@@ -170,20 +170,6 @@
 						imageLoaded: false,
 						imageError: false
 					}))
-
-					// 添加到搜索历史
-					try {
-						await addHistory({ keyword: this.kw.trim() })
-
-						// 检查是否已有相同关键词的搜索记录，如果没有才更新历史记录
-						const hasExistingKeyword = this.searchHistory.some(item => item.keyword === this.kw.trim())
-						if (!hasExistingKeyword) {
-							// 搜索成功后更新历史记录
-							await this.loadSearchHistory()
-						}
-					} catch (err) {
-						console.error('添加搜索历史失败:', err)
-					}
 				} catch (error) {
 					console.error('搜索失败:', error)
 					uni.showToast({
@@ -192,6 +178,20 @@
 					})
 				} finally {
 					this.loading = false
+				}
+
+				// 搜索完成后，异步添加到搜索历史（不显示loading）
+				try {
+					await addHistory({ keyword: this.kw.trim() })
+					
+					// 检查是否已有相同关键词的搜索记录，如果没有才更新历史记录
+					const hasExistingKeyword = this.searchHistory.some(item => item.keyword === this.kw.trim())
+					if (!hasExistingKeyword) {
+						// 搜索成功后更新历史记录
+						await this.loadSearchHistory()
+					}
+				} catch (err) {
+					console.error('添加搜索历史失败:', err)
 				}
 			},
 

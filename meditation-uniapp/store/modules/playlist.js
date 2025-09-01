@@ -47,10 +47,13 @@ const getters = {
         nextIdx = (nextIdx + 1) % state.playlist.length
       }
       return nextIdx
-    } else {
-      // 顺序播放和单曲循环都返回下一首的索引
-      // 单曲循环的处理在onEnded事件中处理
+    } else if (state.playMode === 'loop') {
+      // 单曲循环模式：返回下一首索引（用于手动切换）
       return (state.currentIndex + 1) % state.playlist.length
+    } else {
+      // 顺序播放：到达末尾时不循环
+      const nextIdx = state.currentIndex + 1
+      return nextIdx < state.playlist.length ? nextIdx : -1
     }
   },
   
@@ -65,10 +68,13 @@ const getters = {
         prevIdx = (prevIdx - 1 + state.playlist.length) % state.playlist.length
       }
       return prevIdx
-    } else {
-      // 顺序播放和单曲循环都返回上一首的索引
-      // 单曲循环的处理在手动切换时处理
+    } else if (state.playMode === 'loop') {
+      // 单曲循环模式：返回上一首索引（用于手动切换）
       return (state.currentIndex - 1 + state.playlist.length) % state.playlist.length
+    } else {
+      // 顺序播放：到达开头时不循环
+      const prevIdx = state.currentIndex - 1
+      return prevIdx >= 0 ? prevIdx : -1
     }
   }
 }
@@ -198,9 +204,24 @@ const actions = {
         const currentSrc = manager.src
         manager.src = currentSrc
       } else {
-        // 其他模式，播放下一首
-        console.log('准备播放下一首')
-        dispatch('playNext')
+        // 检查是否有下一首
+        const nextIdx = state.playMode === 'random' ? 
+          Math.floor(Math.random() * state.playlist.length) :
+          state.currentIndex + 1
+        
+        if (state.playMode === 'sequence' && nextIdx >= state.playlist.length) {
+          // 顺序播放模式到达末尾，停止播放
+          console.log('顺序播放到达末尾，停止播放')
+          commit('SET_PLAYING', false)
+          uni.showToast({
+            title: '播放完成',
+            icon: 'none'
+          })
+        } else {
+          // 其他情况，播放下一首
+          console.log('准备播放下一首')
+          dispatch('playNext')
+        }
       }
     })
     
@@ -406,7 +427,15 @@ const actions = {
     if (state.isPlaying) {
       state.audioManager.pause()
     } else {
-      state.audioManager.play()
+      // 播放前检查是否需要重置播放位置
+      if (state.audioManager.currentTime >= state.audioManager.duration) {
+        // 如果已播放完毕，重置到开头
+        console.log('Vuex: 音频已播放完毕，重置到开头')
+        state.audioManager.seek(0)
+      }
+      state.audioManager.play().catch(error => {
+        console.error('Vuex: 播放失败', error)
+      })
     }
   },
   

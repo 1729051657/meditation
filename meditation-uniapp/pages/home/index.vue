@@ -53,7 +53,7 @@
                 <image class="timeImg" src="/static/home/time.png"  lazy-load="false" binderror="" bindload="" />
                 <text class="duration-text">{{ Math.round(item.recommendDuration / 60) || 15 }}分钟</text>
               </view>
-              <view class="card-play">
+              <view class="card-play" @click.stop="playMeditation(item)">
                 <image src="/static/home/play@3x.png" class="play-icon" mode="aspectFit"></image>
               </view>
             </view>
@@ -75,6 +75,9 @@
             <view class="recommend-card">
               <image :src="item.coverUrl || defaultCover" class="recommend-image" mode="aspectFill"></image>
               <view class="duration-tag">{{ Math.round(item.durationSec / 60) || 15 }}分钟</view>
+              <view class="recommend-play" @click.stop="playRecommend(item)">
+                <image src="/static/home/play@3x.png" class="recommend-play-icon" mode="aspectFit"></image>
+              </view>
             </view>
             <text class="recommend-title">{{ item.title }}</text>
           </view>
@@ -353,11 +356,29 @@ export default {
       })
     },
 
+    // 播放冥想系列
+    playMeditation(item) {
+      console.log('播放冥想系列:', item)
+      // 直接跳转到播放器页面并开始播放
+      uni.navigateTo({
+        url: `/pages/player/index?seriesId=${item.id}&type=series&autoPlay=true`
+      })
+    },
+
     // 跳转到推荐详情
     goToRecommend(item) {
       // 跳转到播放器页面
       uni.navigateTo({
         url: `/pages/player/index?id=${item.id}&type=track`
+      })
+    },
+
+    // 播放推荐音频
+    playRecommend(item) {
+      console.log('播放推荐音频:', item)
+      // 直接跳转到播放器页面并开始播放
+      uni.navigateTo({
+        url: `/pages/player/index?id=${item.id}&type=track&autoPlay=true`
       })
     },
 
@@ -699,6 +720,7 @@ export default {
         overflow: hidden;
         box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
+        position: relative;
 
         &:active {
           transform: scale(0.98);
@@ -722,6 +744,31 @@ export default {
           padding: 6rpx 12rpx;
           border-radius: 12rpx;
           backdrop-filter: blur(1px);
+        }
+
+        .recommend-play {
+          position: absolute;
+          bottom: 16rpx;
+          right: 16rpx;
+          width: 48rpx;
+          height: 48rpx;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(10rpx);
+          transition: all 0.3s ease;
+
+          &:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.8);
+          }
+
+          .recommend-play-icon {
+            width: 32rpx;
+            height: 32rpx;
+          }
         }
       }
 

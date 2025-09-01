@@ -223,6 +223,7 @@ export default {
         lastUpdateTime: 0, // 上次更新播放进度的时间
         updateInterval: null, // 更新播放进度的定时器
         hasRecordedInitialHistory: false, // 是否已记录初始播放历史
+        shouldAutoPlay: false, // 是否需要自动播放
     }
   },
 
@@ -367,6 +368,9 @@ export default {
       this.currentTime = parseInt(options.progress) || 0
     }
 
+    // 检查是否需要自动播放
+    this.shouldAutoPlay = options.autoPlay === 'true'
+
     // 如果是从迷你播放器跳转过来的（resume参数），不重新初始化音频
     if (options.resume === 'true') {
       // 只同步当前播放状态
@@ -379,12 +383,48 @@ export default {
         if (this.duration > 0) {
           this.progress = (this.currentTime / this.duration) * 100
         }
-        // 设置音轨信息
-        this.track = {
-          title: audioContext.title || '未知音频',
-          coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.jpg',
-          audioUrl: audioContext.src
+        
+        // 尝试从本地存储或Vuex获取完整的音频信息
+        const storedTrackInfo = uni.getStorageSync('currentTrackInfo')
+        const vuexCurrentTrack = this.$store.state.playlist.currentTrack
+        
+        if (storedTrackInfo && storedTrackInfo.id == this.trackId) {
+          // 使用存储的完整信息
+          this.track = {
+            id: storedTrackInfo.id,
+            title: storedTrackInfo.title || '未知音频',
+            artist: storedTrackInfo.artist || '冥想音乐',
+            coverUrl: storedTrackInfo.coverUrl || '/static/images/default-cover.jpg',
+            audioUrl: storedTrackInfo.audioUrl,
+            duration: storedTrackInfo.durationSec || 0,
+            intro: storedTrackInfo.intro || '',
+            categoryId: storedTrackInfo.categoryId,
+            seriesId: storedTrackInfo.seriesId
+          }
+        } else if (vuexCurrentTrack && vuexCurrentTrack.id == this.trackId) {
+          // 使用Vuex中的完整信息
+          this.track = {
+            id: vuexCurrentTrack.id,
+            title: vuexCurrentTrack.title || '未知音频',
+            artist: vuexCurrentTrack.artist || '冥想音乐',
+            coverUrl: vuexCurrentTrack.coverUrl || '/static/images/default-cover.jpg',
+            audioUrl: vuexCurrentTrack.audioUrl,
+            duration: vuexCurrentTrack.durationSec || 0,
+            intro: vuexCurrentTrack.intro || '',
+            categoryId: vuexCurrentTrack.categoryId,
+            seriesId: vuexCurrentTrack.seriesId
+          }
+        } else {
+          // 如果没有完整信息或ID不匹配，使用audioContext的基本信息并异步加载完整信息
+          this.track = {
+            title: audioContext.title || '加载中...',
+            coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.jpg',
+            audioUrl: audioContext.src
+          }
+          // 异步加载完整的音频信息
+          this.loadTrackInfo()
         }
+        
         // 如果正在播放，开始进度跟踪
         if (this.playing) {
           this.startProgressTracking()
@@ -398,10 +438,60 @@ export default {
     }
 
 
-    // 初始化音频管理器
-    this.initAudio()
-    // 加载指定的音频信息并播放
-    await this.loadTrack()
+    // 检查是否有正在播放的音频，如果是同一个音频则不重新加载
+    const audioContext = uni.getBackgroundAudioManager()
+    const storedTrackId = uni.getStorageSync('currentTrackId')
+    const storedTrackInfo = uni.getStorageSync('currentTrackInfo')
+    
+    if (audioContext && audioContext.src && storedTrackId && String(storedTrackId) === String(this.trackId)) {
+      console.log('检测到正在播放相同音频，复用现有播放状态')
+      
+      // 复用现有的音频上下文
+      this.audioContext = audioContext
+      this.playing = !audioContext.paused
+      this.currentTime = audioContext.currentTime || 0
+      this.duration = audioContext.duration || 0
+      if (this.duration > 0) {
+        this.progress = (this.currentTime / this.duration) * 100
+      }
+      
+      // 使用存储的完整音频信息
+      if (storedTrackInfo) {
+        this.track = {
+          id: storedTrackInfo.id,
+          title: storedTrackInfo.title || '未知音频',
+          artist: storedTrackInfo.artist || '冥想音乐',
+          coverUrl: storedTrackInfo.coverUrl || '/static/images/default-cover.jpg',
+          audioUrl: storedTrackInfo.audioUrl,
+          duration: storedTrackInfo.durationSec || 0,
+          intro: storedTrackInfo.intro || '',
+          categoryId: storedTrackInfo.categoryId,
+          seriesId: storedTrackInfo.seriesId
+        }
+      } else {
+        // 如果没有存储信息，异步加载
+        this.track = {
+          title: audioContext.title || '加载中...',
+          coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.jpg',
+          audioUrl: audioContext.src
+        }
+        this.loadTrackInfo()
+      }
+      
+      // 如果正在播放，开始进度跟踪
+      if (this.playing) {
+        this.startProgressTracking()
+      }
+      
+      // 重新绑定事件监听器
+      this.initAudio()
+    } else {
+      // 初始化音频管理器
+      this.initAudio()
+      // 加载指定的音频信息并播放
+      await this.loadTrack()
+    }
+    
     // 然后加载播放列表（不会影响当前播放）
     this.loadPlaylist()
   },
@@ -606,13 +696,12 @@ export default {
         }
       })
 
+      // 播放结束事件已在全局store中处理，这里只处理页面特定逻辑
       this.audioContext.onEnded(() => {
-        console.log('音频播放结束')
+        console.log('播放页面：音频播放结束')
         this.playing = false
         this.markAsCompleted()
-
-        // 播放下一曲
-        this.next()
+        // 注意：下一曲的播放逻辑由全局store处理
       })
 
       this.audioContext.onError((error) => {
@@ -650,6 +739,56 @@ export default {
       })
     },
 
+    // 异步加载音频信息（不显示loading，用于后台更新）
+    async loadTrackInfo() {
+      if (!this.trackId) {
+        console.error('trackId 为空，无法加载音频信息')
+        return
+      }
+
+      try {
+        console.log('异步加载音频信息，trackId:', this.trackId)
+        const res = await getTrackDetail(this.trackId)
+
+        if (res.code === 200 && res.data) {
+          // 更新音频信息，但不重新设置audioContext
+          const updatedTrack = {
+            id: res.data.id,
+            title: res.data.title || res.data.name || res.data.trackTitle || '未知音频',
+            artist: res.data.subtitle || res.data.author || res.data.artist || '冥想音乐',
+            coverUrl: res.data.coverUrl || res.data.cover || '/static/images/default-cover.jpg',
+            audioUrl: res.data.audioUrl || res.data.audio || res.data.audioPath,
+            duration: res.data.durationSec || res.data.duration || 0,
+            intro: res.data.intro || res.data.description || '',
+            categoryId: res.data.categoryId,
+            seriesId: res.data.seriesId
+          }
+
+          // 更新本地track信息
+          this.track = updatedTrack
+
+          // 更新全局状态
+          const trackForGlobal = {
+            id: updatedTrack.id,
+            title: updatedTrack.title,
+            artist: updatedTrack.artist,
+            durationSec: updatedTrack.duration,
+            audioUrl: updatedTrack.audioUrl,
+            coverUrl: updatedTrack.coverUrl,
+            categoryCode: updatedTrack.categoryCode,
+            seriesId: updatedTrack.seriesId
+          }
+          
+          this.$store.commit('playlist/SET_CURRENT_TRACK', trackForGlobal)
+          uni.setStorageSync('currentTrackInfo', trackForGlobal)
+
+          console.log('异步加载音频信息完成:', updatedTrack)
+        }
+      } catch (error) {
+        console.error('异步加载音频信息失败:', error)
+      }
+    },
+
     async loadTrack() {
       try {
         console.log('开始加载音轨，ID:', this.trackId)
@@ -663,22 +802,29 @@ export default {
         const res = await getTrackDetail(this.trackId)
 
         console.log('音轨详情API响应:', res)
+        console.log('API返回的完整数据结构:', JSON.stringify(res.data, null, 2))
 
         if (res.code === 200 && res.data) {
-          // 映射后端返回的数据字段
+          // 映射后端返回的数据字段 - 尝试多种可能的字段名
           this.track = {
             id: res.data.id,
-            title: res.data.title || '未知音频',
-            artist: res.data.subtitle || res.data.author || '冥想音乐',
-            coverUrl: res.data.coverUrl || '/static/images/default-cover.jpg',
-            audioUrl: res.data.audioUrl || res.data.audio,
-            duration: res.data.durationSec || 0,
-            intro: res.data.intro || '',
+            title: res.data.title || res.data.name || res.data.trackTitle || '未知音频',
+            artist: res.data.subtitle || res.data.author || res.data.artist || '冥想音乐',
+            coverUrl: res.data.coverUrl || res.data.cover || '/static/images/default-cover.jpg',
+            audioUrl: res.data.audioUrl || res.data.audio || res.data.audioPath,
+            duration: res.data.durationSec || res.data.duration || 0,
+            intro: res.data.intro || res.data.description || '',
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
 
           console.log('处理后的音轨数据:', this.track)
+          console.log('标题字段检查:', {
+            title: res.data.title,
+            name: res.data.name,
+            trackTitle: res.data.trackTitle,
+            finalTitle: this.track.title
+          })
 
           // 设置seriesId和categoryId如果没有传入
           if (!this.seriesId && res.data.seriesId) {
@@ -739,27 +885,39 @@ export default {
               coverImgUrl: this.audioContext.coverImgUrl
             })
 
-            // 更新全局播放状态
-            const trackForPlaylist = {
+            // 更新全局播放状态（统一管理）
+            const trackForGlobal = {
               id: this.track.id,
               title: this.track.title || '未知音频',
               artist: this.track.artist || '冥想音乐',
-              durationSec: this.track.durationSec || 0,
+              durationSec: this.track.duration || 0,
               audioUrl: this.track.audioUrl,
               coverUrl: this.track.coverUrl || '/static/images/default-cover.jpg',
               categoryCode: this.track.categoryCode,
               seriesId: this.track.seriesId
             }
-            this.$store.commit('playlist/SET_CURRENT_TRACK', trackForPlaylist)
-
-            // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
+            
+            // 更新Vuex全局状态
+            this.$store.commit('playlist/SET_CURRENT_TRACK', trackForGlobal)
+            this.$store.commit('playlist/SET_PLAYING', true)
+            
+            // 为了兼容迷你播放器，仍然保存到本地存储
             uni.setStorageSync('currentTrackId', this.trackId)
+            uni.setStorageSync('currentTrackInfo', trackForGlobal)
 
             // 如果有传递的播放进度，恢复播放位置
             if (this.currentTime > 0) {
               setTimeout(() => {
                 this.audioContext.seek(this.currentTime)
               }, 100)
+            }
+
+            // 如果需要自动播放，延迟一下再播放
+            if (this.shouldAutoPlay) {
+              setTimeout(() => {
+                console.log('自动播放音频')
+                this.audioContext.play()
+              }, 500)
             }
 
             // 隐藏加载提示
@@ -951,6 +1109,12 @@ export default {
       if (this.playing) {
         this.audioContext.pause()
       } else {
+        // 播放前检查是否需要重置播放位置
+        if (this.audioContext.currentTime >= this.audioContext.duration) {
+          // 如果已播放完毕，重置到开头
+          console.log('播放器页面: 音频已播放完毕，重置到开头')
+          this.audioContext.seek(0)
+        }
         this.audioContext.play().catch(error => {
           console.error('播放失败:', error)
           uni.showToast({
@@ -963,9 +1127,18 @@ export default {
 
     previous() {
       // 实现上一曲逻辑
-      if (this.localPlaylist.length === 0) {
+      if (this.playlist.length === 0) {
         uni.showToast({
           title: '暂无上一曲',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 检查是否有上一首
+      if (!this.hasPrevious) {
+        uni.showToast({
+          title: '已是第一首',
           icon: 'none'
         })
         return
@@ -977,9 +1150,18 @@ export default {
 
     next() {
       // 实现下一曲逻辑
-      if (this.localPlaylist.length === 0) {
+      if (this.playlist.length === 0) {
         uni.showToast({
           title: '暂无下一曲',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 检查是否有下一首
+      if (!this.hasNext) {
+        uni.showToast({
+          title: '已是最后一首',
           icon: 'none'
         })
         return
@@ -1148,8 +1330,25 @@ export default {
         // 注意：src 必须最后设置
         this.audioContext.src = audioUrl
 
-        // 保存当前播放的音轨ID
+        // 更新全局播放状态
+        const trackForGlobal = {
+          id: track.id,
+          title: track.name || '未知音频',
+          artist: track.artist || '冥想音乐',
+          durationSec: track.durationSec || 0,
+          audioUrl: track.audioUrl,
+          coverUrl: track.coverUrl || '/static/images/default-cover.jpg',
+          categoryCode: track.categoryCode,
+          seriesId: track.seriesId
+        }
+        
+        // 更新Vuex全局状态
+        this.$store.commit('playlist/SET_CURRENT_TRACK', trackForGlobal)
+        this.$store.commit('playlist/SET_PLAYING', true)
+        
+        // 为了兼容迷你播放器，仍然保存到本地存储
         uni.setStorageSync('currentTrackId', track.id)
+        uni.setStorageSync('currentTrackInfo', trackForGlobal)
 
         this.currentTime = 0
         this.progress = 0
@@ -1228,9 +1427,7 @@ export default {
       try {
         console.log('切换收藏状态, 当前状态:', this.isFavorite, 'favoriteId:', this.favoriteId, 'trackId:', this.trackId)
 
-        uni.showLoading({
-          title: this.isFavorite ? '取消收藏中...' : '收藏中...'
-        })
+        // 不显示loading，静默操作
 
         if (this.isFavorite) {
           // 取消收藏
@@ -1262,7 +1459,6 @@ export default {
               this.favoriteId = null
               console.log('收藏已取消')
 
-              uni.hideLoading()
               uni.showToast({
                 title: '已取消收藏',
                 icon: 'success'
@@ -1284,7 +1480,6 @@ export default {
             this.favoriteId = res.data?.id || res.data || res.id || null
             console.log('新收藏记录ID:', this.favoriteId)
 
-            uni.hideLoading()
             uni.showToast({
               title: '收藏成功',
               icon: 'success'
@@ -1294,7 +1489,6 @@ export default {
           }
         }
       } catch (error) {
-        uni.hideLoading()
         console.error('收藏操作失败:', error)
         uni.showToast({
           title: error.message || '操作失败',

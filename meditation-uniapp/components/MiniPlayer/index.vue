@@ -3,7 +3,7 @@
     <!-- 圆形封面 -->
     <image 
       class="cover-circle" 
-      :src="(currentTrack && currentTrack.coverUrl) || '/static/images/default-cover.png'" 
+      :src="(displayTrack && displayTrack.coverUrl) || '/static/images/default-cover.png'" 
       mode="aspectFill"
       @click="goToPlayer"
     />
@@ -12,7 +12,7 @@
     <view class="player-bar" @click="goToPlayer">
       <!-- 音乐信息 -->
       <view class="track-info">
-        <text class="track-title">{{ (currentTrack && currentTrack.title) || '未知音频' }}</text>
+        <text class="track-title">{{ (displayTrack && displayTrack.title) || '未知音频' }}</text>
         <!-- 定时器信息 -->
         <view class="timer-info" v-if="sleepTimerRemaining">
           <image class="timer-icon" src="/static/player/time-icon.png" />
@@ -24,7 +24,7 @@
       <view class="play-btn" @click.stop="togglePlay">
         <image 
           class="play-icon" 
-          :src="isPlaying ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'" 
+          :src="displayIsPlaying ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'" 
         />
       </view>
     </view>
@@ -40,14 +40,15 @@ export default {
   data() {
     return {
       audioContext: null,
-      isPlaying: false,
-      currentTrack: null,
+      localIsPlaying: false,
+      localCurrentTrack: null,
       statusCheckInterval: null
     }
   },
   
   computed: {
     ...mapState('timer', ['isTimerActive']),
+    ...mapState('playlist', ['currentTrack', 'isPlaying']),
     ...mapGetters('timer', {
       sleepTimerRemaining: 'remainingSeconds',
       formatTimerRemaining: 'remainingTime'
@@ -55,7 +56,19 @@ export default {
     
     // 是否显示播放器
     showPlayer() {
-      return !!(this.currentTrack && this.currentTrack.audioUrl)
+      // 优先使用全局状态中的currentTrack
+      const track = this.currentTrack || this.localCurrentTrack
+      return !!(track && (track.audioUrl || track.src))
+    },
+    
+    // 获取当前音轨信息（优先从全局状态获取）
+    displayTrack() {
+      return this.currentTrack || this.localCurrentTrack
+    },
+    
+    // 获取播放状态（优先从全局状态获取）
+    displayIsPlaying() {
+      return this.isPlaying !== undefined ? this.isPlaying : this.localIsPlaying
     }
   },
   
@@ -101,25 +114,43 @@ export default {
         console.log('MiniPlayer: 检测到音频', {
           src: this.audioContext.src,
           title: this.audioContext.title,
+          coverImgUrl: this.audioContext.coverImgUrl,
           paused: this.audioContext.paused
         })
         
-        // 有音频正在播放或暂停
-        this.currentTrack = {
+        // 尝试从audioContext获取信息，如果获取不到则从本地存储获取
+        let trackInfo = {
           title: this.audioContext.title || '未知音频',
           coverUrl: this.audioContext.coverImgUrl || '/static/images/default-cover.png',
           audioUrl: this.audioContext.src
         }
         
+        // 如果从audioContext获取的信息不完整，尝试从本地存储获取
+        if (!this.audioContext.title || !this.audioContext.coverImgUrl) {
+          const currentTrackId = uni.getStorageSync('currentTrackId')
+          const storedTrackInfo = uni.getStorageSync('currentTrackInfo')
+          
+          if (storedTrackInfo && storedTrackInfo.id === currentTrackId) {
+            console.log('MiniPlayer: 初始化时从本地存储获取音频信息', storedTrackInfo)
+            trackInfo = {
+              title: storedTrackInfo.title || this.audioContext.title || '未知音频',
+              coverUrl: storedTrackInfo.coverUrl || this.audioContext.coverImgUrl || '/static/images/default-cover.png',
+              audioUrl: this.audioContext.src
+            }
+          }
+        }
+        
+        this.localCurrentTrack = trackInfo
+        
         // 检查播放状态
-        this.isPlaying = !this.audioContext.paused
+        this.localIsPlaying = !this.audioContext.paused
         
         // 监听播放状态变化
         this.setupAudioListeners()
       } else {
         console.log('MiniPlayer: 没有检测到音频')
-        this.currentTrack = null
-        this.isPlaying = false
+        this.localCurrentTrack = null
+        this.localIsPlaying = false
       }
     },
     
@@ -133,33 +164,38 @@ export default {
       // 播放事件
       this.audioContext.onPlay(() => {
         console.log('MiniPlayer: 音频开始播放')
-        this.isPlaying = true
+        this.localIsPlaying = true
+        this.$store.commit('playlist/SET_PLAYING', true)
         this.updateTrackInfo()
       })
       
       // 暂停事件
       this.audioContext.onPause(() => {
         console.log('MiniPlayer: 音频暂停')
-        this.isPlaying = false
+        this.localIsPlaying = false
+        this.$store.commit('playlist/SET_PLAYING', false)
       })
       
       // 停止事件
       this.audioContext.onStop(() => {
         console.log('MiniPlayer: 音频停止')
-        this.isPlaying = false
-        this.currentTrack = null
+        this.localIsPlaying = false
+        this.localCurrentTrack = null
+        this.$store.commit('playlist/SET_PLAYING', false)
       })
       
       // 播放结束事件
       this.audioContext.onEnded(() => {
         console.log('MiniPlayer: 音频播放结束')
-        this.isPlaying = false
+        this.localIsPlaying = false
+        this.$store.commit('playlist/SET_PLAYING', false)
       })
       
       // 错误事件
       this.audioContext.onError((error) => {
         console.error('MiniPlayer: 音频错误:', error)
-        this.isPlaying = false
+        this.localIsPlaying = false
+        this.$store.commit('playlist/SET_PLAYING', false)
       })
     },
     
@@ -181,10 +217,16 @@ export default {
     // 更新音轨信息
     updateTrackInfo() {
       if (this.audioContext && this.audioContext.src) {
-        this.currentTrack = {
+        const trackInfo = {
           title: this.audioContext.title || '未知音频',
           coverUrl: this.audioContext.coverImgUrl || '/static/images/default-cover.png',
           audioUrl: this.audioContext.src
+        }
+        this.localCurrentTrack = trackInfo
+        
+        // 如果全局状态没有当前音轨信息，更新全局状态
+        if (!this.currentTrack || this.currentTrack.audioUrl !== trackInfo.audioUrl) {
+          this.$store.commit('playlist/SET_CURRENT_TRACK', trackInfo)
         }
       }
     },
@@ -195,7 +237,7 @@ export default {
       
       if (audioContext && audioContext.src) {
         // 有音频
-        if (!this.currentTrack || this.currentTrack.audioUrl !== audioContext.src) {
+        if (!this.localCurrentTrack || this.localCurrentTrack.audioUrl !== audioContext.src) {
           // 音频改变了，更新信息
           console.log('MiniPlayer: 检测到新音频或音频变化', {
             src: audioContext.src,
@@ -204,25 +246,50 @@ export default {
             paused: audioContext.paused
           })
           
-          this.currentTrack = {
+          // 尝试从audioContext获取信息，如果获取不到则从本地存储获取
+          let trackInfo = {
             title: audioContext.title || '未知音频',
             coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.png',
             audioUrl: audioContext.src
+          }
+          
+          // 如果从audioContext获取的信息不完整，尝试从本地存储获取
+          if (!audioContext.title || !audioContext.coverImgUrl) {
+            const currentTrackId = uni.getStorageSync('currentTrackId')
+            const storedTrackInfo = uni.getStorageSync('currentTrackInfo')
+            
+            if (storedTrackInfo && storedTrackInfo.id === currentTrackId) {
+              console.log('MiniPlayer: 从本地存储获取音频信息', storedTrackInfo)
+              trackInfo = {
+                title: storedTrackInfo.title || audioContext.title || '未知音频',
+                coverUrl: storedTrackInfo.coverUrl || audioContext.coverImgUrl || '/static/images/default-cover.png',
+                audioUrl: audioContext.src
+              }
+            }
+          }
+          
+          this.localCurrentTrack = trackInfo
+          
+          // 如果全局状态没有当前音轨信息，更新全局状态
+          if (!this.currentTrack || this.currentTrack.audioUrl !== trackInfo.audioUrl) {
+            this.$store.commit('playlist/SET_CURRENT_TRACK', trackInfo)
           }
         }
         
         // 更新播放状态
         const newPlayingState = !audioContext.paused
-        if (this.isPlaying !== newPlayingState) {
+        if (this.localIsPlaying !== newPlayingState) {
           console.log('MiniPlayer: 播放状态变化', newPlayingState ? '播放' : '暂停')
-          this.isPlaying = newPlayingState
+          this.localIsPlaying = newPlayingState
+          this.$store.commit('playlist/SET_PLAYING', newPlayingState)
         }
       } else {
         // 没有音频
-        if (this.currentTrack) {
+        if (this.localCurrentTrack) {
           console.log('MiniPlayer: 音频已停止或清除')
-          this.currentTrack = null
-          this.isPlaying = false
+          this.localCurrentTrack = null
+          this.localIsPlaying = false
+          this.$store.commit('playlist/SET_PLAYING', false)
         }
       }
     },
@@ -234,10 +301,23 @@ export default {
     togglePlay() {
       if (!this.audioContext) return
       
-      if (this.isPlaying) {
+      const currentlyPlaying = this.displayIsPlaying
+      if (currentlyPlaying) {
         this.audioContext.pause()
       } else {
-        this.audioContext.play()
+        // 播放前检查是否需要重置播放位置
+        if (this.audioContext.currentTime >= this.audioContext.duration) {
+          // 如果已播放完毕，重置到开头
+          console.log('MiniPlayer: 音频已播放完毕，重置到开头')
+          this.audioContext.seek(0)
+        }
+        this.audioContext.play().catch(error => {
+          console.error('MiniPlayer: 播放失败', error)
+          uni.showToast({
+            title: '播放失败',
+            icon: 'none'
+          })
+        })
       }
     },
     
@@ -259,7 +339,7 @@ export default {
 <style lang="scss" scoped>
 .mini-player {
   position: fixed;
-  bottom: 60rpx;
+  bottom: 20rpx;
   left: 24rpx;
   right: 24rpx;
   display: flex;

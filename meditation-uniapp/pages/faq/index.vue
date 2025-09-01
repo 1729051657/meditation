@@ -24,12 +24,12 @@
       </view>
       
       <!-- 底部提示 -->
-      <view class="bottom-tips">
+      <!-- <view class="bottom-tips">
         <text class="tips-text">没有找到答案？</text>
         <view class="contact-btn" @click="contactUs">
           <text class="btn-text">联系客服</text>
         </view>
-      </view>
+      </view> -->
     </view>
   </view>
 </template>
