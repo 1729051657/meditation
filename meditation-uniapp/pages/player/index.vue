@@ -1150,10 +1150,12 @@ export default {
   overflow: hidden;
 
   .bg-image {
-    width: 100%;
-    height: 100%;
-    filter: blur(50rpx) brightness(0.7);
+    width: 110%;
+    height: 110%;
+    margin: -5%;
+    filter: blur(60rpx) brightness(0.8) saturate(1.1);
     transform: scale(1.1);
+    animation: slowZoom 20s ease-in-out infinite alternate;
   }
 
   .bg-overlay {
@@ -1162,7 +1164,12 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
   }
 }
 
@@ -1184,57 +1191,7 @@ export default {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0.3;
-  }
-}
 
-@keyframes breathe {
-  0%, 100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes glowPulse {
-  0%, 100% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes shimmer {
-  0%, 100% {
-    opacity: 0.3;
-    transform: translateX(0) translateY(0);
-  }
-  25% {
-    opacity: 0.5;
-    transform: translateX(-10rpx) translateY(-10rpx);
-  }
-  50% {
-    opacity: 0.4;
-    transform: translateX(10rpx) translateY(10rpx);
-  }
-  75% {
-    opacity: 0.6;
-    transform: translateX(-5rpx) translateY(5rpx);
-  }
-}
 
 .main-content {
   padding-top: 200rpx;
@@ -1246,73 +1203,18 @@ export default {
   height: 500rpx;
   margin: 0 auto 60rpx;
   perspective: 1000rpx;
-  position: relative;
-  
-  /* 玻璃阴影效果 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: -20rpx;
-    left: -20rpx;
-    right: -20rpx;
-    bottom: -20rpx;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0.08) 30%,
-      transparent 70%
-    );
-    filter: blur(30rpx);
-    opacity: 0.7;
-    animation: glowPulse 3s ease-in-out infinite;
-    z-index: -1;
-  }
-  
-  /* 动态光环 */
-  &::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 120%;
-    height: 120%;
-    background: conic-gradient(
-      from 0deg,
-      transparent,
-      rgba(124, 58, 237, 0.1),
-      rgba(168, 85, 247, 0.1),
-      transparent,
-      rgba(124, 58, 237, 0.1),
-      transparent
-    );
-    animation: rotate 10s linear infinite;
-    opacity: 0.5;
-    z-index: -1;
-  }
 
   .cover-wrapper {
     width: 100%;
     height: 100%;
     border-radius: 30rpx;
     overflow: hidden;
-    box-shadow: 
-      0 10rpx 30rpx rgba(0, 0, 0, 0.3),
-      0 30rpx 60rpx rgba(0, 0, 0, 0.2),
-      0 50rpx 100rpx rgba(124, 58, 237, 0.15),
-      inset 0 0 20rpx rgba(255, 255, 255, 0.1);
+    box-shadow: 0 30rpx 80rpx rgba(0, 0, 0, 0.4);
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    backdrop-filter: blur(5rpx);
-    background: rgba(255, 255, 255, 0.01);
+    transition: transform 0.3s ease;
 
     &.playing {
       animation: float 6s ease-in-out infinite;
-      box-shadow: 
-        0 15rpx 40rpx rgba(0, 0, 0, 0.4),
-        0 40rpx 80rpx rgba(0, 0, 0, 0.3),
-        0 60rpx 120rpx rgba(124, 58, 237, 0.2),
-        inset 0 0 30rpx rgba(255, 255, 255, 0.15);
     }
 
     .cover-image {
