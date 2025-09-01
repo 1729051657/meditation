@@ -18,6 +18,7 @@ import org.dromara.meditation.domain.vo.SearchHistoryVo;
 import org.dromara.meditation.domain.SearchHistory;
 import org.dromara.meditation.mapper.SearchHistoryMapper;
 import org.dromara.meditation.service.ISearchHistoryService;
+import org.dromara.common.satoken.utils.LoginHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -76,11 +77,24 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
     private LambdaQueryWrapper<SearchHistory> buildQueryWrapper(SearchHistoryBo bo) {
         Map<String, Object> params = bo.getParams();
         LambdaQueryWrapper<SearchHistory> lqw = Wrappers.lambdaQuery();
-        lqw.orderByAsc(SearchHistory::getId);
-        lqw.eq(bo.getUserId() != null, SearchHistory::getUserId, bo.getUserId());
+        
+        // 如果没有指定用户ID，默认查询当前用户的历史
+        if (bo.getUserId() == null) {
+            Long currentUserId = LoginHelper.getUserId();
+            if (currentUserId != null) {
+                lqw.eq(SearchHistory::getUserId, currentUserId);
+            }
+        } else {
+            lqw.eq(SearchHistory::getUserId, bo.getUserId());
+        }
+        
         lqw.eq(StringUtils.isNotBlank(bo.getKeyword()), SearchHistory::getKeyword, bo.getKeyword());
         lqw.eq(bo.getTimes() != null, SearchHistory::getTimes, bo.getTimes());
         lqw.eq(bo.getLastTime() != null, SearchHistory::getLastTime, bo.getLastTime());
+        
+        // 按最后搜索时间倒序排列，最近搜索的在前面
+        lqw.orderByDesc(SearchHistory::getLastTime);
+        
         return lqw;
     }
 
@@ -92,14 +106,38 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
      */
     @Override
     public Boolean insertByBo(SearchHistoryBo bo) {
-        SearchHistory add = MapstructUtils.convert(bo, SearchHistory.class);
-        validEntityBeforeSave(add);
-        add.setLastTime(DateUtil.date());
-        boolean flag = baseMapper.insert(add) > 0;
-        if (flag) {
-            bo.setId(add.getId());
+        // 设置当前用户ID
+        Long userId = LoginHelper.getUserId();
+        if (userId == null) {
+            log.warn("添加搜索历史失败：用户未登录");
+            return false;
         }
-        return flag;
+        bo.setUserId(userId);
+        
+        // 检查是否已存在相同的搜索历史
+        LambdaQueryWrapper<SearchHistory> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(SearchHistory::getUserId, userId)
+               .eq(SearchHistory::getKeyword, bo.getKeyword());
+        SearchHistory existing = baseMapper.selectOne(wrapper);
+        
+        if (existing != null) {
+            // 如果已存在，更新搜索次数和最后搜索时间
+            existing.setTimes((existing.getTimes() == null ? 0 : existing.getTimes()) + 1);
+            existing.setLastTime(DateUtil.date());
+            return baseMapper.updateById(existing) > 0;
+        } else {
+            // 如果不存在，新增搜索历史
+            SearchHistory add = MapstructUtils.convert(bo, SearchHistory.class);
+            add.setUserId(userId);
+            add.setTimes(1);
+            add.setLastTime(DateUtil.date());
+            validEntityBeforeSave(add);
+            boolean flag = baseMapper.insert(add) > 0;
+            if (flag) {
+                bo.setId(add.getId());
+            }
+            return flag;
+        }
     }
 
     /**
@@ -135,5 +173,28 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+    
+    /**
+     * 清空当前用户的搜索历史
+     *
+     * @return 是否清空成功
+     */
+    @Override
+    public Boolean clearUserHistory() {
+        Long userId = LoginHelper.getUserId();
+        if (userId == null) {
+            log.warn("清空搜索历史失败：用户未登录");
+            return false;
+        }
+        
+        // 构建查询条件，只删除当前用户的搜索历史
+        LambdaQueryWrapper<SearchHistory> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(SearchHistory::getUserId, userId);
+        
+        int deleted = baseMapper.delete(wrapper);
+        log.info("用户 {} 清空了 {} 条搜索历史", userId, deleted);
+        
+        return deleted >= 0; // 即使没有历史记录也返回成功
     }
 }

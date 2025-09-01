@@ -67,7 +67,7 @@
 		listHot,
 		listHistory,
 		addHistory,
-		removeHistory
+		clearMyHistory
 	} from '@/api/search'
 	import { listTracks } from '@/api/track'
 
@@ -175,16 +175,13 @@
 					success: async (res) => {
 						if (res.confirm) {
 							try {
-								// 获取所有历史记录的ID
-								const ids = this.searchHistory.map(item => item.id).join(',')
-								if (ids) {
-									await removeHistory(ids)
-									this.searchHistory = []
-									uni.showToast({
-										title: '已清空历史记录',
-										icon: 'success'
-									})
-								}
+								// 调用清空当前用户历史记录的接口
+								await clearMyHistory()
+								this.searchHistory = []
+								uni.showToast({
+									title: '已清空历史记录',
+									icon: 'success'
+								})
 							} catch (error) {
 								console.error('清空历史记录失败:', error)
 								uni.showToast({
