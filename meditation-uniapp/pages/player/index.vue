@@ -1224,7 +1224,7 @@ export default {
     width: 110%;
     height: 110%;
     margin: -5%;
-    filter: blur(1rpx) brightness(1) saturate(1);
+    filter: blur(20rpx) brightness(0.8) saturate(1.2);
     transform: scale(1.1);
     animation: slowZoom 20s ease-in-out infinite alternate;
   }

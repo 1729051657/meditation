@@ -133,7 +133,7 @@ export default {
   methods: {
     // 初始化背景音频管理器
     initBackgroundAudio() {
-      // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
+      // 统一使用全局唯一的背景音频管理器
       this.backgroundAudioManager = uni.getBackgroundAudioManager()
       
       this.backgroundAudioManager.onPlay(() => {
@@ -165,19 +165,12 @@ export default {
         })
         this.isPlaying = false
       })
-      // #endif
-      
-      // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-      this.backgroundAudioManager = uni.createInnerAudioContext()
-      // #endif
     },
     
     // 检查当前播放状态
     checkPlayingStatus() {
       if (this.backgroundAudioManager) {
-        // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
         this.isPlaying = !this.backgroundAudioManager.paused
-        // #endif
       }
     },
     
@@ -308,20 +301,17 @@ export default {
       // 播放新的音频
       this.currentPlaying = item
       
-      // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
-      // 小程序使用背景音频管理器
-      this.backgroundAudioManager.title = item.title
+      // 统一使用背景音频管理器播放
+      this.backgroundAudioManager.title = item.title || '未知音频'
       this.backgroundAudioManager.singer = item.subtitle || '冥想音乐'
-      this.backgroundAudioManager.coverImgUrl = item.cover
-      this.backgroundAudioManager.src = item.audioUrl
-      // #endif
+      this.backgroundAudioManager.coverImgUrl = item.cover || '/static/images/default-cover.jpg'
+      this.backgroundAudioManager.epname = item.title || '冥想音频'
       
-      // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-      // 非小程序环境跳转到播放页面
-      uni.navigateTo({
-        url: `/pages/player/index?id=${item.targetId}&title=${encodeURIComponent(item.title)}`
-      })
-      // #endif
+      // 设置音频源，这会自动开始播放
+      this.backgroundAudioManager.src = item.audioUrl
+      
+      // 保存当前播放的音轨ID，供迷你播放器使用
+      uni.setStorageSync('currentTrackId', item.targetId)
     },
     
     // 暂停音频

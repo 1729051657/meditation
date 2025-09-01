@@ -170,7 +170,7 @@ const actions = {
   
   // 初始化音频管理器并设置事件监听
   initAudioManager({ commit, dispatch, state }) {
-    // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
+    // 统一使用全局唯一的背景音频管理器
     const manager = uni.getBackgroundAudioManager()
     
     // 播放事件
@@ -220,39 +220,6 @@ const actions = {
     
     commit('SET_AUDIO_MANAGER', manager)
     return manager
-    // #endif
-    
-    // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-    const manager = uni.createInnerAudioContext()
-    
-    manager.onPlay(() => {
-      commit('SET_PLAYING', true)
-    })
-    
-    manager.onPause(() => {
-      commit('SET_PLAYING', false)
-    })
-    
-    manager.onEnded(() => {
-      dispatch('playNext')
-    })
-    
-    manager.onError(() => {
-      setTimeout(() => {
-        dispatch('playNext')
-      }, 1000)
-    })
-    
-    manager.onTimeUpdate(() => {
-      commit('SET_PROGRESS', {
-        currentTime: manager.currentTime,
-        duration: manager.duration
-      })
-    })
-    
-    commit('SET_AUDIO_MANAGER', manager)
-    return manager
-    // #endif
   },
   
   // 播放指定音频

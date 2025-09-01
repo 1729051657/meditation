@@ -63,17 +63,10 @@ const mutations = {
 const actions = {
   // 初始化背景音频管理器
   initAudioManager({ commit }) {
-    // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
+    // 统一使用全局唯一的背景音频管理器
     const manager = uni.getBackgroundAudioManager()
     commit('SET_AUDIO_MANAGER', manager)
     return manager
-    // #endif
-    
-    // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-    const manager = uni.createInnerAudioContext()
-    commit('SET_AUDIO_MANAGER', manager)
-    return manager
-    // #endif
   },
   
   // 启动定时器
