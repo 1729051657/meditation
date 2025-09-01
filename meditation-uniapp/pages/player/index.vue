@@ -223,7 +223,6 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
-      playMode: 'list', // 播放模式: list(列表循环), single(单曲循环), random(随机播放)
       sleepTimer: null, // 睡眠定时器
       sleepTimerRemaining: 0, // 定时器剩余时间（秒）
       sleepTimerInterval: null, // 定时器倒计时
@@ -287,12 +286,7 @@ export default {
       }
     }
 
-    // 恢复播放模式设置
-    const savedPlayMode = uni.getStorageSync('playMode')
-    if (savedPlayMode && ['list', 'single', 'random'].includes(savedPlayMode)) {
-      this.playMode = savedPlayMode
-    }
-    
+
     // this.loadTrack()
     this.loadPlaylist()
     this.initAudio()
@@ -301,27 +295,6 @@ export default {
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
-    },
-    
-    // 播放模式图标
-    playModeIcon() {
-      const icons = {
-        'list': '/static/player/mode-list.svg',
-        'single': '/static/player/mode-single.svg',
-        'random': '/static/player/mode-random.svg'
-      }
-      // 如果没有对应图标，使用播放列表图标作为默认
-      return icons[this.playMode] || '/static/player/playlist-icon.png'
-    },
-    
-    // 播放模式名称
-    playModeName() {
-      const names = {
-        'list': '列表循环',
-        'single': '单曲循环',
-        'random': '随机播放'
-      }
-      return names[this.playMode] || '列表循环'
     },
     
     // 格式化定时器剩余时间
@@ -421,23 +394,8 @@ export default {
         this.playing = false
         this.markAsCompleted()
         
-        // 根据播放模式决定下一步
-        if (this.playMode === 'single') {
-          // 单曲循环：重新播放当前曲目
-          console.log('单曲循环模式')
-          this.audioContext.seek(0)
-          setTimeout(() => {
-            this.audioContext.play()
-          }, 100)
-        } else if (this.playMode === 'random') {
-          // 随机播放
-          console.log('随机播放模式')
-          this.playRandom()
-        } else {
-          // 列表循环（默认）
-          console.log('列表循环模式')
-          this.next()
-        }
+        // 播放下一曲
+        this.next()
       })
 
       this.audioContext.onError((error) => {
@@ -510,13 +468,17 @@ export default {
               this.audioContext.stop()
             }
             
-            // 按照文档要求的顺序设置属性
-            this.audioContext.title = this.track.title || '冥想音频' // 必填
-            this.audioContext.epname = '冥想空间' // 专辑名，选填
+            // 重要：根据文档，必须先设置 title，再设置 src
+            // title 必须在设置 src 之前设置，否则会显示"未知音频"
+            this.audioContext.title = this.track.title || '冥想音频' // 必填，必须先设置
+            
+            // 设置其他可选属性
+            this.audioContext.epname = this.track.title || '冥想音频' // 专辑名，选填
             this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
             this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
             
             // 最后设置 src，这会触发音频加载
+            // 注意：src 必须最后设置
             this.audioContext.src = this.track.audioUrl
             
             console.log('音频信息设置完成:', {
@@ -734,63 +696,15 @@ export default {
         return
       }
 
-      if (this.playMode === 'random') {
-        // 随机播放模式
-        this.playRandom()
+      // 列表循环播放
+      if (this.currentIndex < this.playlist.length - 1) {
+        this.currentIndex++
       } else {
-        // 列表循环或单曲循环模式
-        if (this.currentIndex < this.playlist.length - 1) {
-          this.currentIndex++
-        } else {
-          this.currentIndex = 0
-        }
-        this.playTrackAtIndex(this.currentIndex)
+        this.currentIndex = 0
       }
-    },
-    
-    // 随机播放
-    playRandom() {
-      if (this.playlist.length <= 1) {
-        // 只有一首歌时，重新播放
-        this.playTrackAtIndex(0)
-        return
-      }
-      
-      // 生成一个不同于当前索引的随机索引
-      let randomIndex
-      do {
-        randomIndex = Math.floor(Math.random() * this.playlist.length)
-      } while (randomIndex === this.currentIndex)
-      
-      this.currentIndex = randomIndex
       this.playTrackAtIndex(this.currentIndex)
     },
-    
-    // 切换播放模式
-    togglePlayMode() {
-      const modes = ['list', 'single', 'random']
-      const currentModeIndex = modes.indexOf(this.playMode)
-      const nextModeIndex = (currentModeIndex + 1) % modes.length
-      this.playMode = modes[nextModeIndex]
-      
-      // 保存播放模式到本地
-      uni.setStorageSync('playMode', this.playMode)
-      
-      // 显示提示
-      const modeNames = {
-        'list': '列表循环',
-        'single': '单曲循环',
-        'random': '随机播放'
-      }
-      
-      uni.showToast({
-        title: modeNames[this.playMode],
-        icon: 'none',
-        duration: 1500
-      })
-      
-      console.log('切换播放模式:', this.playMode)
-    },
+
 
     // 加载播放列表
     async loadPlaylist() {
@@ -870,13 +784,17 @@ export default {
        console.log(track)
       // 设置新的音频源并播放
       if (track.audioUrl) {
-        // 按照文档要求的顺序设置属性
-        this.audioContext.title = track.name || '冥想音频' // 必填
-        this.audioContext.epname = '冥想空间' // 专辑名
+        // 重要：根据文档，必须先设置 title，再设置 src
+        // title 必须在设置 src 之前设置，否则会显示"未知音频"
+        this.audioContext.title = track.name || '冥想音频' // 必填，必须先设置
+        
+        // 设置其他可选属性
+        this.audioContext.epname = track.name || '冥想音频' // 专辑名
         this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
         this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
         
-        // 最后设置 src
+        // 最后设置 src，这会触发音频加载
+        // 注意：src 必须最后设置
         this.audioContext.src = track.audioUrl
         
         // 保存当前播放的音轨ID
