@@ -85,7 +85,7 @@
           <view class="feature-btn" @click="share">
             <image class="w72" src="/static/player/timer-icon.png" lazy-load="false" binderror="" bindload="" />
             <!-- 显示倒计时 -->
-            <text v-if="sleepTimerRemaining > 0" class="timer-countdown">{{ formatTimerRemaining }}</text>
+            <text v-if="timerRemainingSeconds > 0" class="timer-countdown">{{ timerRemainingTime }}</text>
           </view>
         </view>
       </view>
@@ -225,9 +225,20 @@ export default {
       updateInterval: null, // 更新播放进度的定时器
     }
   },
+  
+  computed: {
+    ...mapState('timer', ['isTimerActive']),
+    ...mapGetters('timer', {
+      timerRemainingSeconds: 'remainingSeconds',
+      timerRemainingTime: 'remainingTime'
+    })
+  },
 
   async onLoad(options) {
     console.log('播放器页面 onLoad 参数:', options)
+    
+    // 恢复定时器状态
+    this.$store.dispatch('timer/restoreTimer')
     
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
@@ -1288,6 +1299,8 @@ export default {
     share() {
       // 显示定时器面板
       this.showbad = true;
+      // 恢复定时器状态（确保显示最新状态）
+      this.$store.dispatch('timer/restoreTimer')
     },
 
     // 清除睡眠定时器（使用全局方法）
@@ -1367,7 +1380,7 @@ export default {
     closeTimer() {
       // 如果有正在运行的定时器，清除它
       if (this.isTimerActive) {
-        this.clearSleepTimer()
+        this.$store.dispatch('timer/stopSleepTimer')
         uni.showToast({
           title: '已取消定时',
           icon: 'none'
