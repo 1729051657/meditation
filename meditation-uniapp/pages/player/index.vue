@@ -695,7 +695,8 @@ export default {
           this.playHistoryId = res.data.id
         }
       } catch (error) {
-        console.error('添加播放历史失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('播放历史记录失败（已忽略）')
       }
     },
 
@@ -732,7 +733,8 @@ export default {
           isCompleted: isCompleted
         })
       } catch (error) {
-        console.error('更新播放进度失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('更新播放进度失败（已忽略）')
       }
     },
 
@@ -748,7 +750,8 @@ export default {
           isCompleted: '1'
         })
       } catch (error) {
-        console.error('标记完成失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('标记完成失败（已忽略）')
       }
     },
 
