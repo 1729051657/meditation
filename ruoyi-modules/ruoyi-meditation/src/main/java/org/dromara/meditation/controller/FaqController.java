@@ -6,7 +6,7 @@ import org.dromara.common.core.domain.R;
 import org.dromara.common.web.core.BaseController;
 import org.dromara.system.domain.vo.SysDictDataVo;
 import org.dromara.system.service.ISysConfigService;
-import org.dromara.system.service.ISysDictDataService;
+import org.dromara.system.service.ISysDictTypeService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +30,7 @@ import java.util.Map;
 public class FaqController extends BaseController {
 
     private final ISysConfigService configService;
-    private final ISysDictDataService dictDataService;
+    private final ISysDictTypeService dictTypeService;
 
     /**
      * 获取FAQ页面数据
@@ -55,7 +55,7 @@ public class FaqController extends BaseController {
         
         // 获取FAQ问题字典数据
         // 假设字典类型为：miniapp_faq_questions
-        List<SysDictDataVo> faqList = dictDataService.selectDictDataByType("miniapp_faq_questions");
+        List<SysDictDataVo> faqList = dictTypeService.selectDictDataByType("miniapp_faq_questions");
         
         // 将字典数据转换为FAQ格式
         List<Map<String, Object>> questions = faqList.stream().map(dict -> {
@@ -105,7 +105,7 @@ public class FaqController extends BaseController {
     @GetMapping("/questions")
     public R<List<Map<String, Object>>> getFaqQuestions() {
         // 获取FAQ问题字典数据
-        List<SysDictDataVo> faqList = dictDataService.selectDictDataByType("miniapp_faq_questions");
+        List<SysDictDataVo> faqList = dictTypeService.selectDictDataByType("miniapp_faq_questions");
         
         // 将字典数据转换为FAQ格式
         List<Map<String, Object>> questions = faqList.stream()
