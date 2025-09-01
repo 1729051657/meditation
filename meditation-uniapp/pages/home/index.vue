@@ -117,7 +117,7 @@
     </view> -->
     
     <!-- 迷你播放器 -->
-    <MiniPlayer />
+    <MiniPlayer ref="miniPlayer" />
       
   </view>
 </template>
@@ -142,6 +142,8 @@ export default {
       defaultCover: '/static/images/default-cover.png',
       defaultKnowledgeCover: '/static/images/default-knowledge.png',
       isLoggedIn: false, // 登录状态
+      showMiniPlayer: false, // 是否显示迷你播放器
+      miniPlayerData: null, // 迷你播放器数据
       // 分类图标映射
       categoryIconMap: {
         'relax': '/static/home/relax-stress@2x.png',
@@ -169,6 +171,12 @@ export default {
     console.log(this.navHeight, "导航栏高度");
 
   },
+  
+  onShow() {
+    // 页面显示时，检查是否有音频在播放
+    console.log('首页显示，检查音频状态')
+    this.checkAudioStatus()
+  },
 
   onPullDownRefresh() {
     this.loadHomeData().finally(() => {
@@ -177,6 +185,31 @@ export default {
   },
 
   methods: {
+    // 检查音频播放状态
+    checkAudioStatus() {
+      const audioContext = uni.getBackgroundAudioManager()
+      
+      if (audioContext && audioContext.src) {
+        console.log('首页检测到音频:', {
+          src: audioContext.src,
+          title: audioContext.title,
+          paused: audioContext.paused
+        })
+        
+        this.showMiniPlayer = true
+        this.miniPlayerData = {
+          title: audioContext.title || '未知音频',
+          coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.png',
+          audioUrl: audioContext.src,
+          isPlaying: !audioContext.paused
+        }
+      } else {
+        console.log('首页未检测到音频')
+        this.showMiniPlayer = false
+        this.miniPlayerData = null
+      }
+    },
+    
     // 检查登录状态
     checkLoginStatus() {
       const token = uni.getStorageSync('meditation_token')

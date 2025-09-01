@@ -1,16 +1,16 @@
 <template>
-  <view class="mini-player" v-if="isPlaying || currentTrack" @click="goToPlayer">
+  <view class="mini-player" v-if="showPlayer" @click="goToPlayer">
     <view class="player-content">
       <!-- 封面图 -->
       <image 
         class="cover-image" 
-        :src="currentTrack.coverUrl || '/static/images/default-cover.png'" 
+        :src="(currentTrack && currentTrack.coverUrl) || '/static/images/default-cover.png'" 
         mode="aspectFill"
       />
       
       <!-- 歌曲信息 -->
       <view class="track-info">
-        <text class="track-title">{{ currentTrack.title || '未知音频' }}</text>
+        <text class="track-title">{{ (currentTrack && currentTrack.title) || '未知音频' }}</text>
         <view class="timer-info" v-if="sleepTimerRemaining">
           <image class="timer-icon" src="/static/player/time-icon.png" />
           <text class="timer-text">定时停止 {{ formatTimerRemaining }}</text>
@@ -43,7 +43,8 @@ export default {
       isPlaying: false,
       currentTrack: null,
       sleepTimerRemaining: 0,
-      timerInterval: null
+      timerInterval: null,
+      statusCheckInterval: null
     }
   },
   
@@ -54,32 +55,64 @@ export default {
       const minutes = Math.floor(this.sleepTimerRemaining / 60)
       const seconds = this.sleepTimerRemaining % 60
       return `${minutes}:${seconds.toString().padStart(2, '0')}`
+    },
+    
+    // 是否显示播放器
+    showPlayer() {
+      return !!(this.currentTrack && this.currentTrack.audioUrl)
     }
   },
   
+  created() {
+    // 组件创建时初始化
+    console.log('MiniPlayer: 组件创建')
+  },
+  
   mounted() {
+    console.log('MiniPlayer: 组件挂载')
     this.initAudioContext()
     this.checkSleepTimer()
+    
+    // 定时检查播放状态，以防错过状态变化
+    // 每500ms检查一次，确保及时响应
+    this.statusCheckInterval = setInterval(() => {
+      this.checkAudioStatus()
+    }, 500)
   },
   
   beforeDestroy() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
     }
+    if (this.statusCheckInterval) {
+      clearInterval(this.statusCheckInterval)
+    }
+    // 移除事件监听
+    if (this.audioContext) {
+      this.removeAudioListeners()
+    }
   },
   
   methods: {
     // 初始化音频上下文
     initAudioContext() {
+      console.log('MiniPlayer: 初始化音频上下文')
+      
       // 获取全局的背景音频管理器
       this.audioContext = uni.getBackgroundAudioManager()
       
       // 检查当前播放状态
       if (this.audioContext && this.audioContext.src) {
+        console.log('MiniPlayer: 检测到音频', {
+          src: this.audioContext.src,
+          title: this.audioContext.title,
+          paused: this.audioContext.paused
+        })
+        
         // 有音频正在播放或暂停
         this.currentTrack = {
-          title: this.audioContext.title,
-          coverUrl: this.audioContext.coverImgUrl,
+          title: this.audioContext.title || '未知音频',
+          coverUrl: this.audioContext.coverImgUrl || '/static/images/default-cover.png',
           audioUrl: this.audioContext.src
         }
         
@@ -88,6 +121,10 @@ export default {
         
         // 监听播放状态变化
         this.setupAudioListeners()
+      } else {
+        console.log('MiniPlayer: 没有检测到音频')
+        this.currentTrack = null
+        this.isPlaying = false
       }
     },
     
@@ -95,33 +132,55 @@ export default {
     setupAudioListeners() {
       if (!this.audioContext) return
       
+      // 先移除旧的监听器，避免重复
+      this.removeAudioListeners()
+      
       // 播放事件
       this.audioContext.onPlay(() => {
+        console.log('MiniPlayer: 音频开始播放')
         this.isPlaying = true
         this.updateTrackInfo()
       })
       
       // 暂停事件
       this.audioContext.onPause(() => {
+        console.log('MiniPlayer: 音频暂停')
         this.isPlaying = false
       })
       
       // 停止事件
       this.audioContext.onStop(() => {
+        console.log('MiniPlayer: 音频停止')
         this.isPlaying = false
         this.currentTrack = null
       })
       
       // 播放结束事件
       this.audioContext.onEnded(() => {
+        console.log('MiniPlayer: 音频播放结束')
         this.isPlaying = false
       })
       
       // 错误事件
       this.audioContext.onError((error) => {
-        console.error('迷你播放器音频错误:', error)
+        console.error('MiniPlayer: 音频错误:', error)
         this.isPlaying = false
       })
+    },
+    
+    // 移除音频事件监听
+    removeAudioListeners() {
+      if (!this.audioContext) return
+      
+      try {
+        this.audioContext.offPlay()
+        this.audioContext.offPause()
+        this.audioContext.offStop()
+        this.audioContext.offEnded()
+        this.audioContext.offError()
+      } catch (error) {
+        console.error('MiniPlayer: 移除事件监听失败', error)
+      }
     },
     
     // 更新音轨信息
@@ -131,6 +190,44 @@ export default {
           title: this.audioContext.title || '未知音频',
           coverUrl: this.audioContext.coverImgUrl || '/static/images/default-cover.png',
           audioUrl: this.audioContext.src
+        }
+      }
+    },
+    
+    // 检查音频状态（用于定时检查）
+    checkAudioStatus() {
+      const audioContext = uni.getBackgroundAudioManager()
+      
+      if (audioContext && audioContext.src) {
+        // 有音频
+        if (!this.currentTrack || this.currentTrack.audioUrl !== audioContext.src) {
+          // 音频改变了，更新信息
+          console.log('MiniPlayer: 检测到新音频或音频变化', {
+            src: audioContext.src,
+            title: audioContext.title,
+            coverImgUrl: audioContext.coverImgUrl,
+            paused: audioContext.paused
+          })
+          
+          this.currentTrack = {
+            title: audioContext.title || '未知音频',
+            coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.png',
+            audioUrl: audioContext.src
+          }
+        }
+        
+        // 更新播放状态
+        const newPlayingState = !audioContext.paused
+        if (this.isPlaying !== newPlayingState) {
+          console.log('MiniPlayer: 播放状态变化', newPlayingState ? '播放' : '暂停')
+          this.isPlaying = newPlayingState
+        }
+      } else {
+        // 没有音频
+        if (this.currentTrack) {
+          console.log('MiniPlayer: 音频已停止或清除')
+          this.currentTrack = null
+          this.isPlaying = false
         }
       }
     },
