@@ -211,6 +211,8 @@ export default {
       playlist: [], // 播放列表，从API获取
       seriesId: null, // 系列ID
       categoryId: null, // 分类ID
+      playlistSource: 'default', // 播放列表来源: default/history/favorites/series
+      sourceList: [], // 来源列表数据（历史/收藏等）
       selectedTime: 5, // 默认选中5分钟
       customTime: 0,   // 自定义时间
       showCustomModal: false, // 是否显示自定义模态框
@@ -240,9 +242,25 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
-    // 检查参数：支持直接传入音轨ID或系列ID
-    if (!options.id && !options.seriesId) {
-      console.error('播放器页面错误：未传入音轨ID或系列ID')
+    // 识别播放列表来源
+    if (options.source) {
+      this.playlistSource = options.source // history/favorites/series/default
+      console.log('播放列表来源:', this.playlistSource)
+    }
+    
+    // 如果传入了源数据列表（如历史记录或收藏列表）
+    if (options.list) {
+      try {
+        this.sourceList = JSON.parse(decodeURIComponent(options.list))
+        console.log('源列表数据:', this.sourceList.length, '条')
+      } catch (error) {
+        console.error('解析源列表数据失败:', error)
+      }
+    }
+    
+    // 检查参数：支持直接传入音轨ID或系列ID，或者使用列表
+    if (!options.id && !options.seriesId && (!this.sourceList || this.sourceList.length === 0)) {
+      console.error('播放器页面错误：未传入有效参数')
       uni.showToast({
         title: '参数错误：缺少必要参数',
         icon: 'none',
@@ -255,18 +273,50 @@ export default {
       return
     }
 
-    // 如果是系列类型，需要先获取系列的第一个音频
-    if (options.type === 'series' && options.seriesId) {
+    // 处理不同的播放模式
+    if (this.playlistSource === 'history' || this.playlistSource === 'favorites') {
+      // 从历史或收藏进入
+      if (this.sourceList && this.sourceList.length > 0) {
+        // 如果指定了音频ID，找到对应的音频
+        if (options.id) {
+          this.trackId = options.id
+          // 在列表中找到对应的索引
+          const index = this.sourceList.findIndex(item => 
+            String(item.trackId || item.targetId || item.id) === String(options.id)
+          )
+          if (index !== -1) {
+            this.currentIndex = index
+          }
+        } else {
+          // 没有指定音频，播放列表第一个
+          const firstItem = this.sourceList[0]
+          this.trackId = firstItem.trackId || firstItem.targetId || firstItem.id
+          this.currentIndex = 0
+        }
+      }
+    } else if (options.type === 'series' && options.seriesId) {
+      // 系列播放模式
       console.log('系列播放模式，系列ID:', options.seriesId)
       this.seriesId = options.seriesId
+      this.playlistSource = 'series'
       
       // 先加载系列的音频列表
       try {
         const tracks = await this.loadSeriesTracks(options.seriesId)
         if (tracks && tracks.length > 0) {
-          // 使用系列的第一个音频作为当前播放音频
-          this.trackId = tracks[0].id
-          console.log('系列第一个音频ID:', this.trackId)
+          // 如果指定了音频ID
+          if (options.id) {
+            this.trackId = options.id
+            const index = tracks.findIndex(item => String(item.id) === String(options.id))
+            if (index !== -1) {
+              this.currentIndex = index
+            }
+          } else {
+            // 使用系列的第一个音频作为当前播放音频
+            this.trackId = tracks[0].id
+            this.currentIndex = 0
+          }
+          console.log('系列音频ID:', this.trackId, '索引:', this.currentIndex)
         } else {
           throw new Error('该系列暂无音频')
         }
@@ -815,39 +865,64 @@ export default {
     // 加载播放列表
     async loadPlaylist() {
       try {
-        let params = {
-          status: 0,
-          pageNum: 1,
-          pageSize: 100
+        let tracks = []
+        
+        // 根据不同来源加载播放列表
+        if (this.playlistSource === 'history' || this.playlistSource === 'favorites') {
+          // 使用传入的源列表
+          if (this.sourceList && this.sourceList.length > 0) {
+            // 格式化源列表数据
+            tracks = this.sourceList.map(item => ({
+              id: item.trackId || item.targetId || item.id,
+              title: item.title || item.trackTitle || '未知音频',
+              artist: item.subtitle || item.author || '冥想音乐',
+              durationSec: item.durationSec || item.duration || 0,
+              audioUrl: item.audioUrl || item.audio,
+              coverUrl: item.coverUrl || item.cover || '/static/images/default-cover.jpg',
+              categoryCode: item.categoryCode,
+              seriesId: item.seriesId
+            }))
+          }
+        } else {
+          // 原有的逻辑：从API加载
+          let params = {
+            status: 0,
+            pageNum: 1,
+            pageSize: 100
+          }
+
+          // 如果有系列ID，获取同系列的音频
+          if (this.seriesId) {
+            params.seriesId = this.seriesId
+            params.orderByColumn = 'order_index'
+            params.isAsc = 'asc'
+          }
+          // 如果有分类ID，获取同分类的音频
+          else if (this.categoryId) {
+            params.categoryId = this.categoryId
+            params.orderByColumn = 'create_time'
+            params.isAsc = 'desc'
+          }
+          // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
+          else {
+            params.orderByColumn = 'create_time'  // 使用创建时间排序
+            params.isAsc = 'desc'  // 最新的在前
+            params.pageSize = 50  // 限制数量，获取最新推荐
+          }
+
+          const res = await listTracks(params)
+          if (res.code === 200) {
+            tracks = res.rows || res.data || []
+          }
         }
 
-        // 如果有系列ID，获取同系列的音频
-        if (this.seriesId) {
-          params.seriesId = this.seriesId
-          params.orderByColumn = 'order_index'
-          params.isAsc = 'asc'
-        }
-        // 如果有分类ID，获取同分类的音频
-        else if (this.categoryId) {
-          params.categoryId = this.categoryId
-          params.orderByColumn = 'create_time'
-          params.isAsc = 'desc'
-        }
-        // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
-        else {
-          params.orderByColumn = 'create_time'  // 使用创建时间排序
-          params.isAsc = 'desc'  // 最新的在前
-          params.pageSize = 50  // 限制数量，获取最新推荐
-        }
-
-        const res = await listTracks(params)
-
-        if (res.code === 200) {
-          const tracks = res.rows || res.data || []
-          
+        // 处理播放列表
+        if (tracks && tracks.length > 0) {
           // 如果当前音频不在列表中，将其添加到列表开头
           let finalTracks = [...tracks]
-          const currentTrackInList = tracks.find(item => item.id === parseInt(this.trackId))
+          const currentTrackInList = tracks.find(item => 
+            String(item.id) === String(this.trackId)
+          )
           
           if (!currentTrackInList && this.track) {
             // 将当前播放的音频添加到列表开头

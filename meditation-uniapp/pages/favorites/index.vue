@@ -275,9 +275,9 @@ export default {
       // 只处理音频类型
       if (item.targetType !== 'track') {
         if (item.targetType === 'series') {
-          // 跳转到系列详情页
+          // 系列类型，跳转到播放器播放系列
           uni.navigateTo({
-            url: `/pages/series/detail?id=${item.targetId}`
+            url: `/pages/player/index?seriesId=${item.targetId}&type=series`
           })
         } else if (item.targetType === 'article') {
           // 跳转到文章详情页
@@ -288,30 +288,16 @@ export default {
         return
       }
       
-      // 如果点击的是当前正在播放的音频
-      if (this.currentPlaying && this.currentPlaying.targetId === item.targetId) {
-        if (this.isPlaying) {
-          this.pauseAudio()
-        } else {
-          this.resumeAudio()
-        }
-        return
-      }
+      // 获取所有音频类型的收藏
+      const audioFavorites = this.favoritesList.filter(fav => fav.targetType === 'track')
       
-      // 播放新的音频
-      this.currentPlaying = item
+      // 准备列表数据
+      const listData = encodeURIComponent(JSON.stringify(audioFavorites))
       
-      // 统一使用背景音频管理器播放
-      this.backgroundAudioManager.title = item.title || '未知音频'
-      this.backgroundAudioManager.singer = item.subtitle || '冥想音乐'
-      this.backgroundAudioManager.coverImgUrl = item.cover || '/static/images/default-cover.jpg'
-      this.backgroundAudioManager.epname = item.title || '冥想音频'
-      
-      // 设置音频源，这会自动开始播放
-      this.backgroundAudioManager.src = item.audioUrl
-      
-      // 保存当前播放的音轨ID，供迷你播放器使用
-      uni.setStorageSync('currentTrackId', item.targetId)
+      // 跳转到播放器页面，传递收藏列表
+      uni.navigateTo({
+        url: `/pages/player/index?id=${item.targetId}&source=favorites&list=${listData}`
+      })
     },
     
     // 暂停音频
