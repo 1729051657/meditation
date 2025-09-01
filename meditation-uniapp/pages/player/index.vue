@@ -224,7 +224,7 @@ export default {
     }
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
       statusBarHeight,
@@ -282,9 +282,12 @@ export default {
     }
 
 
-    // this.loadTrack()
-    this.loadPlaylist()
+    // 初始化音频管理器
     this.initAudio()
+    // 加载指定的音频信息并播放
+    await this.loadTrack()
+    // 然后加载播放列表（不会影响当前播放）
+    this.loadPlaylist()
   },
   computed: {
     ...mapState('timer', ['isTimerActive']),
@@ -484,6 +487,19 @@ export default {
               singer: this.audioContext.singer,
               coverImgUrl: this.audioContext.coverImgUrl
             })
+            
+            // 更新全局播放状态
+            const trackForPlaylist = {
+              id: this.track.id,
+              title: this.track.title || '未知音频',
+              artist: this.track.artist || '冥想音乐',
+              durationSec: this.track.durationSec || 0,
+              audioUrl: this.track.audioUrl,
+              coverUrl: this.track.coverUrl || '/static/images/default-cover.jpg',
+              categoryCode: this.track.categoryCode,
+              seriesId: this.track.seriesId
+            }
+            this.$store.commit('playlist/SET_CURRENT_TRACK', trackForPlaylist)
 
             // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
             uni.setStorageSync('currentTrackId', this.trackId)
@@ -714,18 +730,29 @@ export default {
           params.orderByColumn = 'create_time'
           params.isAsc = 'desc'
         }
-        // 否则获取所有音频
+        // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
         else {
-          params.orderByColumn = 'create_time'
+          params.orderByColumn = 'play_count'
           params.isAsc = 'desc'
+          params.pageSize = 50  // 限制数量，获取热门推荐
         }
 
         const res = await listTracks(params)
 
         if (res.code === 200) {
           const tracks = res.rows || res.data || []
+          
+          // 如果当前音频不在列表中，将其添加到列表开头
+          let finalTracks = [...tracks]
+          const currentTrackInList = tracks.find(item => item.id === parseInt(this.trackId))
+          
+          if (!currentTrackInList && this.track) {
+            // 将当前播放的音频添加到列表开头
+            finalTracks = [this.track, ...tracks]
+          }
+          
           // 格式化播放列表数据
-          const formattedTracks = tracks.map(item => ({
+          const formattedTracks = finalTracks.map(item => ({
             id: item.id,
             title: item.title || '未知音频',
             artist: item.subtitle || item.author || '冥想音乐',
@@ -739,11 +766,11 @@ export default {
           // 找到当前播放音频在列表中的位置
           const currentIndex = formattedTracks.findIndex(item => item.id === parseInt(this.trackId))
           
-          // 设置全局播放列表并开始播放
-          await this.setPlaylistAndPlay({
-            playlist: formattedTracks,
-            startIndex: currentIndex !== -1 ? currentIndex : 0
-          })
+          // 只设置播放列表，不重新播放（因为loadTrack已经在播放了）
+          this.$store.commit('playlist/SET_PLAYLIST', formattedTracks)
+          if (currentIndex !== -1) {
+            this.$store.commit('playlist/SET_CURRENT_INDEX', currentIndex)
+          }
           
           // 本地也保存一份用于显示
           this.playlist = formattedTracks.map(item => ({
