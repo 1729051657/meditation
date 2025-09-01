@@ -15,16 +15,28 @@
 
     <!-- 背景 -->
     <view class="bg-container">
+      <!-- 主背景图 -->
       <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="bg-image"></image>
+      <!-- 渐变遮罩层 -->
       <view class="bg-overlay"></view>
+      <!-- 动态光效 -->
+      <view class="bg-glow"></view>
     </view>
 
     <!-- 主内容 -->
     <view class="main-content">
       <!-- 封面 -->
-      <!-- <view class="cover-container">
-        <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="cover-image"></image>
-      </view> -->
+      <view class="cover-container">
+        <view class="cover-wrapper" :class="{ playing: playing }">
+          <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="cover-image"></image>
+          <!-- 播放状态指示器 -->
+          <view v-if="playing" class="playing-indicator">
+            <view class="wave wave1"></view>
+            <view class="wave wave2"></view>
+            <view class="wave wave3"></view>
+          </view>
+        </view>
+      </view>
 
 
       <view class="multimedia">
@@ -72,11 +84,10 @@
               :src="playing ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'"
               lazy-load="false" binderror="" bindload="" />
           </view>
-          <view class="feature-btn" @click="togglePlayMode">
-            <image class="w72" 
-              :src="playModeIcon" 
-              lazy-load="false" 
-              :title="playModeName" />
+          <view class="feature-btn" @click="share">
+            <image class="w72" src="/static/player/timer-icon.png" lazy-load="false" binderror="" bindload="" />
+            <!-- 显示倒计时 -->
+            <text v-if="sleepTimerRemaining > 0" class="timer-countdown">{{ formatTimerRemaining }}</text>
           </view>
         </view>
       </view>
@@ -180,8 +191,12 @@
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
 import { addPlayHistory, updatePlayHistory } from '@/api/play'
+// import SleepTimer from '@/components/SleepTimer/index.vue'  // 可选：引入独立的定时器组件
 
 export default {
+  // components: {
+  //   SleepTimer  // 如果需要使用独立组件，取消注释
+  // },
   data() {
     return {
       trackId: '',
@@ -208,7 +223,9 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
-      playMode: 'list', // 播放模式: list(列表循环), single(单曲循环), random(随机播放)
+      sleepTimer: null, // 睡眠定时器
+      sleepTimerRemaining: 0, // 定时器剩余时间（秒）
+      sleepTimerInterval: null, // 定时器倒计时
     }
   },
 
@@ -238,7 +255,7 @@ export default {
     if (options.progress) {
       this.currentTime = parseInt(options.progress) || 0
     }
-    
+
     // 如果是从迷你播放器跳转过来的（resume参数），不重新初始化音频
     if (options.resume === 'true') {
       // 只同步当前播放状态
@@ -269,12 +286,7 @@ export default {
       }
     }
 
-    // 恢复播放模式设置
-    const savedPlayMode = uni.getStorageSync('playMode')
-    if (savedPlayMode && ['list', 'single', 'random'].includes(savedPlayMode)) {
-      this.playMode = savedPlayMode
-    }
-    
+
     // this.loadTrack()
     this.loadPlaylist()
     this.initAudio()
@@ -284,29 +296,25 @@ export default {
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
     },
-    
-    // 播放模式图标
-    playModeIcon() {
-      const icons = {
-        'list': '/static/player/mode-list.png',
-        'single': '/static/player/mode-single.png',
-        'random': '/static/player/mode-random.png'
+
+    // 格式化定时器剩余时间
+    formatTimerRemaining() {
+      if (this.sleepTimerRemaining <= 0) return ''
+
+      const minutes = Math.floor(this.sleepTimerRemaining / 60)
+      const seconds = this.sleepTimerRemaining % 60
+
+      if (minutes > 0) {
+        return `${minutes}:${String(seconds).padStart(2, '0')}`
+      } else {
+        return `${seconds}s`
       }
-      // 如果没有对应图标，使用播放列表图标作为默认
-      return icons[this.playMode] || '/static/player/playlist-icon.png'
-    },
-    
-    // 播放模式名称
-    playModeName() {
-      const names = {
-        'list': '列表循环',
-        'single': '单曲循环',
-        'random': '随机播放'
-      }
-      return names[this.playMode] || '列表循环'
     }
   },
   onUnload() {
+    // 页面卸载时，清理定时器
+    this.clearSleepTimer()
+
     // 页面卸载时，如果音频正在播放，保持后台播放
     // 如果音频已停止，则清理资源
     if (this.audioContext && this.audioContext.src) {
@@ -326,7 +334,7 @@ export default {
   onHide() {
     // 页面隐藏时保存播放进度，保持后台播放
     this.savePlayProgress()
-    
+
     // 确保音频继续在后台播放
     if (this.audioContext && this.audioContext.src && this.playing) {
       console.log('页面隐藏，音频继续在后台播放')
@@ -338,12 +346,12 @@ export default {
     if (this.audioContext && this.audioContext.src) {
       // 同步播放状态
       this.playing = !this.audioContext.paused
-      
+
       // 如果音频正在播放，重新开始进度跟踪
       if (this.playing) {
         this.startProgressTracking()
       }
-      
+
       console.log('页面显示，播放状态已同步:', this.playing ? '播放中' : '已暂停')
     }
   },
@@ -357,7 +365,7 @@ export default {
 
       // 设置自动播放为false，需要用户手动触发
       this.audioContext.autoplay = false
-      
+
       // 注意：这里不设置默认值，等待 loadTrack 时设置具体信息
       // 避免覆盖已有的音频信息
 
@@ -385,24 +393,9 @@ export default {
         console.log('音频播放结束')
         this.playing = false
         this.markAsCompleted()
-        
-        // 根据播放模式决定下一步
-        if (this.playMode === 'single') {
-          // 单曲循环：重新播放当前曲目
-          console.log('单曲循环模式')
-          this.audioContext.seek(0)
-          setTimeout(() => {
-            this.audioContext.play()
-          }, 100)
-        } else if (this.playMode === 'random') {
-          // 随机播放
-          console.log('随机播放模式')
-          this.playRandom()
-        } else {
-          // 列表循环（默认）
-          console.log('列表循环模式')
-          this.next()
-        }
+
+        // 播放下一曲
+        this.next()
       })
 
       this.audioContext.onError((error) => {
@@ -421,19 +414,19 @@ export default {
       this.audioContext.onWaiting(() => {
         console.log('音频加载中...')
       })
-      
+
       // 后台播放相关事件
       this.audioContext.onStop(() => {
         console.log('音频停止播放')
         this.playing = false
         this.stopProgressTracking()
       })
-      
+
       this.audioContext.onPrev(() => {
         console.log('上一曲')
         this.previous()
       })
-      
+
       this.audioContext.onNext(() => {
         console.log('下一曲')
         this.next()
@@ -468,32 +461,36 @@ export default {
 
           if (this.track.audioUrl) {
             console.log('设置音频信息:', this.track)
-            
+
             // 根据文档，title 是必填项，必须在设置 src 之前设置
             // 先停止当前播放（如果有）
             if (this.audioContext.src) {
               this.audioContext.stop()
             }
-            
-            // 按照文档要求的顺序设置属性
-            this.audioContext.title = this.track.title || '冥想音频' // 必填
-            this.audioContext.epname = '冥想空间' // 专辑名，选填
+
+            // 重要：根据文档，必须先设置 title，再设置 src
+            // title 必须在设置 src 之前设置，否则会显示"未知音频"
+            this.audioContext.title = this.track.title || '冥想音频' // 必填，必须先设置
+
+            // 设置其他可选属性
+            this.audioContext.epname = this.track.title || '冥想音频' // 专辑名，选填
             this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
             this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
-            
+
             // 最后设置 src，这会触发音频加载
+            // 注意：src 必须最后设置
             this.audioContext.src = this.track.audioUrl
-            
+
             console.log('音频信息设置完成:', {
               src: this.audioContext.src,
               title: this.audioContext.title,
               singer: this.audioContext.singer,
               coverImgUrl: this.audioContext.coverImgUrl
             })
-            
+
             // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
             uni.setStorageSync('currentTrackId', this.trackId)
-            
+
             // 如果有传递的播放进度，恢复播放位置
             if (this.currentTime > 0) {
               setTimeout(() => {
@@ -598,7 +595,7 @@ export default {
 
       // 保存播放进度
       this.savePlayProgress()
-      
+
       console.log('页面资源已清理，音频继续在后台播放')
     },
 
@@ -629,7 +626,7 @@ export default {
           this.audioContext.offPrev()
           this.audioContext.offNext()
           // 注意：不要清空 src，避免 invalid BackgroundAudioManager.src 错误
-          
+
           // 清除存储的当前音轨ID
           uni.removeStorageSync('currentTrackId')
         } catch (error) {
@@ -699,63 +696,15 @@ export default {
         return
       }
 
-      if (this.playMode === 'random') {
-        // 随机播放模式
-        this.playRandom()
+      // 列表循环播放
+      if (this.currentIndex < this.playlist.length - 1) {
+        this.currentIndex++
       } else {
-        // 列表循环或单曲循环模式
-        if (this.currentIndex < this.playlist.length - 1) {
-          this.currentIndex++
-        } else {
-          this.currentIndex = 0
-        }
-        this.playTrackAtIndex(this.currentIndex)
+        this.currentIndex = 0
       }
-    },
-    
-    // 随机播放
-    playRandom() {
-      if (this.playlist.length <= 1) {
-        // 只有一首歌时，重新播放
-        this.playTrackAtIndex(0)
-        return
-      }
-      
-      // 生成一个不同于当前索引的随机索引
-      let randomIndex
-      do {
-        randomIndex = Math.floor(Math.random() * this.playlist.length)
-      } while (randomIndex === this.currentIndex)
-      
-      this.currentIndex = randomIndex
       this.playTrackAtIndex(this.currentIndex)
     },
-    
-    // 切换播放模式
-    togglePlayMode() {
-      const modes = ['list', 'single', 'random']
-      const currentModeIndex = modes.indexOf(this.playMode)
-      const nextModeIndex = (currentModeIndex + 1) % modes.length
-      this.playMode = modes[nextModeIndex]
-      
-      // 保存播放模式到本地
-      uni.setStorageSync('playMode', this.playMode)
-      
-      // 显示提示
-      const modeNames = {
-        'list': '列表循环',
-        'single': '单曲循环',
-        'random': '随机播放'
-      }
-      
-      uni.showToast({
-        title: modeNames[this.playMode],
-        icon: 'none',
-        duration: 1500
-      })
-      
-      console.log('切换播放模式:', this.playMode)
-    },
+
 
     // 加载播放列表
     async loadPlaylist() {
@@ -830,26 +779,30 @@ export default {
         artist: track.artist,
         coverUrl: track.coverUrl,
         audioUrl: track.audioUrl,
-        
+
       }
        console.log(track)
       // 设置新的音频源并播放
       if (track.audioUrl) {
-        // 按照文档要求的顺序设置属性
-        this.audioContext.title = track.name || '冥想音频' // 必填
-        this.audioContext.epname = '冥想空间' // 专辑名
+        // 重要：根据文档，必须先设置 title，再设置 src
+        // title 必须在设置 src 之前设置，否则会显示"未知音频"
+        this.audioContext.title = track.name || '冥想音频' // 必填，必须先设置
+
+        // 设置其他可选属性
+        this.audioContext.epname = track.name || '冥想音频' // 专辑名
         this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
         this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
-        
-        // 最后设置 src
+
+        // 最后设置 src，这会触发音频加载
+        // 注意：src 必须最后设置
         this.audioContext.src = track.audioUrl
-        
+
         // 保存当前播放的音轨ID
         uni.setStorageSync('currentTrackId', track.id)
-        
+
         this.currentTime = 0
         this.progress = 0
-        
+
         // 延迟一下再播放，确保音频加载
         setTimeout(() => {
           this.audioContext.play()
@@ -1008,8 +961,86 @@ export default {
     },
 
     share() {
-      // 分享功能
+      // 显示定时器面板
       this.showbad = true;
+    },
+
+    // 开始睡眠定时器
+    startSleepTimer(minutes) {
+      // 清除之前的定时器
+      this.clearSleepTimer()
+
+      // 设置定时器时间（转换为秒）
+      this.sleepTimerRemaining = minutes * 60
+
+      // 显示提示
+      uni.showToast({
+        title: `将在${minutes}分钟后停止播放`,
+        icon: 'none',
+        duration: 2000
+      })
+
+      // 设置主定时器
+      this.sleepTimer = setTimeout(() => {
+        this.stopPlaybackByTimer()
+      }, minutes * 60 * 1000)
+
+      // 设置倒计时更新（每秒更新一次）
+      this.sleepTimerInterval = setInterval(() => {
+        this.sleepTimerRemaining--
+
+        // 最后10秒提醒
+        if (this.sleepTimerRemaining === 10) {
+          uni.showToast({
+            title: '10秒后将停止播放',
+            icon: 'none'
+          })
+        }
+
+        if (this.sleepTimerRemaining <= 0) {
+          this.clearSleepTimer()
+        }
+      }, 1000)
+
+      // 关闭定时器面板
+      this.showbad = false
+    },
+
+    // 清除睡眠定时器
+    clearSleepTimer() {
+      if (this.sleepTimer) {
+        clearTimeout(this.sleepTimer)
+        this.sleepTimer = null
+      }
+
+      if (this.sleepTimerInterval) {
+        clearInterval(this.sleepTimerInterval)
+        this.sleepTimerInterval = null
+      }
+
+      this.sleepTimerRemaining = 0
+      this.selectedTime = 5
+      this.customTime = 0
+    },
+
+    // 定时器触发停止播放
+    stopPlaybackByTimer() {
+      console.log('定时器触发，停止播放')
+
+      // 停止音频播放
+      if (this.audioContext && this.playing) {
+        this.audioContext.pause()
+      }
+
+      // 清除定时器
+      this.clearSleepTimer()
+
+      // 显示提示
+      uni.showToast({
+        title: '定时停止播放',
+        icon: 'none',
+        duration: 2000
+      })
     },
 
     formatTime(seconds) {
@@ -1040,6 +1071,8 @@ export default {
       this.selectedTime = time;
       this.customTime = 0; // 重置自定义时间
       console.log('选择了', time, '分钟');
+      // 立即启动定时器
+      this.startSleepTimer(time);
     },
 
     // 打开自定义模态框
@@ -1057,7 +1090,10 @@ export default {
     // 确认自定义时间
     confirmCustom() {
       if (!this.customInput || this.customInput <= 0) {
-        alert('请输入有效的时间');
+        uni.showToast({
+          title: '请输入有效的时间',
+          icon: 'none'
+        });
         return;
       }
 
@@ -1065,10 +1101,20 @@ export default {
       this.selectedTime = this.customTime;
       this.showCustomModal = false;
       console.log('自定义了', this.customTime, '分钟');
+      // 启动定时器
+      this.startSleepTimer(this.customTime);
     },
 
     // 关闭定时器
     closeTimer() {
+      // 如果有正在运行的定时器，清除它
+      if (this.sleepTimer || this.sleepTimerRemaining > 0) {
+        this.clearSleepTimer()
+        uni.showToast({
+          title: '已取消定时',
+          icon: 'none'
+        })
+      }
       this.showbad = false;
     }
 
@@ -1103,11 +1149,15 @@ export default {
   right: 0;
   bottom: 0;
   z-index: -1;
+  overflow: hidden;
 
   .bg-image {
-    width: 100%;
-    height: 100%;
-    filter: blur(50rpx);
+    width: 110%;
+    height: 110%;
+    margin: -5%;
+    filter: blur(80rpx) brightness(0.8);
+    transform: scale(1.1);
+    animation: slowZoom 20s ease-in-out infinite alternate;
   }
 
   .bg-overlay {
@@ -1116,7 +1166,46 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+  }
+
+  .bg-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(124, 58, 237, 0.1) 0%,
+      rgba(168, 85, 247, 0.05) 30%,
+      transparent 70%
+    );
+    animation: rotate 30s linear infinite;
+    opacity: 0.6;
+  }
+}
+
+@keyframes slowZoom {
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -1129,13 +1218,77 @@ export default {
   width: 500rpx;
   height: 500rpx;
   margin: 0 auto 60rpx;
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+  perspective: 1000rpx;
 
-  .cover-image {
+  .cover-wrapper {
     width: 100%;
     height: 100%;
+    border-radius: 30rpx;
+    overflow: hidden;
+    box-shadow: 0 30rpx 80rpx rgba(0, 0, 0, 0.4);
+    position: relative;
+    transition: transform 0.3s ease;
+
+    &.playing {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .playing-indicator {
+      position: absolute;
+      bottom: 30rpx;
+      right: 30rpx;
+      display: flex;
+      align-items: flex-end;
+      gap: 6rpx;
+
+      .wave {
+        width: 6rpx;
+        background: linear-gradient(to top, #7C3AED, #A855F7);
+        border-radius: 3rpx;
+        animation: wave 1.2s ease-in-out infinite;
+
+        &.wave1 {
+          height: 20rpx;
+          animation-delay: 0s;
+        }
+
+        &.wave2 {
+          height: 30rpx;
+          animation-delay: 0.2s;
+        }
+
+        &.wave3 {
+          height: 25rpx;
+          animation-delay: 0.4s;
+        }
+      }
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotateY(0);
+  }
+  50% {
+    transform: translateY(-20rpx) rotateY(5deg);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
   }
 }
 
@@ -1671,5 +1824,19 @@ export default {
 .w64 {
   width: 64rpx;
   height: 64rpx;
+}
+.timer-countdown {
+  position: absolute;
+  bottom: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20rpx;
+  color: #7C3AED;
+  font-weight: 600;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 2rpx 8rpx;
+  border-radius: 10rpx;
+  min-width: 50rpx;
+  text-align: center;
 }
 </style>
