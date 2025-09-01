@@ -1,3 +1,8 @@
+// 引入其他内容类型
+import { SeriesVO } from '../series/types';
+import { ArticleVO } from '../article/types';
+import { TrackVO } from '../track/types';
+
 export interface RecommendItemVO {
   /**
    * 主键
@@ -39,6 +44,20 @@ export interface RecommendItemVO {
    */
   status: string;
 
+  /**
+   * 系列内容详情（当contentType为series时）
+   */
+  seriesContent?: SeriesVO;
+
+  /**
+   * 文章内容详情（当contentType为article时）
+   */
+  articleContent?: ArticleVO;
+
+  /**
+   * 音频内容详情（当contentType为track时）
+   */
+  trackContent?: TrackVO;
 }
 
 export interface RecommendItemForm extends BaseEntity {

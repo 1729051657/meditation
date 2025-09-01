@@ -2,6 +2,7 @@ package org.dromara.meditation.domain.vo;
 
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.dromara.meditation.domain.RecommendItem;
 import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
 import cn.idev.excel.annotation.ExcelProperty;
@@ -81,5 +82,23 @@ public class RecommendItemVo implements Serializable {
     @ExcelProperty(value = "状态", converter = ExcelDictConvert.class)
     @ExcelDictFormat(readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /**
+     * 系列内容详情（当contentType为series时）
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private SeriesVo seriesContent;
+
+    /**
+     * 文章内容详情（当contentType为article时）
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ArticleVo articleContent;
+
+    /**
+     * 音频内容详情（当contentType为track时）
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private TrackVo trackContent;
 
 }

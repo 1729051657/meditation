@@ -106,9 +106,13 @@
                     <el-icon size="12"><VideoPlay /></el-icon>
                     {{ getContentDetail(scope.row).episodeCount }} 小节
                   </span>
-                  <span class="content-extra" v-if="getContentDetail(scope.row).duration">
+                  <span class="content-extra" v-if="getContentDetail(scope.row).recommendDuration">
                     <el-icon size="12"><Clock /></el-icon>
-                    {{ formatDuration(getContentDetail(scope.row).duration) }}
+                    {{ formatDuration(getContentDetail(scope.row).recommendDuration) }}
+                  </span>
+                  <span class="content-extra" v-if="getContentDetail(scope.row).authorName">
+                    <el-icon size="12"><User /></el-icon>
+                    {{ getContentDetail(scope.row).authorName }}
                   </span>
                 </template>
               </div>
@@ -315,8 +319,6 @@ const contentOptions = ref<any[]>([]);
 const queryContentOptions = ref<any[]>([]); // 查询用的内容选项
 const selectedContent = ref<any>(null);
 const contentSearch = ref('');
-// 内容缓存，用于存储已加载的内容详情
-const contentCache = ref<Map<string, any>>(new Map());
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -391,10 +393,6 @@ const getList = async () => {
   const res = await listRecommendItem(queryParams.value);
   recommendItemList.value = res.rows;
   total.value = res.total;
-  
-  // 批量加载内容详情
-  await loadContentDetails(res.rows);
-  
   loading.value = false;
 }
 
@@ -414,84 +412,19 @@ const getSlotName = (slotId: string | number) => {
   return slot ? slot.name : slotId;
 }
 
-/** 批量加载内容详情 */
-const loadContentDetails = async (items: RecommendItemVO[]) => {
-  // 按内容类型分组
-  const seriesIds: (string | number)[] = [];
-  const articleIds: (string | number)[] = [];
-  const trackIds: (string | number)[] = [];
-  
-  items.forEach(item => {
-    const cacheKey = `${item.contentType}_${item.contentId}`;
-    // 如果缓存中没有该内容，则需要加载
-    if (!contentCache.value.has(cacheKey)) {
-      switch (item.contentType) {
-        case 'series':
-          seriesIds.push(item.contentId);
-          break;
-        case 'article':
-          articleIds.push(item.contentId);
-          break;
-        case 'track':
-          trackIds.push(item.contentId);
-          break;
-      }
-    }
-  });
-  
-  // 批量加载系列内容
-  if (seriesIds.length > 0) {
-    try {
-      const res = await listSeries({ 
-        ids: seriesIds.join(','),
-        pageNum: 1,
-        pageSize: 100
-      });
-      (res.rows || res.data || []).forEach(series => {
-        contentCache.value.set(`series_${series.id}`, series);
-      });
-    } catch (error) {
-      console.error('加载系列内容失败:', error);
-    }
-  }
-  
-  // 批量加载文章内容
-  if (articleIds.length > 0) {
-    try {
-      const res = await listArticle({ 
-        ids: articleIds.join(','),
-        pageNum: 1,
-        pageSize: 100
-      });
-      (res.rows || res.data || []).forEach(article => {
-        contentCache.value.set(`article_${article.id}`, article);
-      });
-    } catch (error) {
-      console.error('加载文章内容失败:', error);
-    }
-  }
-  
-  // 批量加载音频内容
-  if (trackIds.length > 0) {
-    try {
-      const res = await listTrack({ 
-        ids: trackIds.join(','),
-        pageNum: 1,
-        pageSize: 100
-      });
-      (res.rows || res.data || []).forEach(track => {
-        contentCache.value.set(`track_${track.id}`, track);
-      });
-    } catch (error) {
-      console.error('加载音频内容失败:', error);
-    }
-  }
-}
-
-/** 获取内容详情 */
+/** 获取内容详情 - 从后端返回的嵌套数据中获取 */
 const getContentDetail = (row: RecommendItemVO) => {
-  const cacheKey = `${row.contentType}_${row.contentId}`;
-  return contentCache.value.get(cacheKey);
+  // 根据内容类型返回对应的内容对象
+  switch (row.contentType) {
+    case 'series':
+      return row.seriesContent;
+    case 'article':
+      return row.articleContent;
+    case 'track':
+      return row.trackContent;
+    default:
+      return null;
+  }
 }
 
 /** 获取内容标题 */
