@@ -2,7 +2,7 @@
     <!-- 头部 -->
     <view class="home-page">
         <!-- 导航栏 -->
-        <tn-nav-bar :alpha="true">
+        <tn-nav-bar :alpha="true" backgroundColor="#D8E2F0">
         </tn-nav-bar>
         <view class="knowledge-section">
             <view class="knowledge-list">

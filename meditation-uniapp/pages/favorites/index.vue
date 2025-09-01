@@ -1,17 +1,5 @@
 <template>
   <view class="favorites-page">
-    <!-- 自定义导航栏 -->
-    <tn-nav-bar
-      :isBack="true"
-      :bottomShadow="false"
-      backgroundColor="#7C3AED"
-      :fixed="true"
-    >
-      <view class="nav-title">
-        <text class="nav-title-text">我的收藏</text>
-      </view>
-    </tn-nav-bar>
-    
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 正在播放的音频信息条 -->
@@ -407,24 +395,11 @@ export default {
 <style lang="scss" scoped>
 .favorites-page {
   min-height: 100vh;
-  background: #F5F7FA;
-}
-
-.nav-title {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .nav-title-text {
-    font-size: 32rpx;
-    color: #fff;
-    font-weight: 500;
-  }
+  background: #D8E2F0;
 }
 
 .content-area {
-  padding-top: 120rpx;
+  padding-top: 20rpx;
   padding-bottom: 40rpx;
 }
 

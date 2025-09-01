@@ -32,6 +32,8 @@
 </template>
 
 <script>
+import { mapState, mapGetters } from 'vuex'
+
 export default {
   name: 'MiniPlayer',
   
@@ -40,20 +42,16 @@ export default {
       audioContext: null,
       isPlaying: false,
       currentTrack: null,
-      sleepTimerRemaining: 0,
-      timerInterval: null,
       statusCheckInterval: null
     }
   },
   
   computed: {
-    // 格式化定时器剩余时间
-    formatTimerRemaining() {
-      if (!this.sleepTimerRemaining) return ''
-      const minutes = Math.floor(this.sleepTimerRemaining / 60)
-      const seconds = this.sleepTimerRemaining % 60
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`
-    },
+    ...mapState('timer', ['isTimerActive']),
+    ...mapGetters('timer', {
+      sleepTimerRemaining: 'remainingSeconds',
+      formatTimerRemaining: 'remainingTime'
+    }),
     
     // 是否显示播放器
     showPlayer() {
@@ -69,7 +67,9 @@ export default {
   mounted() {
     console.log('MiniPlayer: 组件挂载')
     this.initAudioContext()
-    this.checkSleepTimer()
+    
+    // 恢复定时器状态
+    this.$store.dispatch('timer/restoreTimer')
     
     // 定时检查播放状态，以防错过状态变化
     // 每500ms检查一次，确保及时响应
@@ -79,9 +79,6 @@ export default {
   },
   
   beforeDestroy() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval)
-    }
     if (this.statusCheckInterval) {
       clearInterval(this.statusCheckInterval)
     }
@@ -230,40 +227,8 @@ export default {
       }
     },
     
-    // 检查睡眠定时器
-    checkSleepTimer() {
-      // 从本地存储获取定时器信息
-      const timerEndTime = uni.getStorageSync('sleepTimerEndTime')
-      if (timerEndTime) {
-        const now = Date.now()
-        const remaining = Math.floor((timerEndTime - now) / 1000)
-        
-        if (remaining > 0) {
-          this.sleepTimerRemaining = remaining
-          this.startTimerCountdown()
-        } else {
-          // 定时器已过期，清除存储
-          uni.removeStorageSync('sleepTimerEndTime')
-        }
-      }
-    },
-    
-    // 开始定时器倒计时
-    startTimerCountdown() {
-      if (this.timerInterval) {
-        clearInterval(this.timerInterval)
-      }
-      
-      this.timerInterval = setInterval(() => {
-        this.sleepTimerRemaining--
-        
-        if (this.sleepTimerRemaining <= 0) {
-          clearInterval(this.timerInterval)
-          this.timerInterval = null
-          uni.removeStorageSync('sleepTimerEndTime')
-        }
-      }, 1000)
-    },
+    // 检查睡眠定时器（不再需要，由 Vuex 管理）
+    // checkSleepTimer 方法已移除
     
     // 切换播放/暂停
     togglePlay() {

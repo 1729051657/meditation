@@ -5,27 +5,31 @@ const state = {
   sleepTimerEnd: 0,           // 定时器结束时间戳
   sleepTimerDuration: 0,      // 定时器总时长（分钟）
   isTimerActive: false,       // 定时器是否激活
+  remainingSeconds: 0,        // 剩余时间（秒） - 用于响应式更新
   
   // 背景音频管理器
   backgroundAudioManager: null,
 }
 
 const getters = {
-  // 获取剩余时间（秒）
+  // 获取剩余时间（秒） - 直接从state获取，保证响应性
   remainingSeconds: (state) => {
-    if (!state.isTimerActive || !state.sleepTimerEnd) return 0
-    const now = Date.now()
-    const remaining = Math.max(0, Math.floor((state.sleepTimerEnd - now) / 1000))
-    return remaining
+    return state.remainingSeconds || 0
   },
   
   // 获取剩余时间（格式化）
-  remainingTime: (state, getters) => {
-    const seconds = getters.remainingSeconds
+  remainingTime: (state) => {
+    const seconds = state.remainingSeconds
     if (seconds <= 0) return '00:00'
-    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
-    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    } else {
+      return `${minutes}:${String(secs).padStart(2, '0')}`
+    }
   }
 }
 
@@ -52,11 +56,17 @@ const mutations = {
     state.sleepTimerEnd = 0
     state.sleepTimerDuration = 0
     state.isTimerActive = false
+    state.remainingSeconds = 0
   },
   
   // 更新定时器状态
   UPDATE_TIMER_STATUS(state, isActive) {
     state.isTimerActive = isActive
+  },
+  
+  // 更新剩余秒数
+  UPDATE_REMAINING_SECONDS(state, seconds) {
+    state.remainingSeconds = seconds
   }
 }
 
@@ -76,14 +86,31 @@ const actions = {
     
     // 计算结束时间
     const endTime = Date.now() + minutes * 60 * 1000
+    const initialSeconds = minutes * 60
     
-    // 创建定时器
+    // 设置初始剩余秒数
+    commit('UPDATE_REMAINING_SECONDS', initialSeconds)
+    
+    // 创建定时器，每秒更新一次
     const timer = setInterval(() => {
       const now = Date.now()
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000))
+      
+      // 更新剩余秒数
+      commit('UPDATE_REMAINING_SECONDS', remaining)
       
       // 检查是否到时间
-      if (now >= endTime) {
+      if (remaining <= 0) {
         dispatch('onTimerEnd')
+      }
+      
+      // 最后10秒提醒
+      if (remaining === 10) {
+        uni.showToast({
+          title: '10秒后将自动关闭',
+          icon: 'none',
+          duration: 2000
+        })
       }
     }, 1000) // 每秒检查一次
     
@@ -153,12 +180,30 @@ const actions = {
       
       // 检查定时器是否还有效
       if (now < endTime) {
+        const remainingSeconds = Math.floor((endTime - now) / 1000)
+        
+        // 设置剩余秒数
+        commit('UPDATE_REMAINING_SECONDS', remainingSeconds)
+        
         // 重新创建定时器
         const timer = setInterval(() => {
           const currentTime = Date.now()
+          const remaining = Math.max(0, Math.floor((endTime - currentTime) / 1000))
           
-          if (currentTime >= endTime) {
+          // 更新剩余秒数
+          commit('UPDATE_REMAINING_SECONDS', remaining)
+          
+          if (remaining <= 0) {
             dispatch('onTimerEnd')
+          }
+          
+          // 最后10秒提醒
+          if (remaining === 10) {
+            uni.showToast({
+              title: '10秒后将自动关闭',
+              icon: 'none',
+              duration: 2000
+            })
           }
         }, 1000)
         

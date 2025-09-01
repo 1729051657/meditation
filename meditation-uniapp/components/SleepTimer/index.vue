@@ -68,6 +68,8 @@
 </template>
 
 <script>
+import { mapState, mapGetters, mapActions } from 'vuex'
+
 export default {
   name: 'SleepTimer',
   
@@ -85,8 +87,6 @@ export default {
       showCustomModal: false,
       selectedTime: 0,
       customMinutes: '',
-      remainingTime: 0, // 剩余时间（秒）
-      timer: null,
       timerOptions: [
         { label: '5分钟', value: 5 },
         { label: '10分钟', value: 10 },
@@ -101,28 +101,31 @@ export default {
   },
   
   computed: {
+    ...mapState('timer', ['isTimerActive']),
+    ...mapGetters('timer', ['remainingSeconds', 'remainingTime']),
+    
+    // 用于组件内部显示的剩余时间
+    remainingTime() {
+      return this.remainingSeconds
+    },
+    
     formatRemainingTime() {
-      if (this.remainingTime <= 0) return ''
-      
-      const hours = Math.floor(this.remainingTime / 3600)
-      const minutes = Math.floor((this.remainingTime % 3600) / 60)
-      const seconds = this.remainingTime % 60
-      
-      if (hours > 0) {
-        return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-      } else {
-        return `${minutes}:${String(seconds).padStart(2, '0')}`
-      }
+      return this.remainingTime
     }
+  },
+  
+  mounted() {
+    // 组件挂载时恢复定时器
+    this.$store.dispatch('timer/restoreTimer')
   },
   
   beforeDestroy() {
-    if (this.timer) {
-      clearInterval(this.timer)
-    }
+    // 组件销毁时不需要清除定时器，因为定时器由 Vuex 管理
   },
   
   methods: {
+    ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
+    
     showSleepTimerModal() {
       this.showModal = true
     },
@@ -143,11 +146,8 @@ export default {
     },
     
     cancelTimer() {
-      if (this.timer) {
-        clearInterval(this.timer)
-        this.timer = null
-      }
-      this.remainingTime = 0
+      // 使用 Vuex action 来取消定时器
+      this.stopSleepTimer()
       this.selectedTime = 0
       
       uni.showToast({
@@ -186,57 +186,11 @@ export default {
     },
     
     startTimer(minutes) {
-      // 清除之前的定时器
-      if (this.timer) {
-        clearInterval(this.timer)
-      }
-      
-      this.remainingTime = minutes * 60
-      
-      uni.showToast({
-        title: `将在${minutes}分钟后关闭`,
-        icon: 'none'
-      })
-      
-      // 每秒更新剩余时间
-      this.timer = setInterval(() => {
-        this.remainingTime--
-        
-        if (this.remainingTime <= 0) {
-          this.stopAudioAndTimer()
-        }
-        
-        // 最后10秒提醒
-        if (this.remainingTime === 10) {
-          uni.showToast({
-            title: '10秒后将自动关闭',
-            icon: 'none'
-          })
-        }
-      }, 1000)
+      // 使用 Vuex action 来启动定时器
+      this.startSleepTimer(minutes)
       
       // 发送事件通知父组件
       this.$emit('timer-start', minutes)
-    },
-    
-    stopAudioAndTimer() {
-      clearInterval(this.timer)
-      this.timer = null
-      this.remainingTime = 0
-      this.selectedTime = 0
-      
-      // 停止音频播放
-      if (this.audioManager) {
-        this.audioManager.stop()
-      }
-      
-      uni.showToast({
-        title: '定时关闭',
-        icon: 'none'
-      })
-      
-      // 发送事件通知父组件
-      this.$emit('timer-end')
     }
   }
 }

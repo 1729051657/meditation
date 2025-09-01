@@ -1,17 +1,5 @@
 <template>
   <view class="history-page">
-    <!-- 自定义导航栏 -->
-    <tn-nav-bar
-      :isBack="true"
-      :bottomShadow="false"
-      backgroundColor="#7C3AED"
-      :fixed="true"
-    >
-      <view class="nav-title">
-        <text class="nav-title-text">最近播放</text>
-      </view>
-    </tn-nav-bar>
-    
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 历史记录列表 -->
@@ -35,10 +23,6 @@
                 </view>
                 <!-- 播放时间 -->
                 <view class="time-badge">{{ formatTime(item.lastPlayTime) }}</view>
-                <!-- 更多选项 -->
-                <view class="more-btn" @click.stop="showMoreOptions(item)">
-                  <text class="tn-icon-more"></text>
-                </view>
               </view>
               <view class="card-content">
                 <text class="card-title">{{ item.title }}</text>
@@ -211,10 +195,26 @@ export default {
       }
     },
     
+    // 将日期字符串转换为 iOS 兼容格式
+    parseDate(dateString) {
+      if (!dateString) return null
+      
+      // 如果已经是 Date 对象，直接返回
+      if (dateString instanceof Date) {
+        return dateString
+      }
+      
+      // 将 "2025-09-01 12:41:06" 格式转换为 "2025/09/01 12:41:06"
+      // iOS 支持这种格式
+      const iOSCompatibleString = dateString.replace(/-/g, '/')
+      return new Date(iOSCompatibleString)
+    },
+    
     // 格式化时间
     formatTime(timestamp) {
       if (!timestamp) return '--:--'
-      const date = new Date(timestamp)
+      const date = this.parseDate(timestamp)
+      if (!date || isNaN(date.getTime())) return '--:--'
       const hours = date.getHours().toString().padStart(2, '0')
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${hours}:${minutes}`
@@ -225,7 +225,8 @@ export default {
       if (!timestamp) return '未知日期'
       
       try {
-        const date = new Date(timestamp)
+        const date = this.parseDate(timestamp)
+        if (!date || isNaN(date.getTime())) return '未知日期'
         const today = new Date()
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
@@ -277,51 +278,6 @@ export default {
       
       uni.navigateTo({
         url: `/pages/player/index?${queryString}`
-      })
-    },
-    
-    // 显示更多选项
-    showMoreOptions(item) {
-      const options = ['继续播放', '从头播放', '删除记录']
-      if (item.seriesId) {
-        options.push('查看系列')
-      }
-      
-      uni.showActionSheet({
-        itemList: options,
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 继续播放
-            this.playAudio(item)
-          } else if (res.tapIndex === 1) {
-            // 从头播放
-            const params = {
-              id: item.trackId,
-              source: 'history'
-            }
-            
-            // 如果有系列ID，也传递过去
-            if (item.seriesId) {
-              params.seriesId = item.seriesId
-            }
-            
-            const queryString = Object.keys(params)
-              .map(key => `${key}=${params[key]}`)
-              .join('&')
-            
-            uni.navigateTo({
-              url: `/pages/player/index?${queryString}`
-            })
-          } else if (res.tapIndex === 2) {
-            // 删除记录
-            this.deleteHistory(item)
-          } else if (res.tapIndex === 3 && item.seriesId) {
-            // 查看系列
-            uni.navigateTo({
-              url: `/pages/series/detail?id=${item.seriesId}`
-            })
-          }
-        }
       })
     },
     
@@ -402,24 +358,11 @@ export default {
 <style lang="scss" scoped>
 .history-page {
   min-height: 100vh;
-  background: #F5F7FA;
-}
-
-.nav-title {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .nav-title-text {
-    font-size: 32rpx;
-    color: #fff;
-    font-weight: 500;
-  }
+  background: #D8E2F0;
 }
 
 .content-area {
-  padding-top: 120rpx;
+  padding-top: 20rpx;
   padding-bottom: 120rpx;
 }
 
@@ -496,30 +439,6 @@ export default {
             border-radius: 20rpx;
             font-size: 24rpx;
             backdrop-filter: blur(10rpx);
-          }
-          
-          // 更多按钮
-          .more-btn {
-            position: absolute;
-            top: 16rpx;
-            right: 16rpx;
-            width: 60rpx;
-            height: 60rpx;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10rpx);
-            
-            text {
-              font-size: 32rpx;
-              color: #666666;
-            }
-            
-            &:active {
-              transform: scale(0.9);
-            }
           }
         }
         

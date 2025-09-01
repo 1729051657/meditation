@@ -344,6 +344,27 @@ export default {
 @import './tuniao-ui/index.scss';
 @import './tuniao-ui/iconfont.css';
 
+/* 全局背景色设置 */
+page {
+	background-color: #D8E2F0;
+	min-height: 100vh;
+}
+
+/* 全局导航栏背景色 */
+.uni-navbar,
+.tn-nav-bar,
+.nav-bar,
+.topNav {
+	background-color: #D8E2F0 !important;
+}
+
+/* 确保所有页面容器使用全局背景色 */
+.container,
+.page-container,
+.content {
+	background-color: #D8E2F0;
+}
+
 .music {
 	width: 702rpx;
 	height: 96rpx;
