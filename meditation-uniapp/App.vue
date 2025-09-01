@@ -29,8 +29,8 @@ export default {
 	onShow: function () {
 		console.log('App Show')
 		
-		// 应用显示时恢复定时器
-		this.$store.dispatch('timer/restoreTimer')
+		// onShow不需要重复恢复定时器，已经在onLaunch中处理
+		// this.$store.dispatch('timer/restoreTimer')
 	},
 	onHide: function () {
 		console.log('App Hide')
@@ -330,7 +330,7 @@ export default {
 			this.$store.dispatch('playlist/initAudioManager')
 			this.$store.dispatch('playlist/initPlaylist')
 			
-			// 恢复定时器（如果有）
+			// 恢复定时器（如果有）- 只在这里调用一次
 			this.$store.dispatch('timer/restoreTimer')
 			
 			console.log('全局音频管理器初始化完成')

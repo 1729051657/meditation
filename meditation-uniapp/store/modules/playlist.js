@@ -47,11 +47,9 @@ const getters = {
         nextIdx = (nextIdx + 1) % state.playlist.length
       }
       return nextIdx
-    } else if (state.playMode === 'loop') {
-      // 单曲循环
-      return state.currentIndex
     } else {
-      // 顺序播放
+      // 顺序播放和单曲循环都返回下一首的索引
+      // 单曲循环的处理在onEnded事件中处理
       return (state.currentIndex + 1) % state.playlist.length
     }
   },
@@ -67,11 +65,9 @@ const getters = {
         prevIdx = (prevIdx - 1 + state.playlist.length) % state.playlist.length
       }
       return prevIdx
-    } else if (state.playMode === 'loop') {
-      // 单曲循环
-      return state.currentIndex
     } else {
-      // 顺序播放
+      // 顺序播放和单曲循环都返回上一首的索引
+      // 单曲循环的处理在手动切换时处理
       return (state.currentIndex - 1 + state.playlist.length) % state.playlist.length
     }
   }
@@ -191,10 +187,21 @@ const actions = {
       commit('SET_PLAYING', false)
     })
     
-    // 播放结束事件 - 自动播放下一首
+    // 播放结束事件 - 根据播放模式处理
     manager.onEnded(() => {
-      console.log('音频播放结束，准备播放下一首')
-      dispatch('playNext')
+      console.log('音频播放结束')
+      
+      // 如果是单曲循环模式，重新播放当前曲目
+      if (state.playMode === 'loop') {
+        console.log('单曲循环模式，重新播放当前曲目')
+        // 重新设置src以重新播放
+        const currentSrc = manager.src
+        manager.src = currentSrc
+      } else {
+        // 其他模式，播放下一首
+        console.log('准备播放下一首')
+        dispatch('playNext')
+      }
     })
     
     // 错误事件
@@ -282,7 +289,15 @@ const actions = {
       return
     }
     
-    const nextIdx = getters.nextIndex
+    // 单曲循环模式下，手动点击下一首时也应该切换到下一首
+    let nextIdx
+    if (state.playMode === 'loop') {
+      // 单曲循环模式下，手动切换到下一首
+      nextIdx = (state.currentIndex + 1) % state.playlist.length
+    } else {
+      nextIdx = getters.nextIndex
+    }
+    
     if (nextIdx === -1) {
       console.log('没有下一首')
       return
@@ -302,7 +317,15 @@ const actions = {
       return
     }
     
-    const prevIdx = getters.previousIndex
+    // 单曲循环模式下，手动点击上一首时也应该切换到上一首
+    let prevIdx
+    if (state.playMode === 'loop') {
+      // 单曲循环模式下，手动切换到上一首
+      prevIdx = (state.currentIndex - 1 + state.playlist.length) % state.playlist.length
+    } else {
+      prevIdx = getters.previousIndex
+    }
+    
     if (prevIdx === -1) {
       console.log('没有上一首')
       return

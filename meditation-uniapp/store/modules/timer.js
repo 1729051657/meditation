@@ -148,7 +148,16 @@ const actions = {
   
   // 定时器结束处理
   onTimerEnd({ commit, state, dispatch }) {
+    // 防止重复调用
+    if (!state.isTimerActive) {
+      console.log('定时器已停止，跳过处理')
+      return
+    }
+    
     console.log('定时器时间到，停止播放')
+    
+    // 先清除定时器，防止重复触发
+    dispatch('stopSleepTimer')
     
     // 停止音频播放
     if (state.backgroundAudioManager) {
@@ -159,9 +168,6 @@ const actions = {
       }
     }
     
-    // 清除定时器
-    dispatch('stopSleepTimer')
-    
     // 显示提示
     uni.showToast({
       title: '定时停止播放',
@@ -171,7 +177,13 @@ const actions = {
   },
   
   // 恢复定时器（从本地存储）
-  restoreTimer({ commit, dispatch }) {
+  restoreTimer({ commit, dispatch, state }) {
+    // 如果定时器已经激活，不重复恢复
+    if (state.isTimerActive) {
+      console.log('定时器已激活，跳过恢复')
+      return
+    }
+    
     const endTime = uni.getStorageSync('sleepTimerEnd')
     const duration = uni.getStorageSync('sleepTimerDuration')
     
@@ -223,8 +235,11 @@ const actions = {
           duration: 2000
         })
       } else {
-        // 定时器已过期，清除存储
-        dispatch('stopSleepTimer')
+        // 定时器已过期，只清除存储，不调用onTimerEnd避免重复触发
+        console.log('定时器已过期，清除存储')
+        commit('CLEAR_TIMER')
+        uni.removeStorageSync('sleepTimerEnd')
+        uni.removeStorageSync('sleepTimerDuration')
       }
     }
   },
