@@ -100,7 +100,6 @@
                 <el-tag size="small" type="info" class="content-type-tag">
                   {{ getContentTypeLabel(scope.row.contentType) }}
                 </el-tag>
-                <span class="content-id">ID: {{ scope.row.contentId }}</span>
                 <template v-if="getContentDetail(scope.row)">
                   <span class="content-extra" v-if="getContentDetail(scope.row).episodeCount">
                     <el-icon size="12"><VideoPlay /></el-icon>
@@ -222,7 +221,6 @@
               <el-tag :type="getContentTypeTag(form.contentType)" size="small" class="preview-type-tag">
                 {{ getContentTypeLabel(form.contentType) }}
               </el-tag>
-              <span class="preview-id">ID: {{ selectedContent.id }}</span>
             </div>
             <div class="preview-content">
               <div class="preview-title">{{ selectedContent.title || selectedContent.name }}</div>
@@ -431,9 +429,9 @@ const getContentDetail = (row: RecommendItemVO) => {
 const getContentTitle = (row: RecommendItemVO) => {
   const content = getContentDetail(row);
   if (content) {
-    return content.title || content.name || `ID: ${row.contentId}`;
+    return content.title || content.name || '未知内容';
   }
-  return `ID: ${row.contentId}`;
+  return '未知内容';
 }
 
 /** 获取内容副标题 */
@@ -831,12 +829,6 @@ onMounted(() => {
       font-size: 11px;
     }
     
-    .content-id {
-      font-size: 11px;
-      color: #c0c4cc;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    }
-    
     .content-extra {
       display: inline-flex;
       align-items: center;
@@ -920,12 +912,6 @@ onMounted(() => {
     .preview-type-tag {
       font-weight: 500;
       border-radius: 12px;
-    }
-    
-    .preview-id {
-      font-size: 12px;
-      color: #909399;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     }
   }
   

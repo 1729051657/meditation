@@ -377,11 +377,11 @@ const handleUpdate = async (row?: TrackVO) => {
   try {
     const res = await getTrack(_id);
     if (res.data) {
-      // 确保所有字段都正确赋值，特别是封面和音频文件
+      // 直接使用后端返回的数据，不做默认值处理
       form.value = {
         ...res.data,
-        // 确保状态字段有值，如果没有则默认为启用
-        status: res.data.status || '0',
+        // 保持status字段的原始值，不设置默认值
+        status: res.data.status,
         // 确保封面和音频字段有值，避免undefined导致的组件错误
         cover: res.data.cover || undefined,
         audio: res.data.audio || undefined
