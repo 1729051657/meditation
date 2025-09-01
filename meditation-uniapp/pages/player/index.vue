@@ -732,9 +732,9 @@ export default {
         }
         // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
         else {
-          params.orderByColumn = 'play_count'
-          params.isAsc = 'desc'
-          params.pageSize = 50  // 限制数量，获取热门推荐
+          params.orderByColumn = 'create_time'  // 使用创建时间排序
+          params.isAsc = 'desc'  // 最新的在前
+          params.pageSize = 50  // 限制数量，获取最新推荐
         }
 
         const res = await listTracks(params)
