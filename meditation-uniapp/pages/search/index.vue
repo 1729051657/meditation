@@ -176,8 +176,9 @@
 				})
 			},
 			goSeries(id) {
+				// 直接跳转到播放器，播放系列的第一个音频
 				uni.navigateTo({
-					url: `/pages/series/detail?id=${id}`
+					url: `/pages/player/index?seriesId=${id}&type=series`
 				})
 			},
 			goArticle(id) {

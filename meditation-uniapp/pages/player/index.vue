@@ -188,7 +188,7 @@
 <script>
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
-import { addPlayHistory, updatePlayHistory } from '@/api/play'
+import { addPlayHistory, updatePlayHistory, listPlayHistoryDetail } from '@/api/play'
 import { mapState, mapGetters, mapActions } from 'vuex'
 
 export default {
@@ -211,6 +211,8 @@ export default {
       playlist: [], // 播放列表，从API获取
       seriesId: null, // 系列ID
       categoryId: null, // 分类ID
+      playlistSource: 'default', // 播放列表来源: default/history/favorites/series
+      sourceList: [], // 来源列表数据（历史/收藏等）
       selectedTime: 5, // 默认选中5分钟
       customTime: 0,   // 自定义时间
       showCustomModal: false, // 是否显示自定义模态框
@@ -225,6 +227,8 @@ export default {
   },
 
   async onLoad(options) {
+    console.log('播放器页面 onLoad 参数:', options)
+    
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
       statusBarHeight,
@@ -238,9 +242,116 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
-    this.trackId = options.id
-    this.seriesId = options.seriesId || null
-    this.categoryId = options.categoryId || null
+    // 识别播放列表来源
+    if (options.source) {
+      this.playlistSource = options.source // history/favorites/series/default
+      console.log('播放列表来源:', this.playlistSource)
+    }
+    
+    // 如果传入了源数据列表（如历史记录或收藏列表）
+    if (options.list) {
+      try {
+        this.sourceList = JSON.parse(decodeURIComponent(options.list))
+        console.log('源列表数据:', this.sourceList.length, '条')
+      } catch (error) {
+        console.error('解析源列表数据失败:', error)
+      }
+    }
+    
+    // 检查参数：支持直接传入音轨ID或系列ID，或者使用列表
+    if (!options.id && !options.seriesId && (!this.sourceList || this.sourceList.length === 0)) {
+      console.error('播放器页面错误：未传入有效参数')
+      uni.showToast({
+        title: '参数错误：缺少必要参数',
+        icon: 'none',
+        duration: 2000
+      })
+      // 延迟返回上一页
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 2000)
+      return
+    }
+
+    // 处理不同的播放模式
+    if (this.playlistSource === 'history') {
+      // 从历史进入，需要加载历史列表
+      if (options.id) {
+        this.trackId = options.id
+      } else {
+        // 如果没有指定ID，稍后从历史列表中获取第一个
+        const historyList = await this.loadHistoryList()
+        if (historyList && historyList.length > 0) {
+          this.trackId = historyList[0].id || historyList[0].trackId
+          this.currentIndex = 0
+        } else {
+          throw new Error('暂无播放历史')
+        }
+      }
+    } else if (this.playlistSource === 'favorites') {
+      // 从收藏进入，需要加载收藏列表
+      if (options.id) {
+        this.trackId = options.id
+      } else {
+        // 如果没有指定ID，从收藏列表中获取第一个
+        const favoritesList = await this.loadFavoritesList()
+        if (favoritesList && favoritesList.length > 0) {
+          this.trackId = favoritesList[0].id || favoritesList[0].trackId
+          this.currentIndex = 0
+        } else {
+          throw new Error('暂无收藏')
+        }
+      }
+    } else if (options.type === 'series' && options.seriesId) {
+      // 系列播放模式
+      console.log('系列播放模式，系列ID:', options.seriesId)
+      this.seriesId = options.seriesId
+      this.playlistSource = 'series'
+      
+      // 先加载系列的音频列表
+      try {
+        const tracks = await this.loadSeriesTracks(options.seriesId)
+        if (tracks && tracks.length > 0) {
+          // 如果指定了音频ID
+          if (options.id) {
+            this.trackId = options.id
+            const index = tracks.findIndex(item => String(item.id) === String(options.id))
+            if (index !== -1) {
+              this.currentIndex = index
+            }
+          } else {
+            // 使用系列的第一个音频作为当前播放音频
+            this.trackId = tracks[0].id
+            this.currentIndex = 0
+          }
+          console.log('系列音频ID:', this.trackId, '索引:', this.currentIndex)
+        } else {
+          throw new Error('该系列暂无音频')
+        }
+      } catch (error) {
+        console.error('加载系列音频失败:', error)
+        uni.showToast({
+          title: error.message || '加载失败',
+          icon: 'none',
+          duration: 2000
+        })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 2000)
+        return
+      }
+    } else {
+      // 单个音频播放模式
+      this.trackId = options.id
+      this.seriesId = options.seriesId || null
+      this.categoryId = options.categoryId || null
+    }
+
+    console.log('音轨信息:', {
+      trackId: this.trackId,
+      seriesId: this.seriesId,
+      categoryId: this.categoryId
+    })
 
     // 重置收藏状态
     this.isFavorite = false
@@ -357,6 +468,99 @@ export default {
   methods: {
     ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
     ...mapActions('playlist', ['setPlaylistAndPlay', 'playNext', 'playPrevious', 'togglePlayMode', 'addAndPlay']),
+    
+    // 加载系列的音频列表
+    async loadSeriesTracks(seriesId) {
+      try {
+        const params = {
+          seriesId: seriesId,
+          status: 0,
+          orderByColumn: 'order_index',
+          isAsc: 'asc',
+          pageNum: 1,
+          pageSize: 100
+        }
+        const res = await listTracks(params)
+        if (res.code === 200) {
+          return res.rows || res.data || []
+        }
+        return []
+      } catch (error) {
+        console.error('加载系列音频失败:', error)
+        throw error
+      }
+    },
+    
+    // 加载播放历史列表
+    async loadHistoryList() {
+      try {
+        const params = {
+          pageNum: 1,
+          pageSize: 100,
+          orderByColumn: 'last_play_time',
+          isAsc: 'desc'
+        }
+        const res = await listPlayHistoryDetail(params)
+        if (res.code === 200) {
+          const list = res.rows || res.data || []
+          // 格式化历史数据
+          return list.map(item => {
+            const track = item.track || {}
+            return {
+              id: track.id || item.trackId,
+              trackId: item.trackId,
+              title: track.title || item.trackTitle || '未知音频',
+              artist: track.subtitle || track.author || '冥想音乐',
+              durationSec: track.durationSec || item.duration || 0,
+              audioUrl: track.audioUrl || track.audio,
+              coverUrl: track.coverUrl || item.cover || '/static/images/default-cover.jpg',
+              progressSec: item.progressSec || 0,
+              seriesId: item.seriesId,
+              categoryCode: track.categoryCode
+            }
+          })
+        }
+        return []
+      } catch (error) {
+        console.log('加载历史列表失败（已忽略）')
+        return []
+      }
+    },
+    
+    // 加载收藏列表
+    async loadFavoritesList() {
+      try {
+        const params = {
+          pageNum: 1,
+          pageSize: 100,
+          orderByColumn: 'create_time',
+          isAsc: 'desc'
+        }
+        const res = await listFavorites(params)
+        if (res.code === 200) {
+          const list = res.rows || res.data || []
+          // 只返回音频类型的收藏
+          return list
+            .filter(item => item.targetType === 'track')
+            .map(item => ({
+              id: item.targetId,
+              trackId: item.targetId,
+              title: item.title || '未知音频',
+              artist: item.subtitle || '冥想音乐',
+              durationSec: item.duration || 0,
+              audioUrl: item.audioUrl,
+              coverUrl: item.cover || '/static/images/default-cover.jpg',
+              seriesId: item.seriesId,
+              categoryCode: item.categoryCode
+            }))
+        }
+        return []
+      } catch (error) {
+        console.log('加载收藏列表失败（已忽略）')
+        return []
+      }
+    },
+    
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()
@@ -435,7 +639,17 @@ export default {
 
     async loadTrack() {
       try {
+        console.log('开始加载音轨，ID:', this.trackId)
+        
+        // 显示加载提示
+        uni.showLoading({
+          title: '加载中...',
+          mask: true
+        })
+        
         const res = await getTrackDetail(this.trackId)
+        
+        console.log('音轨详情API响应:', res)
 
         if (res.code === 200 && res.data) {
           // 映射后端返回的数据字段
@@ -450,6 +664,8 @@ export default {
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
+          
+          console.log('处理后的音轨数据:', this.track)
 
           // 设置seriesId和categoryId如果没有传入
           if (!this.seriesId && res.data.seriesId) {
@@ -475,11 +691,33 @@ export default {
             // 设置其他可选属性
             this.audioContext.epname = this.track.title || '冥想音频' // 专辑名，选填
             this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
-            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
+            
+            // 处理封面图URL
+            let coverUrl = '/static/images/default-cover.jpg'
+            if (this.track.coverUrl) {
+              if (this.track.coverUrl.startsWith('http://') || this.track.coverUrl.startsWith('https://')) {
+                coverUrl = this.track.coverUrl
+              } else {
+                // 需要拼接完整路径
+                coverUrl = `${this.$baseUrl}/system/oss/download/${this.track.coverUrl}`
+              }
+            }
+            this.audioContext.coverImgUrl = coverUrl // 封面图，选填
 
+            // 处理音频URL
+            let audioUrl = ''
+            if (this.track.audioUrl) {
+              if (this.track.audioUrl.startsWith('http://') || this.track.audioUrl.startsWith('https://')) {
+                audioUrl = this.track.audioUrl
+              } else {
+                // 需要拼接完整路径
+                audioUrl = `${this.$baseUrl}/system/oss/download/${this.track.audioUrl}`
+              }
+            }
+            
             // 最后设置 src，这会触发音频加载
             // 注意：src 必须最后设置
-            this.audioContext.src = this.track.audioUrl
+            this.audioContext.src = audioUrl
 
             console.log('音频信息设置完成:', {
               src: this.audioContext.src,
@@ -510,6 +748,11 @@ export default {
                 this.audioContext.seek(this.currentTime)
               }, 100)
             }
+            
+            // 隐藏加载提示
+            uni.hideLoading()
+          } else {
+            throw new Error('音频URL不存在')
           }
         } else {
           throw new Error(res.msg || '获取音频信息失败')
@@ -522,10 +765,20 @@ export default {
         this.addToPlayHistory()
       } catch (error) {
         console.error('加载音频失败:', error)
+        
+        // 隐藏加载提示
+        uni.hideLoading()
+        
         uni.showToast({
-          title: '加载失败',
-          icon: 'none'
+          title: error.message || '加载失败',
+          icon: 'none',
+          duration: 2000
         })
+        
+        // 如果加载失败，延迟返回上一页
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 2000)
       }
     },
 
@@ -542,7 +795,8 @@ export default {
           this.playHistoryId = res.data.id
         }
       } catch (error) {
-        console.error('添加播放历史失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('播放历史记录失败（已忽略）')
       }
     },
 
@@ -579,7 +833,8 @@ export default {
           isCompleted: isCompleted
         })
       } catch (error) {
-        console.error('更新播放进度失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('更新播放进度失败（已忽略）')
       }
     },
 
@@ -595,7 +850,8 @@ export default {
           isCompleted: '1'
         })
       } catch (error) {
-        console.error('标记完成失败:', error)
+        // 静默处理错误，不显示提示
+        console.log('标记完成失败（已忽略）')
       }
     },
 
@@ -712,39 +968,55 @@ export default {
     // 加载播放列表
     async loadPlaylist() {
       try {
-        let params = {
-          status: 0,
-          pageNum: 1,
-          pageSize: 100
+        let tracks = []
+        
+        // 根据不同来源加载播放列表
+        if (this.playlistSource === 'history') {
+          // 从API加载历史列表
+          tracks = await this.loadHistoryList()
+        } else if (this.playlistSource === 'favorites') {
+          // 从API加载收藏列表
+          tracks = await this.loadFavoritesList()
+        } else {
+          // 原有的逻辑：从API加载
+          let params = {
+            status: 0,
+            pageNum: 1,
+            pageSize: 100
+          }
+
+          // 如果有系列ID，获取同系列的音频
+          if (this.seriesId) {
+            params.seriesId = this.seriesId
+            params.orderByColumn = 'order_index'
+            params.isAsc = 'asc'
+          }
+          // 如果有分类ID，获取同分类的音频
+          else if (this.categoryId) {
+            params.categoryId = this.categoryId
+            params.orderByColumn = 'create_time'
+            params.isAsc = 'desc'
+          }
+          // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
+          else {
+            params.orderByColumn = 'create_time'  // 使用创建时间排序
+            params.isAsc = 'desc'  // 最新的在前
+            params.pageSize = 50  // 限制数量，获取最新推荐
+          }
+
+          const res = await listTracks(params)
+          if (res.code === 200) {
+            tracks = res.rows || res.data || []
+          }
         }
 
-        // 如果有系列ID，获取同系列的音频
-        if (this.seriesId) {
-          params.seriesId = this.seriesId
-          params.orderByColumn = 'order_index'
-          params.isAsc = 'asc'
-        }
-        // 如果有分类ID，获取同分类的音频
-        else if (this.categoryId) {
-          params.categoryId = this.categoryId
-          params.orderByColumn = 'create_time'
-          params.isAsc = 'desc'
-        }
-        // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
-        else {
-          params.orderByColumn = 'create_time'  // 使用创建时间排序
-          params.isAsc = 'desc'  // 最新的在前
-          params.pageSize = 50  // 限制数量，获取最新推荐
-        }
-
-        const res = await listTracks(params)
-
-        if (res.code === 200) {
-          const tracks = res.rows || res.data || []
-          
+        // 处理播放列表
+        if (tracks && tracks.length > 0) {
           // 如果当前音频不在列表中，将其添加到列表开头
           let finalTracks = [...tracks]
-          const currentTrackInList = tracks.find(item => item.id === parseInt(this.trackId))
+          const currentTrackInList = tracks.find(item => 
+            String(item.id) === String(this.trackId)
+          )
           
           if (!currentTrackInList && this.track) {
             // 将当前播放的音频添加到列表开头
@@ -824,11 +1096,31 @@ export default {
         // 设置其他可选属性
         this.audioContext.epname = track.name || '冥想音频' // 专辑名
         this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
-        this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
+        
+        // 处理封面图URL
+        let coverUrl = '/static/images/default-cover.jpg'
+        if (track.coverUrl) {
+          if (track.coverUrl.startsWith('http://') || track.coverUrl.startsWith('https://')) {
+            coverUrl = track.coverUrl
+          } else {
+            coverUrl = `${this.$baseUrl}/system/oss/download/${track.coverUrl}`
+          }
+        }
+        this.audioContext.coverImgUrl = coverUrl // 封面图
+
+        // 处理音频URL
+        let audioUrl = ''
+        if (track.audioUrl) {
+          if (track.audioUrl.startsWith('http://') || track.audioUrl.startsWith('https://')) {
+            audioUrl = track.audioUrl
+          } else {
+            audioUrl = `${this.$baseUrl}/system/oss/download/${track.audioUrl}`
+          }
+        }
 
         // 最后设置 src，这会触发音频加载
         // 注意：src 必须最后设置
-        this.audioContext.src = track.audioUrl
+        this.audioContext.src = audioUrl
 
         // 保存当前播放的音轨ID
         uni.setStorageSync('currentTrackId', track.id)
@@ -1121,7 +1413,7 @@ export default {
     width: 110%;
     height: 110%;
     margin: -5%;
-    filter: blur(1rpx) brightness(1) saturate(1);
+    filter: blur(20rpx) brightness(0.8) saturate(1.2);
     transform: scale(1.1);
     animation: slowZoom 20s ease-in-out infinite alternate;
   }

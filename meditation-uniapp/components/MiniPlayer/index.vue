@@ -1,33 +1,31 @@
 <template>
-  <view class="mini-player" v-if="showPlayer" @click="goToPlayer">
-    <view class="player-content">
-      <!-- 封面图 -->
-      <image 
-        class="cover-image" 
-        :src="(currentTrack && currentTrack.coverUrl) || '/static/images/default-cover.png'" 
-        mode="aspectFill"
-      />
-      
-      <!-- 歌曲信息 -->
+  <view class="mini-player" v-if="showPlayer">
+    <!-- 圆形封面 -->
+    <image 
+      class="cover-circle" 
+      :src="(currentTrack && currentTrack.coverUrl) || '/static/images/default-cover.png'" 
+      mode="aspectFill"
+      @click="goToPlayer"
+    />
+    
+    <!-- 长方形播放条 -->
+    <view class="player-bar" @click="goToPlayer">
+      <!-- 音乐信息 -->
       <view class="track-info">
         <text class="track-title">{{ (currentTrack && currentTrack.title) || '未知音频' }}</text>
+        <!-- 定时器信息 -->
         <view class="timer-info" v-if="sleepTimerRemaining">
           <image class="timer-icon" src="/static/player/time-icon.png" />
-          <text class="timer-text">定时停止 {{ formatTimerRemaining }}</text>
+          <text class="timer-text">{{ formatTimerRemaining }}</text>
         </view>
       </view>
       
-      <!-- 播放控制 -->
-      <view class="controls">
-        <view class="control-btn" @click.stop="togglePlay">
-          <image 
-            class="play-icon" 
-            :src="isPlaying ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'" 
-          />
-        </view>
-        <view class="control-btn" @click.stop="closePlayer">
-          <image class="close-icon" src="/static/player/close.png" />
-        </view>
+      <!-- 播放/暂停按钮 -->
+      <view class="play-btn" @click.stop="togglePlay">
+        <image 
+          class="play-icon" 
+          :src="isPlaying ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'" 
+        />
       </view>
     </view>
   </view>
@@ -278,15 +276,6 @@ export default {
       }
     },
     
-    // 关闭播放器
-    closePlayer() {
-      if (this.audioContext) {
-        this.audioContext.stop()
-        this.currentTrack = null
-        this.isPlaying = false
-      }
-    },
-    
     // 跳转到播放器页面
     goToPlayer() {
       // 获取当前播放的音轨ID（可能需要从存储中获取）
@@ -306,14 +295,11 @@ export default {
 .mini-player {
   position: fixed;
   bottom: 100rpx;
-  left: 20rpx;
-  right: 20rpx;
-  height: 120rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  left: 24rpx;
+  right: 24rpx;
+  display: flex;
+  align-items: center;
   z-index: 999;
-  backdrop-filter: blur(10px);
   animation: slideUp 0.3s ease-out;
 }
 
@@ -328,38 +314,53 @@ export default {
   }
 }
 
-.player-content {
+// 圆形封面
+.cover-circle {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  background: #fff;
+  z-index: 2;
+  position: relative;
+}
+
+// 长方形播放条
+.player-bar {
+  flex: 1;
+  height: 96rpx;
+  background: #6D8BA1;
+  border-radius: 52rpx;
+  opacity: 0.9;
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
-  height: 100%;
-  padding: 15rpx;
+  padding: 0 30rpx 0 70rpx; // 左边留出空间给圆形封面
+  margin-left: -56rpx; // 让长方形与圆形拼接
+  position: relative;
 }
 
-.cover-image {
-  width: 90rpx;
-  height: 90rpx;
-  border-radius: 12rpx;
-  flex-shrink: 0;
-}
-
+// 音乐信息
 .track-info {
   flex: 1;
-  margin: 0 20rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 8rpx;
 }
 
 .track-title {
-  font-size: 28rpx;
-  color: #333;
+  font-size: 30rpx;
+  color: #FFFFFF;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 8rpx;
+  max-width: 400rpx;
 }
 
+// 定时器信息
 .timer-info {
   display: flex;
   align-items: center;
@@ -369,42 +370,33 @@ export default {
 .timer-icon {
   width: 24rpx;
   height: 24rpx;
+  opacity: 0.8;
 }
 
 .timer-text {
-  font-size: 22rpx;
-  color: #7B9FD4;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.control-btn {
+// 播放按钮
+.play-btn {
   width: 60rpx;
   height: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(123, 159, 212, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   transition: all 0.2s;
   
   &:active {
     transform: scale(0.9);
-    background: rgba(123, 159, 212, 0.2);
+    background: rgba(255, 255, 255, 0.3);
   }
 }
 
 .play-icon {
-  width: 48rpx;
-  height: 48rpx;
-}
-
-.close-icon {
-  width: 28rpx;
-  height: 28rpx;
+  width: 36rpx;
+  height: 36rpx;
 }
 </style>

@@ -133,7 +133,7 @@ export default {
   methods: {
     // 初始化背景音频管理器
     initBackgroundAudio() {
-      // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
+      // 统一使用全局唯一的背景音频管理器
       this.backgroundAudioManager = uni.getBackgroundAudioManager()
       
       this.backgroundAudioManager.onPlay(() => {
@@ -165,19 +165,12 @@ export default {
         })
         this.isPlaying = false
       })
-      // #endif
-      
-      // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-      this.backgroundAudioManager = uni.createInnerAudioContext()
-      // #endif
     },
     
     // 检查当前播放状态
     checkPlayingStatus() {
       if (this.backgroundAudioManager) {
-        // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
         this.isPlaying = !this.backgroundAudioManager.paused
-        // #endif
       }
     },
     
@@ -282,9 +275,9 @@ export default {
       // 只处理音频类型
       if (item.targetType !== 'track') {
         if (item.targetType === 'series') {
-          // 跳转到系列详情页
+          // 系列类型，跳转到播放器播放系列
           uni.navigateTo({
-            url: `/pages/series/detail?id=${item.targetId}`
+            url: `/pages/player/index?seriesId=${item.targetId}&type=series`
           })
         } else if (item.targetType === 'article') {
           // 跳转到文章详情页
@@ -295,33 +288,10 @@ export default {
         return
       }
       
-      // 如果点击的是当前正在播放的音频
-      if (this.currentPlaying && this.currentPlaying.targetId === item.targetId) {
-        if (this.isPlaying) {
-          this.pauseAudio()
-        } else {
-          this.resumeAudio()
-        }
-        return
-      }
-      
-      // 播放新的音频
-      this.currentPlaying = item
-      
-      // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
-      // 小程序使用背景音频管理器
-      this.backgroundAudioManager.title = item.title
-      this.backgroundAudioManager.singer = item.subtitle || '冥想音乐'
-      this.backgroundAudioManager.coverImgUrl = item.cover
-      this.backgroundAudioManager.src = item.audioUrl
-      // #endif
-      
-      // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-      // 非小程序环境跳转到播放页面
+      // 跳转到播放器页面
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.targetId}&title=${encodeURIComponent(item.title)}`
+        url: `/pages/player/index?id=${item.targetId}&source=favorites`
       })
-      // #endif
     },
     
     // 暂停音频

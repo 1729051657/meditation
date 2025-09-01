@@ -1,9 +1,9 @@
 <template>
   <view class="me-page">
-    <!-- 顶部背景 -->
-    <view class="header-bg">
-      <image src="/static/me/background@3x.png" mode="aspectFill" class="bg-image"></image>
-    </view>
+    <!-- 顶部导航栏占位 -->
+    <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }"></view>
+    <!-- 背景图 -->
+    <image src="/static/home/background@3x.png" class="background-image" mode="widthFix"></image>
 
     <!-- 主要内容区域 -->
     <view class="main-content">
@@ -79,12 +79,26 @@ import { mapState, mapActions } from 'vuex'
 export default {
   data() {
     return {
-
+      navHeight: "", // 导航栏高度
+      statusBarHeight: '', // 状态栏高度
     }
   },
 
   computed: {
     ...mapState('user', ['isLogin', 'token', 'userInfo'])
+  },
+
+  onLoad() {
+    // 获取手机系统的信息 里面有状态栏高度和设备型号
+    let {
+      statusBarHeight,
+      system
+    } = uni.getSystemInfoSync()
+    // 注意返回的单位是px 不是rpx
+    this.statusBarHeight = statusBarHeight
+    // 而导航栏的高度则 = 状态栏的高度 + 判断机型的值（是ios就+40，否则+44）
+    // 这个高度刚好和胶囊对齐
+    this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
   },
 
   onShow() {
@@ -202,44 +216,44 @@ export default {
 <style lang="scss" scoped>
 .me-page {
   min-height: 100vh;
-  background: #F5F7FA;
+  background: #D8E2F0;
   position: relative;
 }
 
-// 顶部背景
-.header-bg {
-  width: 100%;
-  height: 320rpx;
+// 顶部导航栏占位
+.topNav {
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #7C3AED, #A855F7);
+  z-index: 1;
+}
 
-  .bg-image {
-    width: 100%;
-    height: 100%;
-    display: block;
-    opacity: 0.3;
-  }
+// 背景图
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  opacity: 1;
 }
 
 // 主要内容区域
 .main-content {
-  margin-top: -100rpx;
-  padding: 0 30rpx 100rpx;
+  padding: 20rpx 30rpx 100rpx;
   position: relative;
-  z-index: 10;
+  z-index: 1;
 }
 
 // 用户信息卡片 - 左右布局
 .user-card {
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
   padding: 30rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 8rpx 24rpx rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   margin-bottom: 30rpx;
+  margin-top: 20rpx;
 
   .user-info {
     display: flex;
@@ -291,10 +305,10 @@ export default {
 
 // 功能菜单列表
 .menu-list {
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   margin-bottom: 30rpx;
 
   .menu-item {
@@ -342,10 +356,10 @@ export default {
 
 // 设置区域 - 合并的部分
 .settings-section {
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 
   .setting-item {
     height: 110rpx;

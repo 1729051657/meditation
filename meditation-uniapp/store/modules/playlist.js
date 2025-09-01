@@ -170,7 +170,7 @@ const actions = {
   
   // 初始化音频管理器并设置事件监听
   initAudioManager({ commit, dispatch, state }) {
-    // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
+    // 统一使用全局唯一的背景音频管理器
     const manager = uni.getBackgroundAudioManager()
     
     // 播放事件
@@ -220,39 +220,6 @@ const actions = {
     
     commit('SET_AUDIO_MANAGER', manager)
     return manager
-    // #endif
-    
-    // #ifndef MP-WEIXIN || MP-BAIDU || MP-QQ
-    const manager = uni.createInnerAudioContext()
-    
-    manager.onPlay(() => {
-      commit('SET_PLAYING', true)
-    })
-    
-    manager.onPause(() => {
-      commit('SET_PLAYING', false)
-    })
-    
-    manager.onEnded(() => {
-      dispatch('playNext')
-    })
-    
-    manager.onError(() => {
-      setTimeout(() => {
-        dispatch('playNext')
-      }, 1000)
-    })
-    
-    manager.onTimeUpdate(() => {
-      commit('SET_PROGRESS', {
-        currentTime: manager.currentTime,
-        duration: manager.duration
-      })
-    })
-    
-    commit('SET_AUDIO_MANAGER', manager)
-    return manager
-    // #endif
   },
   
   // 播放指定音频
@@ -268,8 +235,29 @@ const actions = {
     
     // 获取音频URL
     const baseUrl = rootState.app.baseUrl || ''
-    const audioUrl = track.audioUrl ? `${baseUrl}/system/oss/download/${track.audioUrl}` : ''
-    const coverUrl = track.coverUrl ? `${baseUrl}/system/oss/download/${track.coverUrl}` : '/static/images/default-cover.jpg'
+    
+    // 判断是否已经是完整的URL
+    let audioUrl = ''
+    if (track.audioUrl) {
+      if (track.audioUrl.startsWith('http://') || track.audioUrl.startsWith('https://')) {
+        // 已经是完整URL，直接使用
+        audioUrl = track.audioUrl
+      } else {
+        // 需要拼接OSS下载路径
+        audioUrl = `${baseUrl}/system/oss/download/${track.audioUrl}`
+      }
+    }
+    
+    let coverUrl = '/static/images/default-cover.jpg'
+    if (track.coverUrl) {
+      if (track.coverUrl.startsWith('http://') || track.coverUrl.startsWith('https://')) {
+        // 已经是完整URL，直接使用
+        coverUrl = track.coverUrl
+      } else {
+        // 需要拼接OSS下载路径
+        coverUrl = `${baseUrl}/system/oss/download/${track.coverUrl}`
+      }
+    }
     
     // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
     // 设置背景音频信息
