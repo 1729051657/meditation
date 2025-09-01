@@ -91,7 +91,7 @@
             <el-tag v-else>{{ scope.row.contentType }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="内容信息" align="center" prop="contentId" width="300">
+        <el-table-column label="内容信息" align="center" prop="contentId" width="400">
           <template #default="scope">
             <div class="content-info">
               <div class="content-title">{{ getContentTitle(scope.row) }}</div>
@@ -101,6 +101,16 @@
                   {{ getContentTypeLabel(scope.row.contentType) }}
                 </el-tag>
                 <span class="content-id">ID: {{ scope.row.contentId }}</span>
+                <template v-if="getContentDetail(scope.row)">
+                  <span class="content-extra" v-if="getContentDetail(scope.row).episodeCount">
+                    <el-icon size="12"><VideoPlay /></el-icon>
+                    {{ getContentDetail(scope.row).episodeCount }} 小节
+                  </span>
+                  <span class="content-extra" v-if="getContentDetail(scope.row).duration">
+                    <el-icon size="12"><Clock /></el-icon>
+                    {{ formatDuration(getContentDetail(scope.row).duration) }}
+                  </span>
+                </template>
               </div>
             </div>
           </template>
@@ -290,11 +300,12 @@
 <script setup name="RecommendItem" lang="ts">
 import { listRecommendItem, getRecommendItem, delRecommendItem, addRecommendItem, updateRecommendItem } from '@/api/meditation/recommendItem';
 import { listRecommendSlot } from '@/api/meditation/recommendSlot';
-import { listSeries } from '@/api/meditation/series';
-import { listArticle } from '@/api/meditation/article';
-import { listTrack } from '@/api/meditation/track';
+import { listSeries, getSeries } from '@/api/meditation/series';
+import { listArticle, getArticle } from '@/api/meditation/article';
+import { listTrack, getTrack } from '@/api/meditation/track';
 import { RecommendItemVO, RecommendItemQuery, RecommendItemForm } from '@/api/meditation/recommendItem/types';
 import { RecommendSlotVO, RecommendSlotQuery } from '@/api/meditation/recommendSlot/types';
+import { VideoPlay, Clock, User, Calendar } from '@element-plus/icons-vue';
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
@@ -304,6 +315,8 @@ const contentOptions = ref<any[]>([]);
 const queryContentOptions = ref<any[]>([]); // 查询用的内容选项
 const selectedContent = ref<any>(null);
 const contentSearch = ref('');
+// 内容缓存，用于存储已加载的内容详情
+const contentCache = ref<Map<string, any>>(new Map());
 const buttonLoading = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -378,6 +391,10 @@ const getList = async () => {
   const res = await listRecommendItem(queryParams.value);
   recommendItemList.value = res.rows;
   total.value = res.total;
+  
+  // 批量加载内容详情
+  await loadContentDetails(res.rows);
+  
   loading.value = false;
 }
 
@@ -397,15 +414,108 @@ const getSlotName = (slotId: string | number) => {
   return slot ? slot.name : slotId;
 }
 
+/** 批量加载内容详情 */
+const loadContentDetails = async (items: RecommendItemVO[]) => {
+  // 按内容类型分组
+  const seriesIds: (string | number)[] = [];
+  const articleIds: (string | number)[] = [];
+  const trackIds: (string | number)[] = [];
+  
+  items.forEach(item => {
+    const cacheKey = `${item.contentType}_${item.contentId}`;
+    // 如果缓存中没有该内容，则需要加载
+    if (!contentCache.value.has(cacheKey)) {
+      switch (item.contentType) {
+        case 'series':
+          seriesIds.push(item.contentId);
+          break;
+        case 'article':
+          articleIds.push(item.contentId);
+          break;
+        case 'track':
+          trackIds.push(item.contentId);
+          break;
+      }
+    }
+  });
+  
+  // 批量加载系列内容
+  if (seriesIds.length > 0) {
+    try {
+      const res = await listSeries({ 
+        ids: seriesIds.join(','),
+        pageNum: 1,
+        pageSize: 100
+      });
+      (res.rows || res.data || []).forEach(series => {
+        contentCache.value.set(`series_${series.id}`, series);
+      });
+    } catch (error) {
+      console.error('加载系列内容失败:', error);
+    }
+  }
+  
+  // 批量加载文章内容
+  if (articleIds.length > 0) {
+    try {
+      const res = await listArticle({ 
+        ids: articleIds.join(','),
+        pageNum: 1,
+        pageSize: 100
+      });
+      (res.rows || res.data || []).forEach(article => {
+        contentCache.value.set(`article_${article.id}`, article);
+      });
+    } catch (error) {
+      console.error('加载文章内容失败:', error);
+    }
+  }
+  
+  // 批量加载音频内容
+  if (trackIds.length > 0) {
+    try {
+      const res = await listTrack({ 
+        ids: trackIds.join(','),
+        pageNum: 1,
+        pageSize: 100
+      });
+      (res.rows || res.data || []).forEach(track => {
+        contentCache.value.set(`track_${track.id}`, track);
+      });
+    } catch (error) {
+      console.error('加载音频内容失败:', error);
+    }
+  }
+}
+
+/** 获取内容详情 */
+const getContentDetail = (row: RecommendItemVO) => {
+  const cacheKey = `${row.contentType}_${row.contentId}`;
+  return contentCache.value.get(cacheKey);
+}
+
 /** 获取内容标题 */
 const getContentTitle = (row: RecommendItemVO) => {
-  // 这里可以根据contentType和contentId获取具体内容信息
-  // 暂时返回ID，后续可以优化为显示实际标题
+  const content = getContentDetail(row);
+  if (content) {
+    return content.title || content.name || `ID: ${row.contentId}`;
+  }
   return `ID: ${row.contentId}`;
 }
 
 /** 获取内容副标题 */
 const getContentSubtitle = (row: RecommendItemVO) => {
+  const content = getContentDetail(row);
+  if (content) {
+    // 根据内容类型返回不同的副标题信息
+    if (row.contentType === 'series') {
+      return content.subtitle || content.intro || '系列内容';
+    } else if (row.contentType === 'article') {
+      return content.subtitle || content.summary || '文章内容';
+    } else if (row.contentType === 'track') {
+      return content.subtitle || content.description || '音频内容';
+    }
+  }
   return row.contentType === 'series' ? '系列' : 
          row.contentType === 'article' ? '文章' : 
          row.contentType === 'track' ? '音频' : '';
@@ -757,32 +867,56 @@ onMounted(() => {
   text-align: left;
   
   .content-title {
-    font-weight: 500;
-    margin-bottom: 4px;
+    font-weight: 600;
+    margin-bottom: 6px;
     color: #303133;
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.4;
   }
   
   .content-subtitle {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 8px;
+    font-size: 13px;
+    color: #606266;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
   
   .content-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    flex-wrap: wrap;
     
     .content-type-tag {
       border-radius: 10px;
-      font-size: 10px;
+      font-size: 11px;
     }
     
     .content-id {
       font-size: 11px;
       color: #c0c4cc;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    
+    .content-extra {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #909399;
+      padding: 2px 6px;
+      background: #f4f4f5;
+      border-radius: 8px;
+      
+      .el-icon {
+        color: #909399;
+      }
     }
   }
 }
