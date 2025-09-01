@@ -22,9 +22,15 @@ export default {
 
 		// 执行无感登录
 		this.silentLogin()
+		
+		// 初始化全局音频管理器和恢复定时器
+		this.initGlobalAudio()
 	},
 	onShow: function () {
 		console.log('App Show')
+		
+		// 应用显示时恢复定时器
+		this.$store.dispatch('timer/restoreTimer')
 	},
 	onHide: function () {
 		console.log('App Hide')
@@ -311,6 +317,23 @@ export default {
 			// #ifndef MP-WEIXIN
 			console.log('非微信小程序环境，跳过无感登录')
 			// #endif
+		},
+		
+		/**
+		 * 初始化全局音频管理器
+		 */
+		initGlobalAudio() {
+			// 初始化背景音频管理器
+			const audioManager = this.$store.dispatch('timer/initAudioManager')
+			
+			// 初始化播放列表管理器
+			this.$store.dispatch('playlist/initAudioManager')
+			this.$store.dispatch('playlist/initPlaylist')
+			
+			// 恢复定时器（如果有）
+			this.$store.dispatch('timer/restoreTimer')
+			
+			console.log('全局音频管理器初始化完成')
 		}
 	}
 }

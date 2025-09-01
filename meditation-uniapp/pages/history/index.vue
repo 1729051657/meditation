@@ -15,28 +15,38 @@
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 历史记录列表 -->
-      <view class="history-list" v-if="historyList.length > 0">
+      <view class="history-container" v-if="historyList.length > 0">
         <!-- 按日期分组 -->
-        <view class="date-group" v-for="(group, dateIndex) in groupedHistory" :key="dateIndex">
-          <text class="date-title">{{ group.date }}</text>
+        <view class="date-section" v-for="(group, dateIndex) in groupedHistory" :key="dateIndex">
+          <text class="date-header">{{ group.date }}</text>
           
-          <view 
-            class="history-item" 
-            v-for="(item, index) in group.items" 
-            :key="item.id"
-            @click="playAudio(item)"
-          >
-            <image :src="item.cover" mode="aspectFill" class="item-cover"></image>
-            <view class="item-info">
-              <text class="item-title">{{ item.title }}</text>
-              <text class="item-series" v-if="item.seriesTitle">{{ item.seriesTitle }}</text>
-              <view class="item-meta">
-                <text class="meta-time">{{ formatTime(item.lastPlayTime) }}</text>
-                <text class="meta-progress">已播放{{ item.progressPercent }}%</text>
+          <view class="history-grid">
+            <view 
+              class="history-card" 
+              v-for="(item, index) in group.items" 
+              :key="item.id"
+              @click="playAudio(item)"
+            >
+              <view class="card-image-wrapper">
+                <image :src="item.cover" mode="aspectFill" class="card-image"></image>
+                <!-- 进度条 -->
+                <view class="progress-bar">
+                  <view class="progress-fill" :style="{ width: item.progressPercent + '%' }"></view>
+                </view>
+                <!-- 播放时间 -->
+                <view class="time-badge">{{ formatTime(item.lastPlayTime) }}</view>
+                <!-- 更多选项 -->
+                <view class="more-btn" @click.stop="showMoreOptions(item)">
+                  <text class="tn-icon-more"></text>
+                </view>
               </view>
-            </view>
-            <view class="item-action" @click.stop="showMoreOptions(item)">
-              <text class="tn-icon-more-vertical"></text>
+              <view class="card-content">
+                <text class="card-title">{{ item.title }}</text>
+                <text class="card-series" v-if="item.seriesTitle">{{ item.seriesTitle }}</text>
+                <view class="card-meta">
+                  <text class="progress-text">已播放{{ item.progressPercent }}%</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
@@ -417,92 +427,141 @@ export default {
   padding-bottom: 120rpx;
 }
 
-.history-list {
+.history-container {
   padding: 20rpx;
+  padding-bottom: 120rpx;
   
-  .date-group {
+  .date-section {
     margin-bottom: 40rpx;
     
-    .date-title {
+    .date-header {
       display: block;
-      font-size: 28rpx;
-      color: #999999;
+      font-size: 30rpx;
+      color: #666666;
       margin-bottom: 20rpx;
       padding-left: 10rpx;
-      font-weight: 500;
+      font-weight: 600;
     }
     
-    .history-item {
+    .history-grid {
       display: flex;
-      align-items: center;
-      background: #FFFFFF;
-      border-radius: 20rpx;
-      padding: 20rpx;
-      margin-bottom: 16rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-      transition: all 0.3s ease;
+      flex-wrap: wrap;
+      gap: 20rpx;
       
-      &:active {
-        transform: scale(0.98);
-        box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.08);
-      }
-      
-      .item-cover {
-        width: 100rpx;
-        height: 100rpx;
-        border-radius: 16rpx;
-        flex-shrink: 0;
-      }
-      
-      .item-info {
-        flex: 1;
-        margin-left: 24rpx;
-        display: flex;
-        flex-direction: column;
+      .history-card {
+        width: calc(50% - 10rpx);
+        background: #FFFFFF;
+        border-radius: 20rpx;
+        overflow: hidden;
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
         
-        .item-title {
-          font-size: 30rpx;
-          color: #333333;
-          font-weight: 500;
-          margin-bottom: 8rpx;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+        &:active {
+          transform: scale(0.98);
+          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
         }
         
-        .item-series {
-          font-size: 26rpx;
-          color: #999999;
-          margin-bottom: 8rpx;
+        .card-image-wrapper {
+          width: 100%;
+          height: 340rpx;
+          position: relative;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        
-        .item-meta {
-          display: flex;
-          align-items: center;
           
-          .meta-time {
-            font-size: 24rpx;
-            color: #BBBBBB;
-            margin-right: 20rpx;
+          .card-image {
+            width: 100%;
+            height: 100%;
+            display: block;
           }
           
-          .meta-progress {
+          // 进度条
+          .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 6rpx;
+            background: rgba(0, 0, 0, 0.2);
+            
+            .progress-fill {
+              height: 100%;
+              background: linear-gradient(90deg, #7C3AED, #A855F7);
+              transition: width 0.3s ease;
+            }
+          }
+          
+          // 时间标签
+          .time-badge {
+            position: absolute;
+            top: 16rpx;
+            left: 16rpx;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 8rpx 16rpx;
+            border-radius: 20rpx;
             font-size: 24rpx;
-            color: #7C3AED;
+            backdrop-filter: blur(10rpx);
+          }
+          
+          // 更多按钮
+          .more-btn {
+            position: absolute;
+            top: 16rpx;
+            right: 16rpx;
+            width: 60rpx;
+            height: 60rpx;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10rpx);
+            
+            text {
+              font-size: 32rpx;
+              color: #666666;
+            }
+            
+            &:active {
+              transform: scale(0.9);
+            }
+          }
+        }
+        
+        .card-content {
+          padding: 20rpx;
+          
+          .card-title {
+            font-size: 28rpx;
+            color: #333333;
             font-weight: 500;
+            display: block;
+            margin-bottom: 8rpx;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
-        }
-      }
-      
-      .item-action {
-        padding: 10rpx;
-        
-        text {
-          font-size: 36rpx;
-          color: #CCCCCC;
+          
+          .card-series {
+            font-size: 24rpx;
+            color: #999999;
+            display: block;
+            margin-bottom: 8rpx;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          
+          .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            
+            .progress-text {
+              font-size: 22rpx;
+              color: #7C3AED;
+              font-weight: 500;
+            }
+          }
         }
       }
     }

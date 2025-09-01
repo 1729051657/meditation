@@ -38,28 +38,62 @@
 			</view>
 		</view>
 
+		<!-- 标签页切换 -->
+		<view class="tabs" v-if="hasSearchResults">
+			<view class="tab" :class="{ active: tab === 'track' }" @click="tab = 'track'">
+				音频 ({{ tracks.length }})
+			</view>
+			<view class="tab" :class="{ active: tab === 'series' }" @click="tab = 'series'">
+				系列 ({{ series.length }})
+			</view>
+			<view class="tab" :class="{ active: tab === 'article' }" @click="tab = 'article'">
+				文章 ({{ articles.length }})
+			</view>
+		</view>
+
 		<scroll-view class="list" scroll-y>
-			<block v-if="tab === 'track'">
-				<view class="item" v-for="t in tracks" :key="t.id" @click="goTrack(t.id)">
-					<image :src="oss(t.coverUrl)" class="cover" />
-					<view class="title">{{ t.title }}</view>
-					<view class="sub">{{ Math.ceil((t.durationSec || 0) / 60) }}分钟</view>
+			<!-- 音频卡片列表 -->
+			<view class="card-grid" v-if="tab === 'track' && tracks.length > 0">
+				<view class="card-item" v-for="t in tracks" :key="t.id" @click="goTrack(t.id)">
+					<image :src="oss(t.coverUrl)" class="card-image" mode="aspectFill" />
+					<view class="duration-tag">{{ Math.ceil((t.durationSec || 0) / 60) }}分钟</view>
+					<view class="card-info">
+						<text class="card-title">{{ t.title }}</text>
+						<view class="card-meta">
+							<text class="card-subtitle" v-if="t.subtitle">{{ t.subtitle }}</text>
+						</view>
+					</view>
 				</view>
-			</block>
-			<block v-else-if="tab === 'series'">
-				<view class="item" v-for="s in series" :key="s.id" @click="goSeries(s.id)">
-					<image :src="oss(s.coverUrl)" class="cover" />
-					<view class="title">{{ s.title }}</view>
-					<view class="sub">系列 · {{ s.episodeCount }}</view>
+			</view>
+			
+			<!-- 系列卡片列表 -->
+			<view class="card-grid" v-else-if="tab === 'series' && series.length > 0">
+				<view class="card-item" v-for="s in series" :key="s.id" @click="goSeries(s.id)">
+					<image :src="oss(s.coverUrl)" class="card-image" mode="aspectFill" />
+					<view class="series-tag">系列 · {{ s.episodeCount }}集</view>
+					<view class="card-info">
+						<text class="card-title">{{ s.title }}</text>
+						<view class="card-meta">
+							<text class="card-subtitle" v-if="s.description">{{ s.description }}</text>
+						</view>
+					</view>
 				</view>
-			</block>
-			<block v-else>
-				<view class="item" v-for="a in articles" :key="a.id" @click="goArticle(a.id)">
-					<image :src="oss(a.coverUrl)" class="cover" />
-					<view class="title">{{ a.title }}</view>
-					<view class="sub">{{ a.summary }}</view>
+			</view>
+			
+			<!-- 文章卡片列表 -->
+			<view class="card-grid" v-else-if="tab === 'article' && articles.length > 0">
+				<view class="card-item" v-for="a in articles" :key="a.id" @click="goArticle(a.id)">
+					<image :src="oss(a.coverUrl)" class="card-image" mode="aspectFill" />
+					<view class="article-tag">文章</view>
+					<view class="card-info">
+						<text class="card-title">{{ a.title }}</text>
+						<view class="card-meta">
+							<text class="card-subtitle" v-if="a.summary">{{ a.summary }}</text>
+						</view>
+					</view>
 				</view>
-			</block>
+			</view>
+			
 			<!-- 空状态 -->
 			<view class="top" v-if="hasSearched && !hasSearchResults">
 				<tn-icon name="search" size="320" color="#E0E0E0"></tn-icon>
@@ -210,49 +244,126 @@
 
 	.tabs {
 		display: flex;
+		background: #fff;
+		margin: 20rpx 20rpx 0;
+		border-radius: 16rpx;
+		padding: 8rpx;
 	}
 
 	.tab {
 		flex: 1;
 		text-align: center;
-		padding: 16rpx 0;
-		border-bottom: 4rpx solid transparent;
+		padding: 20rpx 0;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		color: #666;
+		transition: all 0.3s;
 	}
 
 	.tab.active {
-		border-color: #3b82f6;
-		color: #3b82f6
+		background: linear-gradient(135deg, #7C3AED, #A855F7);
+		color: #fff;
+		font-weight: 500;
 	}
 
 	.list {
-		height: calc(100vh - 220rpx);
-		padding: 12rpx 20rpx;
+		height: calc(100vh - 300rpx);
+		padding: 20rpx;
 	}
 
-	.item {
+	// 卡片网格布局
+	.card-grid {
 		display: flex;
-		gap: 12rpx;
+		flex-wrap: wrap;
+		gap: 20rpx;
+		padding-bottom: 40rpx;
+	}
+
+	.card-item {
+		width: calc(50% - 10rpx);
 		background: #fff;
-		border-radius: 12rpx;
-		padding: 12rpx;
-		margin-bottom: 12rpx;
-		align-items: center
-	}
+		border-radius: 20rpx;
+		overflow: hidden;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+		transition: all 0.3s ease;
+		position: relative;
 
-	.cover {
-		width: 140rpx;
-		height: 100rpx;
-		border-radius: 8rpx
-	}
+		&:active {
+			transform: scale(0.98);
+			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+		}
 
-	.title {
-		font-size: 28rpx;
-		flex: 1
-	}
+		.card-image {
+			width: 100%;
+			height: 340rpx;
+			display: block;
+		}
 
-	.sub {
-		color: #888;
-		font-size: 22rpx
+		// 时长标签
+		.duration-tag {
+			position: absolute;
+			top: 16rpx;
+			right: 16rpx;
+			background: rgba(0, 0, 0, 0.6);
+			color: #fff;
+			padding: 8rpx 16rpx;
+			border-radius: 20rpx;
+			font-size: 24rpx;
+			backdrop-filter: blur(10rpx);
+		}
+
+		// 系列标签
+		.series-tag {
+			position: absolute;
+			top: 16rpx;
+			right: 16rpx;
+			background: linear-gradient(135deg, #7C3AED, #A855F7);
+			color: #fff;
+			padding: 8rpx 16rpx;
+			border-radius: 20rpx;
+			font-size: 24rpx;
+		}
+
+		// 文章标签
+		.article-tag {
+			position: absolute;
+			top: 16rpx;
+			right: 16rpx;
+			background: linear-gradient(135deg, #10B981, #34D399);
+			color: #fff;
+			padding: 8rpx 16rpx;
+			border-radius: 20rpx;
+			font-size: 24rpx;
+		}
+
+		.card-info {
+			padding: 20rpx;
+
+			.card-title {
+				font-size: 28rpx;
+				color: #333;
+				font-weight: 500;
+				display: block;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				margin-bottom: 8rpx;
+			}
+
+			.card-meta {
+				.card-subtitle {
+					font-size: 24rpx;
+					color: #999;
+					display: block;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					-webkit-box-orient: vertical;
+					line-height: 1.4;
+				}
+			}
+		}
 	}
 
 	.w64 {

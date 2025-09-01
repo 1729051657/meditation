@@ -15,12 +15,10 @@
 
     <!-- 背景 -->
     <view class="bg-container">
-      <!-- 主背景图 -->
+      <!-- 模糊背景图 -->
       <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="bg-image"></image>
-      <!-- 渐变遮罩层 -->
+      <!-- 半透明遮罩层 -->
       <view class="bg-overlay"></view>
-      <!-- 动态光效 -->
-      <view class="bg-glow"></view>
     </view>
 
     <!-- 主内容 -->
@@ -191,7 +189,7 @@
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
 import { addPlayHistory, updatePlayHistory } from '@/api/play'
-// import SleepTimer from '@/components/SleepTimer/index.vue'  // 可选：引入独立的定时器组件
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 export default {
   // components: {
@@ -223,13 +221,10 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
-      sleepTimer: null, // 睡眠定时器
-      sleepTimerRemaining: 0, // 定时器剩余时间（秒）
-      sleepTimerInterval: null, // 定时器倒计时
     }
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
       statusBarHeight,
@@ -287,11 +282,24 @@ export default {
     }
 
 
-    // this.loadTrack()
-    this.loadPlaylist()
+    // 初始化音频管理器
     this.initAudio()
+    // 加载指定的音频信息并播放
+    await this.loadTrack()
+    // 然后加载播放列表（不会影响当前播放）
+    this.loadPlaylist()
   },
   computed: {
+    ...mapState('timer', ['isTimerActive']),
+    ...mapGetters('timer', ['remainingSeconds', 'remainingTime']),
+    ...mapState('playlist', ['playlist', 'currentIndex', 'currentTrack', 'playMode']),
+    ...mapGetters('playlist', ['hasNext', 'hasPrevious']),
+    
+    // 定时器剩余时间（兼容旧代码）
+    sleepTimerRemaining() {
+      return this.remainingSeconds
+    },
+    
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
@@ -299,21 +307,11 @@ export default {
 
     // 格式化定时器剩余时间
     formatTimerRemaining() {
-      if (this.sleepTimerRemaining <= 0) return ''
-
-      const minutes = Math.floor(this.sleepTimerRemaining / 60)
-      const seconds = this.sleepTimerRemaining % 60
-
-      if (minutes > 0) {
-        return `${minutes}:${String(seconds).padStart(2, '0')}`
-      } else {
-        return `${seconds}s`
-      }
+      return this.remainingTime
     }
   },
   onUnload() {
-    // 页面卸载时，清理定时器
-    this.clearSleepTimer()
+    // 页面卸载时，定时器继续在后台运行，不需要清理
 
     // 页面卸载时，如果音频正在播放，保持后台播放
     // 如果音频已停止，则清理资源
@@ -357,6 +355,8 @@ export default {
   },
 
   methods: {
+    ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
+    ...mapActions('playlist', ['setPlaylistAndPlay', 'playNext', 'playPrevious', 'togglePlayMode', 'addAndPlay']),
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()
@@ -487,6 +487,19 @@ export default {
               singer: this.audioContext.singer,
               coverImgUrl: this.audioContext.coverImgUrl
             })
+            
+            // 更新全局播放状态
+            const trackForPlaylist = {
+              id: this.track.id,
+              title: this.track.title || '未知音频',
+              artist: this.track.artist || '冥想音乐',
+              durationSec: this.track.durationSec || 0,
+              audioUrl: this.track.audioUrl,
+              coverUrl: this.track.coverUrl || '/static/images/default-cover.jpg',
+              categoryCode: this.track.categoryCode,
+              seriesId: this.track.seriesId
+            }
+            this.$store.commit('playlist/SET_CURRENT_TRACK', trackForPlaylist)
 
             // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
             uni.setStorageSync('currentTrackId', this.trackId)
@@ -677,13 +690,8 @@ export default {
         return
       }
 
-      if (this.currentIndex > 0) {
-        this.currentIndex--
-      } else {
-        this.currentIndex = this.playlist.length - 1
-      }
-
-      this.playTrackAtIndex(this.currentIndex)
+      // 使用全局播放列表的上一首
+      this.playPrevious()
     },
 
     next() {
@@ -696,13 +704,8 @@ export default {
         return
       }
 
-      // 列表循环播放
-      if (this.currentIndex < this.playlist.length - 1) {
-        this.currentIndex++
-      } else {
-        this.currentIndex = 0
-      }
-      this.playTrackAtIndex(this.currentIndex)
+      // 使用全局播放列表的下一首
+      this.playNext()
     },
 
 
@@ -727,28 +730,58 @@ export default {
           params.orderByColumn = 'create_time'
           params.isAsc = 'desc'
         }
-        // 否则获取所有音频
+        // 否则获取推荐音频（适用于从首页冥想推荐进入的情况）
         else {
-          params.orderByColumn = 'create_time'
-          params.isAsc = 'desc'
+          params.orderByColumn = 'create_time'  // 使用创建时间排序
+          params.isAsc = 'desc'  // 最新的在前
+          params.pageSize = 50  // 限制数量，获取最新推荐
         }
 
         const res = await listTracks(params)
 
         if (res.code === 200) {
           const tracks = res.rows || res.data || []
-          this.playlist = tracks.map(item => ({
+          
+          // 如果当前音频不在列表中，将其添加到列表开头
+          let finalTracks = [...tracks]
+          const currentTrackInList = tracks.find(item => item.id === parseInt(this.trackId))
+          
+          if (!currentTrackInList && this.track) {
+            // 将当前播放的音频添加到列表开头
+            finalTracks = [this.track, ...tracks]
+          }
+          
+          // 格式化播放列表数据
+          const formattedTracks = finalTracks.map(item => ({
             id: item.id,
-            name: item.title || '未知音频',
-            duration: item.durationSec ? this.formatDuration(item.durationSec) : '未知',
+            title: item.title || '未知音频',
+            artist: item.subtitle || item.author || '冥想音乐',
+            durationSec: item.durationSec || 0,
             audioUrl: item.audioUrl || item.audio,
             coverUrl: item.coverUrl || '/static/images/default-cover.jpg',
-            artist: item.subtitle || item.author || '冥想音乐'
+            categoryCode: item.categoryCode,
+            seriesId: item.seriesId
           }))
-          this.trackId = this.playlist[0].id
-          this.loadTrack()
+          
           // 找到当前播放音频在列表中的位置
-          const currentIndex = this.playlist.findIndex(item => item.id === parseInt(this.trackId))
+          const currentIndex = formattedTracks.findIndex(item => item.id === parseInt(this.trackId))
+          
+          // 只设置播放列表，不重新播放（因为loadTrack已经在播放了）
+          this.$store.commit('playlist/SET_PLAYLIST', formattedTracks)
+          if (currentIndex !== -1) {
+            this.$store.commit('playlist/SET_CURRENT_INDEX', currentIndex)
+          }
+          
+          // 本地也保存一份用于显示
+          this.playlist = formattedTracks.map(item => ({
+            id: item.id,
+            name: item.title,
+            duration: item.durationSec ? this.formatDuration(item.durationSec) : '未知',
+            audioUrl: item.audioUrl,
+            coverUrl: item.coverUrl,
+            artist: item.artist
+          }))
+          
           if (currentIndex !== -1) {
             this.currentIndex = currentIndex
           }
@@ -965,82 +998,11 @@ export default {
       this.showbad = true;
     },
 
-    // 开始睡眠定时器
-    startSleepTimer(minutes) {
-      // 清除之前的定时器
-      this.clearSleepTimer()
-
-      // 设置定时器时间（转换为秒）
-      this.sleepTimerRemaining = minutes * 60
-
-      // 显示提示
-      uni.showToast({
-        title: `将在${minutes}分钟后停止播放`,
-        icon: 'none',
-        duration: 2000
-      })
-
-      // 设置主定时器
-      this.sleepTimer = setTimeout(() => {
-        this.stopPlaybackByTimer()
-      }, minutes * 60 * 1000)
-
-      // 设置倒计时更新（每秒更新一次）
-      this.sleepTimerInterval = setInterval(() => {
-        this.sleepTimerRemaining--
-
-        // 最后10秒提醒
-        if (this.sleepTimerRemaining === 10) {
-          uni.showToast({
-            title: '10秒后将停止播放',
-            icon: 'none'
-          })
-        }
-
-        if (this.sleepTimerRemaining <= 0) {
-          this.clearSleepTimer()
-        }
-      }, 1000)
-
-      // 关闭定时器面板
-      this.showbad = false
-    },
-
-    // 清除睡眠定时器
+    // 清除睡眠定时器（使用全局方法）
     clearSleepTimer() {
-      if (this.sleepTimer) {
-        clearTimeout(this.sleepTimer)
-        this.sleepTimer = null
-      }
-
-      if (this.sleepTimerInterval) {
-        clearInterval(this.sleepTimerInterval)
-        this.sleepTimerInterval = null
-      }
-
-      this.sleepTimerRemaining = 0
+      this.stopSleepTimer()
       this.selectedTime = 5
       this.customTime = 0
-    },
-
-    // 定时器触发停止播放
-    stopPlaybackByTimer() {
-      console.log('定时器触发，停止播放')
-
-      // 停止音频播放
-      if (this.audioContext && this.playing) {
-        this.audioContext.pause()
-      }
-
-      // 清除定时器
-      this.clearSleepTimer()
-
-      // 显示提示
-      uni.showToast({
-        title: '定时停止播放',
-        icon: 'none',
-        duration: 2000
-      })
     },
 
     formatTime(seconds) {
@@ -1071,8 +1033,10 @@ export default {
       this.selectedTime = time;
       this.customTime = 0; // 重置自定义时间
       console.log('选择了', time, '分钟');
-      // 立即启动定时器
+      // 立即启动全局定时器
       this.startSleepTimer(time);
+      // 关闭定时器面板
+      this.showbad = false;
     },
 
     // 打开自定义模态框
@@ -1101,14 +1065,16 @@ export default {
       this.selectedTime = this.customTime;
       this.showCustomModal = false;
       console.log('自定义了', this.customTime, '分钟');
-      // 启动定时器
+      // 启动全局定时器
       this.startSleepTimer(this.customTime);
+      // 关闭定时器面板
+      this.showbad = false;
     },
 
     // 关闭定时器
     closeTimer() {
       // 如果有正在运行的定时器，清除它
-      if (this.sleepTimer || this.sleepTimerRemaining > 0) {
+      if (this.isTimerActive) {
         this.clearSleepTimer()
         uni.showToast({
           title: '已取消定时',
@@ -1155,7 +1121,7 @@ export default {
     width: 110%;
     height: 110%;
     margin: -5%;
-    filter: blur(80rpx) brightness(0.8);
+    filter: blur(20rpx) brightness(0.85) saturate(1.2);
     transform: scale(1.1);
     animation: slowZoom 20s ease-in-out infinite alternate;
   }
@@ -1168,26 +1134,10 @@ export default {
     bottom: 0;
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.3) 0%,
-      rgba(0, 0, 0, 0.5) 50%,
-      rgba(0, 0, 0, 0.7) 100%
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(0, 0, 0, 0.25) 50%,
+      rgba(0, 0, 0, 0.4) 100%
     );
-  }
-
-  .bg-glow {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    background: radial-gradient(
-      circle at center,
-      rgba(124, 58, 237, 0.1) 0%,
-      rgba(168, 85, 247, 0.05) 30%,
-      transparent 70%
-    );
-    animation: rotate 30s linear infinite;
-    opacity: 0.6;
   }
 }
 
@@ -1208,6 +1158,8 @@ export default {
     transform: rotate(360deg);
   }
 }
+
+
 
 .main-content {
   padding-top: 200rpx;
