@@ -15,14 +15,10 @@
 
     <!-- 背景 -->
     <view class="bg-container">
-      <!-- 主背景图 -->
+      <!-- 模糊背景图 -->
       <image :src="track.coverUrl || '/static/images/default-cover.jpg'" mode="aspectFill" class="bg-image"></image>
-      <!-- 渐变遮罩层 -->
+      <!-- 半透明遮罩层 -->
       <view class="bg-overlay"></view>
-      <!-- 动态光效 -->
-      <view class="bg-glow"></view>
-      <!-- 玻璃反射层 -->
-      <view class="glass-reflection"></view>
     </view>
 
     <!-- 主内容 -->
@@ -1154,12 +1150,10 @@ export default {
   overflow: hidden;
 
   .bg-image {
-    width: 110%;
-    height: 110%;
-    margin: -5%;
-    filter: blur(100rpx) brightness(0.9) saturate(1.2);
+    width: 100%;
+    height: 100%;
+    filter: blur(50rpx) brightness(0.7);
     transform: scale(1.1);
-    animation: slowZoom 20s ease-in-out infinite alternate;
   }
 
   .bg-overlay {
@@ -1168,87 +1162,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.2) 0%,
-      rgba(0, 0, 0, 0.4) 50%,
-      rgba(0, 0, 0, 0.6) 100%
-    );
-    backdrop-filter: blur(10rpx);
-  }
-
-  .bg-glow {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    background: radial-gradient(
-      circle at center,
-      rgba(124, 58, 237, 0.15) 0%,
-      rgba(168, 85, 247, 0.08) 30%,
-      transparent 70%
-    );
-    animation: rotate 30s linear infinite;
-    opacity: 0.8;
-    mix-blend-mode: screen;
-  }
-  
-  /* 玻璃阴影效果层 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 600rpx;
-    height: 600rpx;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 20%,
-      transparent 60%
-    );
-    filter: blur(40rpx);
-    opacity: 0.6;
-    animation: pulse 4s ease-in-out infinite;
-  }
-  
-  /* 动态光晕效果 */
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      radial-gradient(ellipse at top, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
-    opacity: 0.5;
-    animation: breathe 8s ease-in-out infinite;
-  }
-  
-  /* 玻璃反射层样式 */
-  .glass-reflection {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 20%,
-      transparent 40%,
-      transparent 60%,
-      rgba(255, 255, 255, 0.05) 80%,
-      rgba(255, 255, 255, 0.1) 100%
-    );
-    backdrop-filter: blur(2rpx);
-    opacity: 0.3;
-    pointer-events: none;
-    animation: shimmer 15s ease-in-out infinite;
+    background: rgba(0, 0, 0, 0.3);
   }
 }
 
