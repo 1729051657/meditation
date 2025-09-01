@@ -8,8 +8,8 @@
 			<tn-icon name="search" size="48" color="#79B1DA" @click="doSearch"></tn-icon>
 		</view>
 
-		<!-- 搜索历史和热门搜索 - 只在没有搜索结果时显示 -->
-		<view v-if="!hasSearchResults">
+		<!-- 搜索历史和热门搜索 - 只在未搜索时显示 -->
+		<view v-if="!hasSearched">
 			<!-- 搜索历史 -->
 			<view class="history" v-if="searchHistory.length > 0">
 				<view class="history-header">
@@ -36,7 +36,7 @@
 		</view>
 
 		<!-- 搜索结果列表 - 只显示单集 -->
-		<scroll-view class="list" scroll-y v-if="hasSearchResults || hasSearched">
+		<scroll-view class="list" scroll-y v-if="hasSearched">
 			<view class="result-header" v-if="hasSearchResults">
 				<text class="result-count">找到 {{ tracks.length }} 个单集</text>
 			</view>
@@ -67,9 +67,9 @@
 		listHot,
 		listHistory,
 		addHistory,
-		removeHistory,
-		searchTracks
+		removeHistory
 	} from '@/api/search'
+	import { listTracks } from '@/api/track'
 
 	export default {
 		data() {
@@ -135,8 +135,10 @@
 					// 添加到搜索历史
 					await addHistory({ keyword: this.kw.trim() })
 					
-					// 搜索单集
-					const res = await searchTracks(this.kw.trim(), {
+					// 使用listTracks接口搜索单集
+					const res = await listTracks({
+						title: this.kw.trim(),
+						status: 0,
 						pageNum: 1,
 						pageSize: 50
 					})
