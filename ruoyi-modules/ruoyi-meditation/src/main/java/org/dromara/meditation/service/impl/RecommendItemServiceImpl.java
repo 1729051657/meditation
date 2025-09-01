@@ -12,13 +12,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.dromara.meditation.domain.bo.RecommendItemBo;
 import org.dromara.meditation.domain.vo.RecommendItemVo;
+import org.dromara.meditation.domain.vo.SeriesVo;
+import org.dromara.meditation.domain.vo.ArticleVo;
+import org.dromara.meditation.domain.vo.TrackVo;
 import org.dromara.meditation.domain.RecommendItem;
 import org.dromara.meditation.mapper.RecommendItemMapper;
+import org.dromara.meditation.mapper.SeriesMapper;
+import org.dromara.meditation.mapper.ArticleMapper;
+import org.dromara.meditation.mapper.TrackMapper;
 import org.dromara.meditation.service.IRecommendItemService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * 推荐位内容Service业务层处理
@@ -32,6 +41,9 @@ import java.util.Collection;
 public class RecommendItemServiceImpl implements IRecommendItemService {
 
     private final RecommendItemMapper baseMapper;
+    private final SeriesMapper seriesMapper;
+    private final ArticleMapper articleMapper;
+    private final TrackMapper trackMapper;
 
     /**
      * 查询推荐位内容
@@ -55,6 +67,12 @@ public class RecommendItemServiceImpl implements IRecommendItemService {
     public TableDataInfo<RecommendItemVo> queryPageList(RecommendItemBo bo, PageQuery pageQuery) {
         LambdaQueryWrapper<RecommendItem> lqw = buildQueryWrapper(bo);
         Page<RecommendItemVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
+        
+        // 批量加载内容详情，避免N+1问题
+        if (result.getRecords() != null && !result.getRecords().isEmpty()) {
+            loadContentDetails(result.getRecords());
+        }
+        
         return TableDataInfo.build(result);
     }
 
@@ -67,7 +85,14 @@ public class RecommendItemServiceImpl implements IRecommendItemService {
     @Override
     public List<RecommendItemVo> queryList(RecommendItemBo bo) {
         LambdaQueryWrapper<RecommendItem> lqw = buildQueryWrapper(bo);
-        return baseMapper.selectVoList(lqw);
+        List<RecommendItemVo> list = baseMapper.selectVoList(lqw);
+        
+        // 批量加载内容详情
+        if (list != null && !list.isEmpty()) {
+            loadContentDetails(list);
+        }
+        
+        return list;
     }
 
     private LambdaQueryWrapper<RecommendItem> buildQueryWrapper(RecommendItemBo bo) {
@@ -135,5 +160,87 @@ public class RecommendItemServiceImpl implements IRecommendItemService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+    
+    /**
+     * 批量加载内容详情，避免N+1查询问题
+     * 使用批量查询，按内容类型分组一次性加载
+     */
+    private void loadContentDetails(List<RecommendItemVo> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        
+        // 按内容类型分组
+        List<Long> seriesIds = new ArrayList<>();
+        List<Long> articleIds = new ArrayList<>();
+        List<Long> trackIds = new ArrayList<>();
+        
+        for (RecommendItemVo item : items) {
+            if (item.getContentId() == null) {
+                continue;
+            }
+            
+            switch (item.getContentType()) {
+                case "series":
+                    seriesIds.add(item.getContentId());
+                    break;
+                case "article":
+                    articleIds.add(item.getContentId());
+                    break;
+                case "track":
+                    trackIds.add(item.getContentId());
+                    break;
+            }
+        }
+        
+        // 批量查询系列内容
+        Map<Long, SeriesVo> seriesMap = new HashMap<>();
+        if (!seriesIds.isEmpty()) {
+            List<SeriesVo> seriesList = seriesMapper.selectVoBatchIds(seriesIds);
+            if (seriesList != null) {
+                seriesMap = seriesList.stream()
+                    .collect(Collectors.toMap(SeriesVo::getId, s -> s, (v1, v2) -> v1));
+            }
+        }
+        
+        // 批量查询文章内容
+        Map<Long, ArticleVo> articleMap = new HashMap<>();
+        if (!articleIds.isEmpty()) {
+            List<ArticleVo> articleList = articleMapper.selectVoBatchIds(articleIds);
+            if (articleList != null) {
+                articleMap = articleList.stream()
+                    .collect(Collectors.toMap(ArticleVo::getId, a -> a, (v1, v2) -> v1));
+            }
+        }
+        
+        // 批量查询音频内容
+        Map<Long, TrackVo> trackMap = new HashMap<>();
+        if (!trackIds.isEmpty()) {
+            List<TrackVo> trackList = trackMapper.selectVoBatchIds(trackIds);
+            if (trackList != null) {
+                trackMap = trackList.stream()
+                    .collect(Collectors.toMap(TrackVo::getId, t -> t, (v1, v2) -> v1));
+            }
+        }
+        
+        // 设置内容详情到对应的推荐项
+        for (RecommendItemVo item : items) {
+            if (item.getContentId() == null) {
+                continue;
+            }
+            
+            switch (item.getContentType()) {
+                case "series":
+                    item.setSeriesContent(seriesMap.get(item.getContentId()));
+                    break;
+                case "article":
+                    item.setArticleContent(articleMap.get(item.getContentId()));
+                    break;
+                case "track":
+                    item.setTrackContent(trackMap.get(item.getContentId()));
+                    break;
+            }
+        }
     }
 }
