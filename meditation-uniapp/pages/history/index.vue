@@ -264,51 +264,6 @@ export default {
       })
     },
     
-    // 显示更多选项
-    showMoreOptions(item) {
-      const options = ['继续播放', '从头播放', '删除记录']
-      if (item.seriesId) {
-        options.push('查看系列')
-      }
-      
-      uni.showActionSheet({
-        itemList: options,
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 继续播放
-            this.playAudio(item)
-          } else if (res.tapIndex === 1) {
-            // 从头播放
-            const params = {
-              id: item.trackId,
-              source: 'history'
-            }
-            
-            // 如果有系列ID，也传递过去
-            if (item.seriesId) {
-              params.seriesId = item.seriesId
-            }
-            
-            const queryString = Object.keys(params)
-              .map(key => `${key}=${params[key]}`)
-              .join('&')
-            
-            uni.navigateTo({
-              url: `/pages/player/index?${queryString}`
-            })
-          } else if (res.tapIndex === 2) {
-            // 删除记录
-            this.deleteHistory(item)
-          } else if (res.tapIndex === 3 && item.seriesId) {
-            // 查看系列
-            uni.navigateTo({
-              url: `/pages/series/detail?id=${item.seriesId}`
-            })
-          }
-        }
-      })
-    },
-    
     // 删除历史记录
     async deleteHistory(item) {
       try {

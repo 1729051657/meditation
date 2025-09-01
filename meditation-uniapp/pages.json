@@ -70,13 +70,6 @@
       }
     },
     {
-      "path": "pages/series/detail",
-      "style": {
-        "navigationBarTitleText": "系列详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/article/detail",
       "style": {
         "navigationBarTitleText": "文章详情",
