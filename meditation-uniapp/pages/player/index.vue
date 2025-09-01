@@ -327,10 +327,8 @@ export default {
       // 设置自动播放为false，需要用户手动触发
       this.audioContext.autoplay = false
       
-      // 设置后台播放相关属性
-      this.audioContext.epname = '冥想空间' // 专辑名称
-      this.audioContext.singer = '冥想音乐' // 歌手名称
-      this.audioContext.coverImgUrl = '/static/images/default-cover.jpg' // 默认封面
+      // 注意：这里不设置默认值，等待 loadTrack 时设置具体信息
+      // 避免覆盖已有的音频信息
 
       this.audioContext.onPlay(() => {
         console.log('音频开始播放')
@@ -421,13 +419,22 @@ export default {
           }
 
           if (this.track.audioUrl) {
-            console.log(this.track.audioUrl)
-            this.audioContext.src = this.track.audioUrl
+            console.log('设置音频信息:', this.track)
+            
+            // 重要：必须先设置 title 等信息，最后设置 src
             this.audioContext.title = this.track.title || '冥想音频'
             this.audioContext.singer = this.track.artist || '冥想音乐'
             this.audioContext.epname = '冥想空间'
             this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg'
-            console.log(this.audioContext, this.track.audioUrl)
+            
+            // 最后设置 src 触发播放
+            this.audioContext.src = this.track.audioUrl
+            
+            console.log('音频信息设置完成:', {
+              src: this.audioContext.src,
+              title: this.audioContext.title,
+              coverImgUrl: this.audioContext.coverImgUrl
+            })
             
             // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
             uni.setStorageSync('currentTrackId', this.trackId)
