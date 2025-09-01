@@ -421,18 +421,25 @@ export default {
           if (this.track.audioUrl) {
             console.log('设置音频信息:', this.track)
             
-            // 重要：必须先设置 title 等信息，最后设置 src
-            this.audioContext.title = this.track.title || '冥想音频'
-            this.audioContext.singer = this.track.artist || '冥想音乐'
-            this.audioContext.epname = '冥想空间'
-            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg'
+            // 根据文档，title 是必填项，必须在设置 src 之前设置
+            // 先停止当前播放（如果有）
+            if (this.audioContext.src) {
+              this.audioContext.stop()
+            }
             
-            // 最后设置 src 触发播放
+            // 按照文档要求的顺序设置属性
+            this.audioContext.title = this.track.title || '冥想音频' // 必填
+            this.audioContext.epname = '冥想空间' // 专辑名，选填
+            this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
+            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
+            
+            // 最后设置 src，这会触发音频加载
             this.audioContext.src = this.track.audioUrl
             
             console.log('音频信息设置完成:', {
               src: this.audioContext.src,
               title: this.audioContext.title,
+              singer: this.audioContext.singer,
               coverImgUrl: this.audioContext.coverImgUrl
             })
             
@@ -731,8 +738,17 @@ export default {
        console.log(track)
       // 设置新的音频源并播放
       if (track.audioUrl) {
-        this.audioContext.title = track.name
+        // 按照文档要求的顺序设置属性
+        this.audioContext.title = track.name || '冥想音频' // 必填
+        this.audioContext.epname = '冥想空间' // 专辑名
+        this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
+        this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
+        
+        // 最后设置 src
         this.audioContext.src = track.audioUrl
+        
+        // 保存当前播放的音轨ID
+        uni.setStorageSync('currentTrackId', track.id)
         
         this.currentTime = 0
         this.progress = 0
