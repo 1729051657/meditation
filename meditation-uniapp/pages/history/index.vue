@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { listPlayHistoryDetail, updatePlayHistory } from '@/api/play'
+import { listPlayHistoryDetail, updatePlayHistory,listPlayHistory } from '@/api/play'
 
 export default {
   data() {
@@ -141,7 +141,7 @@ export default {
       
       try {
         this.loading = true
-        const res = await listPlayHistoryDetail({
+        const res = await listPlayHistory({
           pageNum: this.pageNum,
           pageSize: this.pageSize
         })

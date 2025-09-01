@@ -7,7 +7,8 @@
         <view class="knowledge-section">
             <view class="knowledge-list">
                 <view v-for="item in knowledgeItems" :key="item.id" class="knowledge-item" @click="goToKnowledge(item)">
-                    <image :src="item.coverUrl || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill"></image>
+                    <image :src="item.coverUrl || defaultKnowledgeCover" class="knowledge-image" mode="aspectFill">
+                    </image>
                     <view class="knowledge-content">
                         <text class="knowledge-title">{{ item.title }}</text>
                         <text class="knowledge-desc" v-if="item.summary">{{ item.summary }}</text>
@@ -20,11 +21,13 @@
 
 <script>
 
-import { getHomeData } from '@/api/home'
+import { listArticles } from '@/api/article'
 export default {
     data() {
         return {
             knowledgeItems: [], // 知识内容
+            pageNum: 1,
+            pageSize: 100,
         }
     },
 
@@ -41,12 +44,16 @@ export default {
         // 加载首页数据
         async loadHomeData() {
             try {
-                const res = await getHomeData()
-
-                if (res.code === 200 && res.data) {
-                    const data = res.data
+                const res = await listArticles({
+                    pageNum: this.pageNum,
+                    pageSize: this.pageSize
+                })
+                console.log(res.code,res.rows)
+                if (res.code === 200 && res.rows) {
+                    const data = res.rows
+                    console.log(data)
                     // 设置知识内容 - 使用 articeVoList 作为知识内容
-                    this.knowledgeItems = data.articleVoList || []
+                    this.knowledgeItems = data || []
                 }
             } catch (error) {
                 console.error('加载首页数据失败:', error)

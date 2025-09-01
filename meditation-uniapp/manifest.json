@@ -53,7 +53,8 @@
         "optimization" : {
             "subPackages" : true
         },
-        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
+        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ],
+        "requiredBackgroundModes" : [ "audio" ]
     },
     "mp-alipay" : {
         "usingComponents" : true

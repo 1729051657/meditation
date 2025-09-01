@@ -50,7 +50,7 @@
             </view>
             <view class="card-bottom-bar">
               <view class="card-duration">
-                <uni-icons type="time" size="14" color="#fff"></uni-icons>
+                <image class="timeImg" src="/static/home/time.png"  lazy-load="false" binderror="" bindload="" />
                 <text class="duration-text">{{ Math.round(item.recommendDuration / 60) || 15 }}分钟</text>
               </view>
               <view class="card-play">
@@ -102,12 +102,25 @@
         </view>
       </view>
     </view>
+    <!-- <view class="music">
+      <image class="musicimg" src="https://bawu-film.oss-cn-shanghai.aliyuncs.com/2025/08/27/9d999a824b444832b78b23261bb721e5.png"  lazy-load="false" binderror="" bindload="" />
+      <view class="musicName">
+        名称
+      </view>
+        
+        <view class="timing">
+          定时停止 9:12
+        </view>
+        <image class="pause" src="/static/player/close.png"  lazy-load="false" binderror="" bindload="" />
+          
+          
+    </view> -->
+      
   </view>
 </template>
 
 <script>
 import { getHomeData } from '@/api/home'
-
 export default {
   data() {
     return {
@@ -295,7 +308,7 @@ export default {
     goToMeditation(item) {
       // 跳转到系列详情页
       uni.navigateTo({
-        url: `/pages/series/detail?id=${item.id}`
+        url: `/pages/player/index?id=${item.id}`
       })
     },
 
@@ -334,7 +347,8 @@ export default {
 <style lang="scss" scoped>
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
+  // background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
+  background: #D8E2F0;
   padding-bottom: 100rpx;
   position: relative;
 }
@@ -653,7 +667,7 @@ export default {
 
         .recommend-image {
           width: 100%;
-          height: 200rpx;
+          height:100%;
           flex-shrink: 0;
         }
 
@@ -782,6 +796,9 @@ export default {
   width: 24rpx;
   height: 24rpx;
 }
-
+.timeImg{
+  width: 24rpx;
+  height: 24rpx;
+}
 
 </style>

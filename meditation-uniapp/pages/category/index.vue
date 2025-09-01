@@ -12,11 +12,11 @@
           <view class="chip" :class="{ active: category.id === currentCategoryId }" v-for="category in categories"
             :key="category.id" @click="switchCategory(category.id)">
             <view class="newchip">
-              
-           
-              
-            <image :src="getCategoryIcon(category.name, category.id)" class="chipImg"></image>
-              
+
+
+
+            <image :src="getCategoryIcon(category.code, category.id)" class="chipImg"></image>
+
             {{ category.name }}
              </view>
           </view>
@@ -43,7 +43,7 @@
             <view class="series-image-wrapper">
               <image :src="s.coverUrl" class="series-cover" mode="aspectFill" />
             </view>
-           
+
           </view>
         </view>
       </scroll-view>
@@ -109,7 +109,7 @@ export default {
     console.log('页面加载，参数:', query)
     await this.loadCategoryData()
   },
-  
+
   onShow() {
     console.log('页面显示')
     // 页面显示时可以刷新数据
@@ -121,7 +121,7 @@ export default {
         console.log('开始加载分类数据...')
         const res = await listCategories({ status: 0 })
         console.log('分类数据响应:', res)
-        
+
         // 兼容不同的响应格式
         if (res.rows) {
           this.categories = res.rows
@@ -132,7 +132,7 @@ export default {
         } else {
           this.categories = []
         }
-        
+
         console.log('解析后的分类数据:', this.categories)
 
         if (this.categories.length > 0) {
@@ -174,10 +174,10 @@ export default {
           pageSize: this.pageSize
         }
         console.log('系列请求参数:', params)
-        
+
         const res = await listSeries(params)
         console.log('系列数据响应:', res)
-        
+
         // 兼容不同的响应格式
         let rows = []
         if (res.rows) {
@@ -187,9 +187,9 @@ export default {
         } else if (res.data && res.data.rows) {
           rows = res.data.rows
         }
-        
+
         console.log('解析后的系列数据:', rows)
-        
+
         // 处理封面URL（如果需要）
         rows = rows.map(item => {
           // 如果没有coverUrl但有cover，记录日志
@@ -198,19 +198,19 @@ export default {
           }
           return item
         })
-        
+
         if (reset) {
           this.series = rows
         } else {
           this.series = this.series.concat(rows)
         }
-        
+
         // 判断是否还有更多数据
         this.seriesHasMore = rows.length >= this.pageSize
         if (this.seriesHasMore) {
           this.seriesPageNum += 1
         }
-        
+
         console.log('当前系列数据总数:', this.series.length, '还有更多:', this.seriesHasMore)
       } catch (error) {
         console.error('加载系列列表失败:', error)
@@ -242,10 +242,10 @@ export default {
           pageSize: this.pageSize
         }
         console.log('单集请求参数:', params)
-        
+
         const res = await listTracks(params)
         console.log('单集数据响应:', res)
-        
+
         // 兼容不同的响应格式
         let rows = []
         if (res.rows) {
@@ -255,9 +255,9 @@ export default {
         } else if (res.data && res.data.rows) {
           rows = res.data.rows
         }
-        
+
         console.log('解析后的单集数据:', rows)
-        
+
         // 处理封面URL和音频URL（如果需要）
         rows = rows.map(item => {
           // 如果没有coverUrl但有cover，记录日志
@@ -270,19 +270,19 @@ export default {
           }
           return item
         })
-        
+
         if (reset) {
           this.tracks = rows
         } else {
           this.tracks = this.tracks.concat(rows)
         }
-        
+
         // 判断是否还有更多数据
         this.tracksHasMore = rows.length >= this.pageSize
         if (this.tracksHasMore) {
           this.tracksPageNum += 1
         }
-        
+
         console.log('当前单集数据总数:', this.tracks.length, '还有更多:', this.tracksHasMore)
       } catch (error) {
         console.error('加载单集列表失败:', error)
@@ -301,10 +301,10 @@ export default {
         console.log('分类未改变，不重新加载')
         return
       }
-      
+
       console.log('切换分类，从', this.currentCategoryId, '到', id)
       this.currentCategoryId = id
-      
+
       // 重置分页参数
       this.seriesPageNum = 1
       this.tracksPageNum = 1
@@ -334,7 +334,7 @@ export default {
 
     goBack() { uni.navigateBack() },
     goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) },
-    
+
     // 加载更多
     async loadMore() {
       console.log('点击加载更多')
@@ -360,30 +360,30 @@ export default {
       return '分类'
     },
 
-    // 根据分类名称获取对应的图标
-    getCategoryIcon(categoryName, categoryId) {
-      // 基础图标映射
+    // 根据分类code获取对应的图标
+    getCategoryIcon(categoryCode, categoryId) {
+      // 基础图标映射 - 使用code匹配
       const iconMap = {
-        '情绪调节': '/static/category/emotion-regulation@2x.png',
-        '提升专注': '/static/category/improve-focus@2x.png',
-        '改善睡眠': '/static/category/improve-sleep@2x.png',
-        '放松减压': '/static/category/relax-stress@2x.png'
+        'emotion': '/static/category/emotion-regulation@2x.png',
+        'focus': '/static/category/improve-focus@2x.png',
+        'sleep': '/static/category/improve-sleep@2x.png',
+        'relax': '/static/category/relax-stress@2x.png'
       }
-      
+
       // 如果分类被选中，返回对应的选中状态图标
       if (categoryId === this.currentCategoryId) {
-        // 根据分类名称返回对应的选中状态图标
+        // 根据分类code返回对应的选中状态图标
         const selectedIconMap = {
-          '情绪调节': '/static/home/emotion-regulation@2x.png',
-          '提升专注': '/static/home/improve-focus@2x.png',
-          '改善睡眠': '/static/home/improve-sleep@2x.png',
-          '放松减压': '/static/home/relax-stress@2x.png'
+          'emotion': '/static/home/emotion-regulation@2x.png',
+          'focus': '/static/home/improve-focus@2x.png',
+          'sleep': '/static/home/improve-sleep@2x.png',
+          'relax': '/static/home/relax-stress@2x.png'
         }
-        return selectedIconMap[categoryName] || iconMap[categoryName] || '/static/images/category/category-icon.png'
+        return selectedIconMap[categoryCode] || iconMap[categoryCode] || '/static/images/category/category-icon.png'
       }
-      
+
       // 未选中状态返回基础图标
-      return iconMap[categoryName] || '/static/images/category/category-icon.png'
+      return iconMap[categoryCode] || '/static/images/category/category-icon.png'
     }
   },
   onReachBottom() {
@@ -468,11 +468,11 @@ export default {
   background: #fff;
   border-radius: 20rpx;
   overflow: hidden;
- 
+
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   display: flex;
-  
+
 
   &:active {
     transform: scale(0.98);
@@ -483,7 +483,7 @@ export default {
 .series-image-wrapper {
   position: relative;
   width: 160rpx;
-  
+
   overflow: hidden;
   padding:20rpx;
   box-sizing: border-box;
@@ -531,7 +531,6 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24rpx;
-  padding: 0 30rpx;
 }
 
 .track-card {
@@ -774,7 +773,7 @@ margin-top: 40rpx;
   width: 40rpx;
   height: 40rpx;
   margin-right: 4rpx;
-    
+
 }
 .newchip{
   display: flex;

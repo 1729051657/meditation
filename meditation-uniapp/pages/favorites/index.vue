@@ -15,8 +15,8 @@
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 正在播放的音频信息条 -->
-      <view class="playing-bar" v-if="currentPlaying" @click="goToPlayer">
-        <view class="playing-info">
+      <view class="playing-bar" v-if="currentPlaying" >
+        <view class="playing-info" >
           <view class="playing-animation">
             <view class="bar" v-for="i in 3" :key="i"></view>
           </view>
@@ -108,7 +108,7 @@ export default {
       clearInterval(this.sleepTimer)
     }
   },
-  
+
   onPullDownRefresh() {
     this.refreshFavorites().finally(() => {
       uni.stopPullDownRefresh()

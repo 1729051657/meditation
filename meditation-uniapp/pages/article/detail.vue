@@ -4,7 +4,9 @@
     <tn-nav-bar :alpha="true">
     </tn-nav-bar>
     <text class="title">{{ article && article.title ? article.title : '' }}</text>
-    <image class="cover" :src="oss(article && article.coverUrl ? article.coverUrl : '')" mode="aspectFill" />
+    <view class="border">
+      <image class="cover" :src="article && article.coverUrl ? article.coverUrl : ''" mode="widthFix" />
+    </view>
     <view class="p24">
       <rich-text :nodes="article && article.content ? article.content : ''"></rich-text>
     </view>
@@ -40,12 +42,17 @@ export default {
   font-weight: 600;
   padding: 20rpx
 }
-
+.border{
+  padding:0 24rpx;
+  box-sizing: border-box;
+  margin-bottom: 26rpx;
+  margin-top:24rpx;
+}
 .cover {
-  width: 92%;
-  margin: 0 4%;
-  height: 360rpx;
-  border-radius: 16rpx
+  width: 100%;
+
+  border-radius: 16rpx;
+  box-sizing: border-box;
 }
 
 .p24 {

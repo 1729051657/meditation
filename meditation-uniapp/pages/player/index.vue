@@ -9,9 +9,7 @@
     <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }">
     </view>
     <view class="imggo" @click="go">
-      <image class="w64"
-        src="/static/player/back-arrow.png"
-        lazy-load="false" binderror="" bindload="" />
+      <image class="w64" src="/static/player/back-arrow.png" lazy-load="false" binderror="" bindload="" />
 
     </view>
 
@@ -33,7 +31,7 @@
         <!-- 标题信息 -->
         <view class="info-section">
           <text class="track-title">{{ track.title }}</text>
-          <text class="track-artist">{{ track.artist || '冥想音乐' }}</text>
+          <!-- <text class="track-artist">{{ track.artist || '冥想音乐' }}</text> -->
           <view class="collect">
             <image class="w64" @click="toggleFavorite"
               :src="isFavorite ? '/static/player/favorite-active.png' : '/static/player/favorite-icon.png'"
@@ -66,20 +64,16 @@
         <!-- 其他功能 -->
         <view class="feature-section">
           <view class="feature-btn" @click="openModal">
-            <image class="w72"
-              src="/static/player/playlist-icon.png"
-              lazy-load="false" binderror="" bindload="" />
+            <image class="w72" src="/static/player/playlist-icon.png" lazy-load="false" binderror="" bindload="" />
 
           </view>
-          <view class="feature-btn">
+          <view class="feature-btn" @click="togglePlay">
             <image class="w140"
-              src="/static/player/play-pause-icon.png"
+              :src="playing ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'"
               lazy-load="false" binderror="" bindload="" />
           </view>
-          <view class="feature-btn" @click="share">
-            <image class="w72"
-              src="/static/player/timer-icon.png"
-              lazy-load="false" binderror="" bindload="" />
+          <view class="feature-btn" >
+            <image class="w72" src="" lazy-load="false" binderror="" bindload="" />
           </view>
         </view>
       </view>
@@ -103,13 +97,11 @@
               <view class="song-name" :class="{ song: index === currentIndex }">{{ item.name }}</view>
             </view>
             <image class="w56"
-              src="/static/player/play-icon.png"
+              :src="index === currentIndex ? '/static/player/close.png' : '/static/player/play-icon.png'"
               lazy-load="false" binderror="" bindload="" />
           </view>
           <view class="playlist-img">
-            <image class="w32"
-              src="/static/player/time-icon.png"
-              lazy-load="false" binderror="" bindload="" />
+            <image class="w32" src="/static/player/time-icon.png" lazy-load="false" binderror="" bindload="" />
             <view class="time">
               {{ item.duration }}
             </view>
@@ -126,9 +118,8 @@
       <view class="header">
         <view class="header-title">定时器</view>
         <view class="close-icon" @click="closeTimer">
-          <image class="w32"
-            src="/static/player/close-icon.png"
-            mode="aspectFit|aspectFill|widthFix" lazy-load="false" binderror="" bindload="" />
+          <image class="w32" src="/static/player/close-icon.png" mode="aspectFit|aspectFill|widthFix" lazy-load="false"
+            binderror="" bindload="" />
           结束定时
         </view>
       </view>
@@ -234,19 +225,20 @@ export default {
     this.trackId = options.id
     this.seriesId = options.seriesId || null
     this.categoryId = options.categoryId || null
-    
+
     // 重置收藏状态
     this.isFavorite = false
     this.favoriteId = null
-    
+
     // 如果有传递播放进度，恢复播放进度
     if (options.progress) {
       this.currentTime = parseInt(options.progress) || 0
     }
-    
-    this.initAudio()
-    this.loadTrack()
+
+
+    // this.loadTrack()
     this.loadPlaylist()
+    this.initAudio()
   },
   computed: {
     // 计算是否是自定义时间
@@ -255,25 +247,61 @@ export default {
     }
   },
   onUnload() {
-    // 清理定时器
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval)
+    // 页面卸载时，如果音频正在播放，保持后台播放
+    // 如果音频已停止，则清理资源
+    if (this.audioContext && this.audioContext.src) {
+      if (this.playing) {
+        // 音频正在播放，保持后台播放，只清理页面相关资源
+        this.cleanupPageResources()
+      } else {
+        // 音频已停止，清理所有资源
+        this.cleanupAudioResources()
+      }
+    } else {
+      // 没有音频，只清理页面资源
+      this.cleanupPageResources()
     }
-    
-    // 保存播放进度
+  },
+
+  onHide() {
+    // 页面隐藏时保存播放进度，保持后台播放
     this.savePlayProgress()
     
-    if (this.audioContext) {
-      this.audioContext.destroy()
+    // 确保音频继续在后台播放
+    if (this.audioContext && this.audioContext.src && this.playing) {
+      console.log('页面隐藏，音频继续在后台播放')
+    }
+  },
+
+  onShow() {
+    // 页面显示时恢复播放状态
+    if (this.audioContext && this.audioContext.src) {
+      // 同步播放状态
+      this.playing = !this.audioContext.paused
+      
+      // 如果音频正在播放，重新开始进度跟踪
+      if (this.playing) {
+        this.startProgressTracking()
+      }
+      
+      console.log('页面显示，播放状态已同步:', this.playing ? '播放中' : '已暂停')
     }
   },
 
   methods: {
     initAudio() {
-      this.audioContext = uni.createInnerAudioContext()
-      
+      // 使用后台音频管理器，支持后台播放
+      this.audioContext = uni.getBackgroundAudioManager()
+
+      console.log(this.audioContext)
+
       // 设置自动播放为false，需要用户手动触发
       this.audioContext.autoplay = false
+      
+      // 设置后台播放相关属性
+      this.audioContext.epname = '冥想空间' // 专辑名称
+      this.audioContext.singer = '冥想音乐' // 歌手名称
+      this.audioContext.coverImgUrl = '/static/images/default-cover.jpg' // 默认封面
 
       this.audioContext.onPlay(() => {
         console.log('音频开始播放')
@@ -301,7 +329,7 @@ export default {
         this.markAsCompleted()
         this.next()
       })
-      
+
       this.audioContext.onError((error) => {
         console.error('音频播放错误:', error)
         this.playing = false
@@ -310,20 +338,37 @@ export default {
           icon: 'none'
         })
       })
-      
+
       this.audioContext.onCanplay(() => {
         console.log('音频可以播放，时长:', this.audioContext.duration)
       })
-      
+
       this.audioContext.onWaiting(() => {
         console.log('音频加载中...')
+      })
+      
+      // 后台播放相关事件
+      this.audioContext.onStop(() => {
+        console.log('音频停止播放')
+        this.playing = false
+        this.stopProgressTracking()
+      })
+      
+      this.audioContext.onPrev(() => {
+        console.log('上一曲')
+        this.previous()
+      })
+      
+      this.audioContext.onNext(() => {
+        console.log('下一曲')
+        this.next()
       })
     },
 
     async loadTrack() {
       try {
         const res = await getTrackDetail(this.trackId)
-        
+
         if (res.code === 200 && res.data) {
           // 映射后端返回的数据字段
           this.track = {
@@ -337,7 +382,7 @@ export default {
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
-          
+
           // 设置seriesId和categoryId如果没有传入
           if (!this.seriesId && res.data.seriesId) {
             this.seriesId = res.data.seriesId
@@ -347,8 +392,13 @@ export default {
           }
 
           if (this.track.audioUrl) {
+            console.log(this.track.audioUrl)
             this.audioContext.src = this.track.audioUrl
-            
+            this.audioContext.title = this.track.title || '冥想音频'
+            this.audioContext.singer = this.track.artist || '冥想音乐'
+            this.audioContext.epname = '冥想空间'
+            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg'
+            console.log(this.audioContext, this.track.audioUrl)
             // 如果有传递的播放进度，恢复播放位置
             if (this.currentTime > 0) {
               setTimeout(() => {
@@ -373,7 +423,7 @@ export default {
         })
       }
     },
-    
+
     // 添加到播放历史
     async addToPlayHistory() {
       try {
@@ -382,7 +432,7 @@ export default {
           progressSec: Math.floor(this.currentTime),
           isCompleted: '0'
         })
-        
+
         if (res.code === 200 && res.data) {
           this.playHistoryId = res.data.id
         }
@@ -390,7 +440,7 @@ export default {
         console.error('添加播放历史失败:', error)
       }
     },
-    
+
     // 开始跟踪播放进度
     startProgressTracking() {
       // 每10秒更新一次播放进度
@@ -398,7 +448,7 @@ export default {
         this.savePlayProgress()
       }, 10000)
     },
-    
+
     // 停止跟踪播放进度
     stopProgressTracking() {
       if (this.updateInterval) {
@@ -408,15 +458,15 @@ export default {
       // 暂停时立即保存进度
       this.savePlayProgress()
     },
-    
+
     // 保存播放进度
     async savePlayProgress() {
       if (!this.playHistoryId || !this.trackId) return
-      
+
       try {
         const progressSec = Math.floor(this.currentTime)
         const isCompleted = this.duration > 0 && this.currentTime >= this.duration * 0.95 ? '1' : '0'
-        
+
         await updatePlayHistory({
           id: this.playHistoryId,
           trackId: this.trackId,
@@ -427,11 +477,11 @@ export default {
         console.error('更新播放进度失败:', error)
       }
     },
-    
+
     // 标记为已完成
     async markAsCompleted() {
       if (!this.playHistoryId || !this.trackId) return
-      
+
       try {
         await updatePlayHistory({
           id: this.playHistoryId,
@@ -444,7 +494,54 @@ export default {
       }
     },
 
+    // 清理页面资源（保持音频播放）
+    cleanupPageResources() {
+      // 清理定时器
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval)
+      }
+
+      // 保存播放进度
+      this.savePlayProgress()
+      
+      console.log('页面资源已清理，音频继续在后台播放')
+    },
+
+    // 清理音频资源（完全停止播放）
+    cleanupAudioResources() {
+      // 清理定时器
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval)
+      }
+
+      // 保存播放进度
+      this.savePlayProgress()
+
+      // 清理音频资源 - BackgroundAudioManager 没有 destroy 方法
+      if (this.audioContext) {
+        try {
+          // 停止播放
+          this.audioContext.stop()
+          // 移除所有事件监听器
+          this.audioContext.offPlay()
+          this.audioContext.offPause()
+          this.audioContext.offTimeUpdate()
+          this.audioContext.offEnded()
+          this.audioContext.offError()
+          this.audioContext.offCanplay()
+          this.audioContext.offWaiting()
+          this.audioContext.offStop()
+          this.audioContext.offPrev()
+          this.audioContext.offNext()
+          // 注意：不要清空 src，避免 invalid BackgroundAudioManager.src 错误
+        } catch (error) {
+          console.error('清理音频资源时出错:', error)
+        }
+      }
+    },
+
     togglePlay() {
+      console.log(this.audioContext)
       if (!this.audioContext) {
         uni.showToast({
           title: '音频未加载',
@@ -452,15 +549,16 @@ export default {
         })
         return
       }
-      
+
       if (!this.audioContext.src) {
+        console.log(this.audioContext)
         uni.showToast({
           title: '音频地址无效',
           icon: 'none'
         })
         return
       }
-      
+
       if (this.playing) {
         this.audioContext.pause()
       } else {
@@ -483,13 +581,13 @@ export default {
         })
         return
       }
-      
+
       if (this.currentIndex > 0) {
         this.currentIndex--
       } else {
         this.currentIndex = this.playlist.length - 1
       }
-      
+
       this.playTrackAtIndex(this.currentIndex)
     },
 
@@ -502,16 +600,16 @@ export default {
         })
         return
       }
-      
+
       if (this.currentIndex < this.playlist.length - 1) {
         this.currentIndex++
       } else {
         this.currentIndex = 0
       }
-      
+
       this.playTrackAtIndex(this.currentIndex)
     },
-    
+
     // 加载播放列表
     async loadPlaylist() {
       try {
@@ -520,13 +618,13 @@ export default {
           pageNum: 1,
           pageSize: 100
         }
-        
+
         // 如果有系列ID，获取同系列的音频
         if (this.seriesId) {
           params.seriesId = this.seriesId
           params.orderByColumn = 'order_index'
           params.isAsc = 'asc'
-        } 
+        }
         // 如果有分类ID，获取同分类的音频
         else if (this.categoryId) {
           params.categoryId = this.categoryId
@@ -538,9 +636,9 @@ export default {
           params.orderByColumn = 'create_time'
           params.isAsc = 'desc'
         }
-        
+
         const res = await listTracks(params)
-        
+
         if (res.code === 200) {
           const tracks = res.rows || res.data || []
           this.playlist = tracks.map(item => ({
@@ -551,7 +649,8 @@ export default {
             coverUrl: item.coverUrl || '/static/images/default-cover.jpg',
             artist: item.subtitle || item.author || '冥想音乐'
           }))
-          
+          this.trackId = this.playlist[0].id
+          this.loadTrack()
           // 找到当前播放音频在列表中的位置
           const currentIndex = this.playlist.findIndex(item => item.id === parseInt(this.trackId))
           if (currentIndex !== -1) {
@@ -562,19 +661,19 @@ export default {
         console.error('加载播放列表失败:', error)
       }
     },
-    
+
     // 播放指定索引的音频
     async playTrackAtIndex(index) {
       if (index < 0 || index >= this.playlist.length) return
-      
+
       const track = this.playlist[index]
       if (!track) return
-      
+
       // 停止当前播放
       if (this.audioContext) {
         this.audioContext.stop()
       }
-      
+
       // 更新当前音频信息
       this.trackId = track.id
       this.currentIndex = index
@@ -583,12 +682,15 @@ export default {
         title: track.name,
         artist: track.artist,
         coverUrl: track.coverUrl,
-        audioUrl: track.audioUrl
+        audioUrl: track.audioUrl,
+        
       }
-      
+       console.log(track)
       // 设置新的音频源并播放
       if (track.audioUrl) {
+        this.audioContext.title = track.name
         this.audioContext.src = track.audioUrl
+        
         this.currentTime = 0
         this.progress = 0
         
@@ -597,34 +699,34 @@ export default {
           this.audioContext.play()
         }, 100)
       }
-      
+
       // 检查收藏状态
       await this.checkFavoriteStatus(track.id)
-      
+
       // 添加播放历史
       this.addToPlayHistory()
     },
-    
+
     // 格式化时长
     formatDuration(seconds) {
       if (!seconds) return '未知'
       const minutes = Math.ceil(seconds / 60)
       return `${minutes}分钟`
     },
-    
+
     // 检查收藏状态
     async checkFavoriteStatus(trackId) {
       try {
         console.log('检查收藏状态, trackId:', trackId)
-        
+
         // 先检查是否收藏
         const checkRes = await checkFavorite(trackId, 'track')
         console.log('收藏状态检查结果:', checkRes)
-        
+
         if (checkRes.code === 200) {
           this.isFavorite = checkRes.data === true || checkRes.data === 'true' || checkRes.data === 1
           console.log('是否已收藏:', this.isFavorite)
-          
+
           // 如果已收藏，获取收藏记录ID
           if (this.isFavorite) {
             const listRes = await listFavorites({
@@ -634,7 +736,7 @@ export default {
               pageSize: 1
             })
             console.log('收藏列表结果:', listRes)
-            
+
             if (listRes.code === 200 && listRes.rows && listRes.rows.length > 0) {
               this.favoriteId = listRes.rows[0].id
               console.log('收藏记录ID (rows):', this.favoriteId)
@@ -665,11 +767,11 @@ export default {
     async toggleFavorite() {
       try {
         console.log('切换收藏状态, 当前状态:', this.isFavorite, 'favoriteId:', this.favoriteId, 'trackId:', this.trackId)
-        
+
         uni.showLoading({
           title: this.isFavorite ? '取消收藏中...' : '收藏中...'
         })
-        
+
         if (this.isFavorite) {
           // 取消收藏
           if (!this.favoriteId) {
@@ -680,7 +782,7 @@ export default {
               pageNum: 1,
               pageSize: 1
             })
-            
+
             if (listRes.code === 200) {
               if (listRes.rows && listRes.rows.length > 0) {
                 this.favoriteId = listRes.rows[0].id
@@ -689,17 +791,17 @@ export default {
               }
             }
           }
-          
+
           if (this.favoriteId) {
             console.log('取消收藏, favoriteId:', this.favoriteId)
             const res = await removeFavorite(this.favoriteId)
             console.log('取消收藏结果:', res)
-            
+
             if (res.code === 200) {
               this.isFavorite = false
               this.favoriteId = null
               console.log('收藏已取消')
-              
+
               uni.hideLoading()
               uni.showToast({
                 title: '已取消收藏',
@@ -715,13 +817,13 @@ export default {
           // 添加收藏
           const res = await addFavorite(this.trackId, 'track')
           console.log('添加收藏结果:', res)
-          
+
           if (res.code === 200) {
             this.isFavorite = true
             // 尝试从不同的响应格式中获取ID
             this.favoriteId = res.data?.id || res.data || res.id || null
             console.log('新收藏记录ID:', this.favoriteId)
-            
+
             uni.hideLoading()
             uni.showToast({
               title: '收藏成功',
