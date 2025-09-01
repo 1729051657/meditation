@@ -234,7 +234,36 @@ export default {
     if (options.progress) {
       this.currentTime = parseInt(options.progress) || 0
     }
-
+    
+    // 如果是从迷你播放器跳转过来的（resume参数），不重新初始化音频
+    if (options.resume === 'true') {
+      // 只同步当前播放状态
+      const audioContext = uni.getBackgroundAudioManager()
+      if (audioContext && audioContext.src) {
+        this.audioContext = audioContext
+        this.playing = !audioContext.paused
+        this.currentTime = audioContext.currentTime || 0
+        this.duration = audioContext.duration || 0
+        if (this.duration > 0) {
+          this.progress = (this.currentTime / this.duration) * 100
+        }
+        // 设置音轨信息
+        this.track = {
+          title: audioContext.title || '未知音频',
+          coverUrl: audioContext.coverImgUrl || '/static/images/default-cover.jpg',
+          audioUrl: audioContext.src
+        }
+        // 如果正在播放，开始进度跟踪
+        if (this.playing) {
+          this.startProgressTracking()
+        }
+        // 加载播放列表
+        this.loadPlaylist()
+        // 检查收藏状态
+        this.checkFavoriteStatus(this.trackId)
+        return
+      }
+    }
 
     // this.loadTrack()
     this.loadPlaylist()
@@ -399,6 +428,10 @@ export default {
             this.audioContext.epname = '冥想空间'
             this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg'
             console.log(this.audioContext, this.track.audioUrl)
+            
+            // 保存当前播放的音轨ID到本地存储，供迷你播放器使用
+            uni.setStorageSync('currentTrackId', this.trackId)
+            
             // 如果有传递的播放进度，恢复播放位置
             if (this.currentTime > 0) {
               setTimeout(() => {
@@ -534,6 +567,9 @@ export default {
           this.audioContext.offPrev()
           this.audioContext.offNext()
           // 注意：不要清空 src，避免 invalid BackgroundAudioManager.src 错误
+          
+          // 清除存储的当前音轨ID
+          uni.removeStorageSync('currentTrackId')
         } catch (error) {
           console.error('清理音频资源时出错:', error)
         }

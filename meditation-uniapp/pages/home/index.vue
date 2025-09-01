@@ -115,13 +115,21 @@
           
           
     </view> -->
+    
+    <!-- 迷你播放器 -->
+    <MiniPlayer />
       
   </view>
 </template>
 
 <script>
 import { getHomeData } from '@/api/home'
+import MiniPlayer from '@/components/MiniPlayer/index.vue'
+
 export default {
+  components: {
+    MiniPlayer
+  },
   data() {
     return {
       navHeight: "", // 导航栏高度
