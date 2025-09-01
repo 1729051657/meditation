@@ -235,8 +235,29 @@ const actions = {
     
     // 获取音频URL
     const baseUrl = rootState.app.baseUrl || ''
-    const audioUrl = track.audioUrl ? `${baseUrl}/system/oss/download/${track.audioUrl}` : ''
-    const coverUrl = track.coverUrl ? `${baseUrl}/system/oss/download/${track.coverUrl}` : '/static/images/default-cover.jpg'
+    
+    // 判断是否已经是完整的URL
+    let audioUrl = ''
+    if (track.audioUrl) {
+      if (track.audioUrl.startsWith('http://') || track.audioUrl.startsWith('https://')) {
+        // 已经是完整URL，直接使用
+        audioUrl = track.audioUrl
+      } else {
+        // 需要拼接OSS下载路径
+        audioUrl = `${baseUrl}/system/oss/download/${track.audioUrl}`
+      }
+    }
+    
+    let coverUrl = '/static/images/default-cover.jpg'
+    if (track.coverUrl) {
+      if (track.coverUrl.startsWith('http://') || track.coverUrl.startsWith('https://')) {
+        // 已经是完整URL，直接使用
+        coverUrl = track.coverUrl
+      } else {
+        // 需要拼接OSS下载路径
+        coverUrl = `${baseUrl}/system/oss/download/${track.coverUrl}`
+      }
+    }
     
     // #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ
     // 设置背景音频信息

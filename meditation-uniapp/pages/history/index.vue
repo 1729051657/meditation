@@ -260,11 +260,10 @@ export default {
     
     // 播放音频
     playAudio(item) {
-      // 跳转到播放页面，传递播放进度信息
+      // 跳转到播放页面
       const params = {
         id: item.trackId,
-        source: 'history',
-        progress: item.progressSec
+        source: 'history'
       }
       
       // 如果有系列ID，也传递过去
@@ -298,8 +297,7 @@ export default {
             // 从头播放
             const params = {
               id: item.trackId,
-              source: 'history',
-              progress: 0  // 从头开始播放
+              source: 'history'
             }
             
             // 如果有系列ID，也传递过去

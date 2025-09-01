@@ -691,11 +691,33 @@ export default {
             // 设置其他可选属性
             this.audioContext.epname = this.track.title || '冥想音频' // 专辑名，选填
             this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
-            this.audioContext.coverImgUrl = this.track.coverUrl || '/static/images/default-cover.jpg' // 封面图，选填
+            
+            // 处理封面图URL
+            let coverUrl = '/static/images/default-cover.jpg'
+            if (this.track.coverUrl) {
+              if (this.track.coverUrl.startsWith('http://') || this.track.coverUrl.startsWith('https://')) {
+                coverUrl = this.track.coverUrl
+              } else {
+                // 需要拼接完整路径
+                coverUrl = `${this.$baseUrl}/system/oss/download/${this.track.coverUrl}`
+              }
+            }
+            this.audioContext.coverImgUrl = coverUrl // 封面图，选填
 
+            // 处理音频URL
+            let audioUrl = ''
+            if (this.track.audioUrl) {
+              if (this.track.audioUrl.startsWith('http://') || this.track.audioUrl.startsWith('https://')) {
+                audioUrl = this.track.audioUrl
+              } else {
+                // 需要拼接完整路径
+                audioUrl = `${this.$baseUrl}/system/oss/download/${this.track.audioUrl}`
+              }
+            }
+            
             // 最后设置 src，这会触发音频加载
             // 注意：src 必须最后设置
-            this.audioContext.src = this.track.audioUrl
+            this.audioContext.src = audioUrl
 
             console.log('音频信息设置完成:', {
               src: this.audioContext.src,
@@ -1074,11 +1096,31 @@ export default {
         // 设置其他可选属性
         this.audioContext.epname = track.name || '冥想音频' // 专辑名
         this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
-        this.audioContext.coverImgUrl = track.coverUrl || '/static/images/default-cover.jpg' // 封面图
+        
+        // 处理封面图URL
+        let coverUrl = '/static/images/default-cover.jpg'
+        if (track.coverUrl) {
+          if (track.coverUrl.startsWith('http://') || track.coverUrl.startsWith('https://')) {
+            coverUrl = track.coverUrl
+          } else {
+            coverUrl = `${this.$baseUrl}/system/oss/download/${track.coverUrl}`
+          }
+        }
+        this.audioContext.coverImgUrl = coverUrl // 封面图
+
+        // 处理音频URL
+        let audioUrl = ''
+        if (track.audioUrl) {
+          if (track.audioUrl.startsWith('http://') || track.audioUrl.startsWith('https://')) {
+            audioUrl = track.audioUrl
+          } else {
+            audioUrl = `${this.$baseUrl}/system/oss/download/${track.audioUrl}`
+          }
+        }
 
         // 最后设置 src，这会触发音频加载
         // 注意：src 必须最后设置
-        this.audioContext.src = track.audioUrl
+        this.audioContext.src = audioUrl
 
         // 保存当前播放的音轨ID
         uni.setStorageSync('currentTrackId', track.id)
