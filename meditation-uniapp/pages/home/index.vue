@@ -388,8 +388,7 @@ export default {
 <style lang="scss" scoped>
 .home-page {
   min-height: 100vh;
-  // background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
-  background: #D8E2F0;
+  background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
   padding-bottom: 100rpx;
   position: relative;
 }
