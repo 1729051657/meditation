@@ -189,7 +189,7 @@
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
 import { addPlayHistory, updatePlayHistory } from '@/api/play'
-// import SleepTimer from '@/components/SleepTimer/index.vue'  // 可选：引入独立的定时器组件
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 export default {
   // components: {
@@ -221,9 +221,6 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
-      sleepTimer: null, // 睡眠定时器
-      sleepTimerRemaining: 0, // 定时器剩余时间（秒）
-      sleepTimerInterval: null, // 定时器倒计时
     }
   },
 
@@ -290,6 +287,14 @@ export default {
     this.initAudio()
   },
   computed: {
+    ...mapState('timer', ['isTimerActive']),
+    ...mapGetters('timer', ['remainingSeconds', 'remainingTime']),
+    
+    // 定时器剩余时间（兼容旧代码）
+    sleepTimerRemaining() {
+      return this.remainingSeconds
+    },
+    
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
@@ -297,21 +302,11 @@ export default {
 
     // 格式化定时器剩余时间
     formatTimerRemaining() {
-      if (this.sleepTimerRemaining <= 0) return ''
-
-      const minutes = Math.floor(this.sleepTimerRemaining / 60)
-      const seconds = this.sleepTimerRemaining % 60
-
-      if (minutes > 0) {
-        return `${minutes}:${String(seconds).padStart(2, '0')}`
-      } else {
-        return `${seconds}s`
-      }
+      return this.remainingTime
     }
   },
   onUnload() {
-    // 页面卸载时，清理定时器
-    this.clearSleepTimer()
+    // 页面卸载时，定时器继续在后台运行，不需要清理
 
     // 页面卸载时，如果音频正在播放，保持后台播放
     // 如果音频已停止，则清理资源
@@ -355,6 +350,7 @@ export default {
   },
 
   methods: {
+    ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()
@@ -963,82 +959,11 @@ export default {
       this.showbad = true;
     },
 
-    // 开始睡眠定时器
-    startSleepTimer(minutes) {
-      // 清除之前的定时器
-      this.clearSleepTimer()
-
-      // 设置定时器时间（转换为秒）
-      this.sleepTimerRemaining = minutes * 60
-
-      // 显示提示
-      uni.showToast({
-        title: `将在${minutes}分钟后停止播放`,
-        icon: 'none',
-        duration: 2000
-      })
-
-      // 设置主定时器
-      this.sleepTimer = setTimeout(() => {
-        this.stopPlaybackByTimer()
-      }, minutes * 60 * 1000)
-
-      // 设置倒计时更新（每秒更新一次）
-      this.sleepTimerInterval = setInterval(() => {
-        this.sleepTimerRemaining--
-
-        // 最后10秒提醒
-        if (this.sleepTimerRemaining === 10) {
-          uni.showToast({
-            title: '10秒后将停止播放',
-            icon: 'none'
-          })
-        }
-
-        if (this.sleepTimerRemaining <= 0) {
-          this.clearSleepTimer()
-        }
-      }, 1000)
-
-      // 关闭定时器面板
-      this.showbad = false
-    },
-
-    // 清除睡眠定时器
+    // 清除睡眠定时器（使用全局方法）
     clearSleepTimer() {
-      if (this.sleepTimer) {
-        clearTimeout(this.sleepTimer)
-        this.sleepTimer = null
-      }
-
-      if (this.sleepTimerInterval) {
-        clearInterval(this.sleepTimerInterval)
-        this.sleepTimerInterval = null
-      }
-
-      this.sleepTimerRemaining = 0
+      this.stopSleepTimer()
       this.selectedTime = 5
       this.customTime = 0
-    },
-
-    // 定时器触发停止播放
-    stopPlaybackByTimer() {
-      console.log('定时器触发，停止播放')
-
-      // 停止音频播放
-      if (this.audioContext && this.playing) {
-        this.audioContext.pause()
-      }
-
-      // 清除定时器
-      this.clearSleepTimer()
-
-      // 显示提示
-      uni.showToast({
-        title: '定时停止播放',
-        icon: 'none',
-        duration: 2000
-      })
     },
 
     formatTime(seconds) {
@@ -1069,8 +994,10 @@ export default {
       this.selectedTime = time;
       this.customTime = 0; // 重置自定义时间
       console.log('选择了', time, '分钟');
-      // 立即启动定时器
+      // 立即启动全局定时器
       this.startSleepTimer(time);
+      // 关闭定时器面板
+      this.showbad = false;
     },
 
     // 打开自定义模态框
@@ -1099,14 +1026,16 @@ export default {
       this.selectedTime = this.customTime;
       this.showCustomModal = false;
       console.log('自定义了', this.customTime, '分钟');
-      // 启动定时器
+      // 启动全局定时器
       this.startSleepTimer(this.customTime);
+      // 关闭定时器面板
+      this.showbad = false;
     },
 
     // 关闭定时器
     closeTimer() {
       // 如果有正在运行的定时器，清除它
-      if (this.sleepTimer || this.sleepTimerRemaining > 0) {
+      if (this.isTimerActive) {
         this.clearSleepTimer()
         uni.showToast({
           title: '已取消定时',

@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 // 导入模块
 import app from './modules/app'
 import user from './modules/user'
+import timer from './modules/timer'
 
 Vue.use(Vuex)
 
@@ -19,7 +20,8 @@ const store = new Vuex.Store({
 	},
 	modules: {
 		app,
-		user
+		user,
+		timer
 	}
 })
 
