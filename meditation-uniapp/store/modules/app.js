@@ -17,7 +17,9 @@ const app = {
 		// 屏幕方向
 		orientation: 'portrait',
 		// 主题色
-		primaryColor: '#007aff'
+		primaryColor: '#007aff',
+		// API基础URL
+		baseUrl: 'https://meditation.kailixing.com/api'
 	},
 	
 	mutations: {

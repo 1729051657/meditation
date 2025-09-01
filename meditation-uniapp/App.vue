@@ -326,6 +326,10 @@ export default {
 			// 初始化背景音频管理器
 			const audioManager = this.$store.dispatch('timer/initAudioManager')
 			
+			// 初始化播放列表管理器
+			this.$store.dispatch('playlist/initAudioManager')
+			this.$store.dispatch('playlist/initPlaylist')
+			
 			// 恢复定时器（如果有）
 			this.$store.dispatch('timer/restoreTimer')
 			

@@ -289,6 +289,8 @@ export default {
   computed: {
     ...mapState('timer', ['isTimerActive']),
     ...mapGetters('timer', ['remainingSeconds', 'remainingTime']),
+    ...mapState('playlist', ['playlist', 'currentIndex', 'currentTrack', 'playMode']),
+    ...mapGetters('playlist', ['hasNext', 'hasPrevious']),
     
     // 定时器剩余时间（兼容旧代码）
     sleepTimerRemaining() {
@@ -351,6 +353,7 @@ export default {
 
   methods: {
     ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
+    ...mapActions('playlist', ['setPlaylistAndPlay', 'playNext', 'playPrevious', 'togglePlayMode', 'addAndPlay']),
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()
@@ -671,13 +674,8 @@ export default {
         return
       }
 
-      if (this.currentIndex > 0) {
-        this.currentIndex--
-      } else {
-        this.currentIndex = this.playlist.length - 1
-      }
-
-      this.playTrackAtIndex(this.currentIndex)
+      // 使用全局播放列表的上一首
+      this.playPrevious()
     },
 
     next() {
@@ -690,13 +688,8 @@ export default {
         return
       }
 
-      // 列表循环播放
-      if (this.currentIndex < this.playlist.length - 1) {
-        this.currentIndex++
-      } else {
-        this.currentIndex = 0
-      }
-      this.playTrackAtIndex(this.currentIndex)
+      // 使用全局播放列表的下一首
+      this.playNext()
     },
 
 
@@ -731,18 +724,37 @@ export default {
 
         if (res.code === 200) {
           const tracks = res.rows || res.data || []
-          this.playlist = tracks.map(item => ({
+          // 格式化播放列表数据
+          const formattedTracks = tracks.map(item => ({
             id: item.id,
-            name: item.title || '未知音频',
-            duration: item.durationSec ? this.formatDuration(item.durationSec) : '未知',
+            title: item.title || '未知音频',
+            artist: item.subtitle || item.author || '冥想音乐',
+            durationSec: item.durationSec || 0,
             audioUrl: item.audioUrl || item.audio,
             coverUrl: item.coverUrl || '/static/images/default-cover.jpg',
-            artist: item.subtitle || item.author || '冥想音乐'
+            categoryCode: item.categoryCode,
+            seriesId: item.seriesId
           }))
-          this.trackId = this.playlist[0].id
-          this.loadTrack()
+          
           // 找到当前播放音频在列表中的位置
-          const currentIndex = this.playlist.findIndex(item => item.id === parseInt(this.trackId))
+          const currentIndex = formattedTracks.findIndex(item => item.id === parseInt(this.trackId))
+          
+          // 设置全局播放列表并开始播放
+          await this.setPlaylistAndPlay({
+            playlist: formattedTracks,
+            startIndex: currentIndex !== -1 ? currentIndex : 0
+          })
+          
+          // 本地也保存一份用于显示
+          this.playlist = formattedTracks.map(item => ({
+            id: item.id,
+            name: item.title,
+            duration: item.durationSec ? this.formatDuration(item.durationSec) : '未知',
+            audioUrl: item.audioUrl,
+            coverUrl: item.coverUrl,
+            artist: item.artist
+          }))
+          
           if (currentIndex !== -1) {
             this.currentIndex = currentIndex
           }
