@@ -1153,7 +1153,7 @@ export default {
     width: 110%;
     height: 110%;
     margin: -5%;
-    filter: blur(60rpx) brightness(0.8) saturate(1.1);
+    filter: blur(20rpx) brightness(0.85) saturate(1.2);
     transform: scale(1.1);
     animation: slowZoom 20s ease-in-out infinite alternate;
   }
@@ -1166,9 +1166,9 @@ export default {
     bottom: 0;
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.2) 0%,
-      rgba(0, 0, 0, 0.3) 50%,
-      rgba(0, 0, 0, 0.5) 100%
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(0, 0, 0, 0.25) 50%,
+      rgba(0, 0, 0, 0.4) 100%
     );
   }
 }
