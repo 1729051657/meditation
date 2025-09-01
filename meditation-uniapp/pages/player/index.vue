@@ -72,8 +72,11 @@
               :src="playing ? '/static/player/close-pause-icon.png' : '/static/player/play-pause-icon.png'"
               lazy-load="false" binderror="" bindload="" />
           </view>
-          <view class="feature-btn" >
-            <image class="w72" src="" lazy-load="false" binderror="" bindload="" />
+          <view class="feature-btn" @click="togglePlayMode">
+            <image class="w72" 
+              :src="playModeIcon" 
+              lazy-load="false" 
+              :title="playModeName" />
           </view>
         </view>
       </view>
@@ -205,6 +208,7 @@ export default {
       playHistoryId: null, // 播放历史记录ID
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
+      playMode: 'list', // 播放模式: list(列表循环), single(单曲循环), random(随机播放)
     }
   },
 
@@ -265,6 +269,12 @@ export default {
       }
     }
 
+    // 恢复播放模式设置
+    const savedPlayMode = uni.getStorageSync('playMode')
+    if (savedPlayMode && ['list', 'single', 'random'].includes(savedPlayMode)) {
+      this.playMode = savedPlayMode
+    }
+    
     // this.loadTrack()
     this.loadPlaylist()
     this.initAudio()
@@ -273,6 +283,27 @@ export default {
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
+    },
+    
+    // 播放模式图标
+    playModeIcon() {
+      const icons = {
+        'list': '/static/player/mode-list.png',
+        'single': '/static/player/mode-single.png',
+        'random': '/static/player/mode-random.png'
+      }
+      // 如果没有对应图标，使用播放列表图标作为默认
+      return icons[this.playMode] || '/static/player/playlist-icon.png'
+    },
+    
+    // 播放模式名称
+    playModeName() {
+      const names = {
+        'list': '列表循环',
+        'single': '单曲循环',
+        'random': '随机播放'
+      }
+      return names[this.playMode] || '列表循环'
     }
   },
   onUnload() {
@@ -354,7 +385,24 @@ export default {
         console.log('音频播放结束')
         this.playing = false
         this.markAsCompleted()
-        this.next()
+        
+        // 根据播放模式决定下一步
+        if (this.playMode === 'single') {
+          // 单曲循环：重新播放当前曲目
+          console.log('单曲循环模式')
+          this.audioContext.seek(0)
+          setTimeout(() => {
+            this.audioContext.play()
+          }, 100)
+        } else if (this.playMode === 'random') {
+          // 随机播放
+          console.log('随机播放模式')
+          this.playRandom()
+        } else {
+          // 列表循环（默认）
+          console.log('列表循环模式')
+          this.next()
+        }
       })
 
       this.audioContext.onError((error) => {
@@ -651,13 +699,62 @@ export default {
         return
       }
 
-      if (this.currentIndex < this.playlist.length - 1) {
-        this.currentIndex++
+      if (this.playMode === 'random') {
+        // 随机播放模式
+        this.playRandom()
       } else {
-        this.currentIndex = 0
+        // 列表循环或单曲循环模式
+        if (this.currentIndex < this.playlist.length - 1) {
+          this.currentIndex++
+        } else {
+          this.currentIndex = 0
+        }
+        this.playTrackAtIndex(this.currentIndex)
       }
-
+    },
+    
+    // 随机播放
+    playRandom() {
+      if (this.playlist.length <= 1) {
+        // 只有一首歌时，重新播放
+        this.playTrackAtIndex(0)
+        return
+      }
+      
+      // 生成一个不同于当前索引的随机索引
+      let randomIndex
+      do {
+        randomIndex = Math.floor(Math.random() * this.playlist.length)
+      } while (randomIndex === this.currentIndex)
+      
+      this.currentIndex = randomIndex
       this.playTrackAtIndex(this.currentIndex)
+    },
+    
+    // 切换播放模式
+    togglePlayMode() {
+      const modes = ['list', 'single', 'random']
+      const currentModeIndex = modes.indexOf(this.playMode)
+      const nextModeIndex = (currentModeIndex + 1) % modes.length
+      this.playMode = modes[nextModeIndex]
+      
+      // 保存播放模式到本地
+      uni.setStorageSync('playMode', this.playMode)
+      
+      // 显示提示
+      const modeNames = {
+        'list': '列表循环',
+        'single': '单曲循环',
+        'random': '随机播放'
+      }
+      
+      uni.showToast({
+        title: modeNames[this.playMode],
+        icon: 'none',
+        duration: 1500
+      })
+      
+      console.log('切换播放模式:', this.playMode)
     },
 
     // 加载播放列表
