@@ -240,11 +240,11 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
-    // 检查是否传入了有效的 ID
-    if (!options.id) {
-      console.error('播放器页面错误：未传入音轨ID')
+    // 检查参数：支持直接传入音轨ID或系列ID
+    if (!options.id && !options.seriesId) {
+      console.error('播放器页面错误：未传入音轨ID或系列ID')
       uni.showToast({
-        title: '参数错误：缺少音轨ID',
+        title: '参数错误：缺少必要参数',
         icon: 'none',
         duration: 2000
       })
@@ -255,9 +255,39 @@ export default {
       return
     }
 
-    this.trackId = options.id
-    this.seriesId = options.seriesId || null
-    this.categoryId = options.categoryId || null
+    // 如果是系列类型，需要先获取系列的第一个音频
+    if (options.type === 'series' && options.seriesId) {
+      console.log('系列播放模式，系列ID:', options.seriesId)
+      this.seriesId = options.seriesId
+      
+      // 先加载系列的音频列表
+      try {
+        const tracks = await this.loadSeriesTracks(options.seriesId)
+        if (tracks && tracks.length > 0) {
+          // 使用系列的第一个音频作为当前播放音频
+          this.trackId = tracks[0].id
+          console.log('系列第一个音频ID:', this.trackId)
+        } else {
+          throw new Error('该系列暂无音频')
+        }
+      } catch (error) {
+        console.error('加载系列音频失败:', error)
+        uni.showToast({
+          title: error.message || '加载失败',
+          icon: 'none',
+          duration: 2000
+        })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 2000)
+        return
+      }
+    } else {
+      // 单个音频播放模式
+      this.trackId = options.id
+      this.seriesId = options.seriesId || null
+      this.categoryId = options.categoryId || null
+    }
 
     console.log('音轨信息:', {
       trackId: this.trackId,
@@ -380,6 +410,29 @@ export default {
   methods: {
     ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
     ...mapActions('playlist', ['setPlaylistAndPlay', 'playNext', 'playPrevious', 'togglePlayMode', 'addAndPlay']),
+    
+    // 加载系列的音频列表
+    async loadSeriesTracks(seriesId) {
+      try {
+        const params = {
+          seriesId: seriesId,
+          status: 0,
+          orderByColumn: 'order_index',
+          isAsc: 'asc',
+          pageNum: 1,
+          pageSize: 100
+        }
+        const res = await listTracks(params)
+        if (res.code === 200) {
+          return res.rows || res.data || []
+        }
+        return []
+      } catch (error) {
+        console.error('加载系列音频失败:', error)
+        throw error
+      }
+    },
+    
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()

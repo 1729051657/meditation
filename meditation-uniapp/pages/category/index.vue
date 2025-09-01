@@ -320,8 +320,9 @@ export default {
 
     // 播放系列
     playSeries(series) {
+      // 直接跳转到播放器，播放系列的第一个音频
       uni.navigateTo({
-        url: `/pages/series/detail?id=${series.id}`
+        url: `/pages/player/index?seriesId=${series.id}&type=series`
       })
     },
 
