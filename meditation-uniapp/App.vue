@@ -22,13 +22,13 @@ export default {
 
 		// 执行无感登录
 		this.silentLogin()
-		
+
 		// 初始化全局音频管理器和恢复定时器
 		this.initGlobalAudio()
 	},
 	onShow: function () {
 		console.log('App Show')
-		
+
 		// onShow不需要重复恢复定时器，已经在onLaunch中处理
 		// this.$store.dispatch('timer/restoreTimer')
 	},
@@ -318,21 +318,21 @@ export default {
 			console.log('非微信小程序环境，跳过无感登录')
 			// #endif
 		},
-		
+
 		/**
 		 * 初始化全局音频管理器
 		 */
 		initGlobalAudio() {
 			// 初始化背景音频管理器
 			const audioManager = this.$store.dispatch('timer/initAudioManager')
-			
+
 			// 初始化播放列表管理器
 			this.$store.dispatch('playlist/initAudioManager')
 			this.$store.dispatch('playlist/initPlaylist')
-			
+
 			// 恢复定时器（如果有）- 只在这里调用一次
 			this.$store.dispatch('timer/restoreTimer')
-			
+
 			console.log('全局音频管理器初始化完成')
 		}
 	}
@@ -351,12 +351,6 @@ page {
 }
 
 /* 全局导航栏背景色 */
-.uni-navbar,
-.tn-nav-bar,
-.nav-bar,
-.topNav {
-	background-color: #D8E2F0 !important;
-}
 
 /* 确保所有页面容器使用全局背景色 */
 .container,

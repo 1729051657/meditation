@@ -29,6 +29,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 首页数据服务实现
@@ -96,7 +99,7 @@ public class HomeServiceImpl implements IHomeService {
         // 查询启用状态的分类，按排序号排序
         LambdaQueryWrapper<Category> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(Category::getStatus, "0") // 正常状态
-               .orderByAsc(Category::getOrderNum);
+            .orderByAsc(Category::getOrderNum);
 
         return categoryMapper.selectVoList(wrapper);
     }
@@ -110,8 +113,8 @@ public class HomeServiceImpl implements IHomeService {
         // 查询首页推荐位
         LambdaQueryWrapper<RecommendSlot> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(RecommendSlot::getStatus, "0") // 正常状态
-               .eq(RecommendSlot::getPage, "home") // 首页
-               .orderByAsc(RecommendSlot::getOrderNum);
+            .eq(RecommendSlot::getPage, "home") // 首页
+            .orderByAsc(RecommendSlot::getOrderNum);
 
         List<RecommendSlot> slots = recommendSlotMapper.selectList(wrapper);
         if (slots.isEmpty()) {
@@ -122,9 +125,9 @@ public class HomeServiceImpl implements IHomeService {
         List<Long> slotIds = slots.stream().map(RecommendSlot::getId).toList();
         LambdaQueryWrapper<RecommendItem> itemWrapper = Wrappers.lambdaQuery();
         itemWrapper.in(RecommendItem::getSlotId, slotIds)
-                  .eq(RecommendItem::getStatus, "0")
-                  .eq(RecommendItem::getContentType, "series")
-                  .orderByAsc(RecommendItem::getOrderNum);
+            .eq(RecommendItem::getStatus, "0")
+            .eq(RecommendItem::getContentType, "series")
+            .orderByAsc(RecommendItem::getOrderNum);
 
         List<RecommendItem> recommendItems = recommendItemMapper.selectList(itemWrapper);
         if (recommendItems.isEmpty()) {
@@ -133,27 +136,28 @@ public class HomeServiceImpl implements IHomeService {
 
         // 批量查询系列信息
         List<Long> seriesIds = recommendItems.stream()
-                .map(RecommendItem::getContentId)
-                .distinct()
-                .toList();
-        
-        List<SeriesVo> seriesVoList = seriesMapper.selectVoList(
-            Wrappers.<Series>lambdaQuery().in(Series::getId, seriesIds)
-        );
+            .map(RecommendItem::getContentId)
+            .distinct()
+            .toList();
 
-        // 按推荐位顺序组织数据
+        // 批量查询系列信息（使用selectVoByIds方法，避免IN查询的拦截器问题）
+        List<SeriesVo> seriesVoList = seriesMapper.selectVoByIds(seriesIds);
+
+        // 构建ID到SeriesVo的映射，提高查找性能
+        Map<Long, SeriesVo> seriesMap = seriesVoList.stream()
+            .collect(Collectors.toMap(SeriesVo::getId, Function.identity()));
+
+        // 按推荐位顺序组织数据，每个推荐位可能有多个推荐项
         for (RecommendSlot slot : slots) {
-            RecommendItem firstItem = recommendItems.stream()
-                    .filter(item -> item.getSlotId().equals(slot.getId()))
-                    .findFirst()
-                    .orElse(null);
-            
-            if (firstItem != null) {
-                SeriesVo seriesVo = seriesVoList.stream()
-                        .filter(series -> series.getId().equals(firstItem.getContentId()))
-                        .findFirst()
-                        .orElse(null);
-                
+            // 获取该推荐位的所有推荐项
+            List<RecommendItem> slotItems = recommendItems.stream()
+                .filter(item -> item.getSlotId().equals(slot.getId()))
+                .sorted((a, b) -> Integer.compare(a.getOrderNum(), b.getOrderNum()))
+                .toList();
+
+            // 为每个推荐项添加对应的系列
+            for (RecommendItem item : slotItems) {
+                SeriesVo seriesVo = seriesMap.get(item.getContentId());
                 if (seriesVo != null) {
                     items.add(seriesVo);
                 }
@@ -172,36 +176,34 @@ public class HomeServiceImpl implements IHomeService {
         // 查询推荐内容
         LambdaQueryWrapper<RecommendItem> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(RecommendItem::getStatus, "0")
-               .eq(RecommendItem::getContentType, "track")
-               .le(RecommendItem::getStartTime, new Date())
-               .and(w -> w.isNull(RecommendItem::getEndTime)
-                         .or()
-                         .ge(RecommendItem::getEndTime, new Date()))
-               .orderByAsc(RecommendItem::getOrderNum)
-               .last("LIMIT 3");
+            .eq(RecommendItem::getContentType, "track")
+            .le(RecommendItem::getStartTime, new Date())
+            .and(w -> w.isNull(RecommendItem::getEndTime)
+                .or()
+                .ge(RecommendItem::getEndTime, new Date()))
+            .orderByAsc(RecommendItem::getOrderNum)
+            .last("LIMIT 5");
 
         List<RecommendItem> recommendItems = recommendItemMapper.selectList(wrapper);
-        
+
         if (recommendItems.isEmpty()) {
             return items;
         }
 
-        // 批量查询Track信息
+        // 批量查询Track信息（使用selectVoByIds方法）
         List<Long> trackIds = recommendItems.stream()
-                .map(RecommendItem::getContentId)
-                .toList();
-        
-        List<TrackVo> trackVoList = trackMapper.selectVoList(
-            Wrappers.<Track>lambdaQuery().in(Track::getId, trackIds)
-        );
+            .map(RecommendItem::getContentId)
+            .toList();
+
+        List<TrackVo> trackVoList = trackMapper.selectVoByIds(trackIds);
+
+        // 构建ID到TrackVo的映射，提高查找性能
+        Map<Long, TrackVo> trackMap = trackVoList.stream()
+            .collect(Collectors.toMap(TrackVo::getId, Function.identity()));
 
         // 按推荐顺序组织数据
         for (RecommendItem item : recommendItems) {
-            TrackVo trackVo = trackVoList.stream()
-                    .filter(track -> track.getId().equals(item.getContentId()))
-                    .findFirst()
-                    .orElse(null);
-            
+            TrackVo trackVo = trackMap.get(item.getContentId());
             if (trackVo != null) {
                 items.add(trackVo);
             }
@@ -219,36 +221,34 @@ public class HomeServiceImpl implements IHomeService {
         // 查询知识类型的推荐内容
         LambdaQueryWrapper<RecommendItem> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(RecommendItem::getStatus, "0")
-               .eq(RecommendItem::getContentType, "article")
-               .le(RecommendItem::getStartTime, new Date())
-               .and(w -> w.isNull(RecommendItem::getEndTime)
-                         .or()
-                         .ge(RecommendItem::getEndTime, new Date()))
-               .orderByAsc(RecommendItem::getOrderNum)
-               .last("LIMIT 3");
+            .eq(RecommendItem::getContentType, "article")
+            .le(RecommendItem::getStartTime, new Date())
+            .and(w -> w.isNull(RecommendItem::getEndTime)
+                .or()
+                .ge(RecommendItem::getEndTime, new Date()))
+            .orderByAsc(RecommendItem::getOrderNum)
+            .last("LIMIT 3");
 
         List<RecommendItem> recommendItems = recommendItemMapper.selectList(wrapper);
-        
+
         if (recommendItems.isEmpty()) {
             return items;
         }
 
-        // 批量查询Article信息
+        // 批量查询Article信息（使用selectVoByIds方法）
         List<Long> articleIds = recommendItems.stream()
-                .map(RecommendItem::getContentId)
-                .toList();
-        
-        List<ArticleVo> articleVoList = articleMapper.selectVoList(
-            Wrappers.<Article>lambdaQuery().in(Article::getId, articleIds)
-        );
+            .map(RecommendItem::getContentId)
+            .toList();
+
+        List<ArticleVo> articleVoList = articleMapper.selectVoByIds(articleIds);
+
+        // 构建ID到ArticleVo的映射，提高查找性能
+        Map<Long, ArticleVo> articleMap = articleVoList.stream()
+            .collect(Collectors.toMap(ArticleVo::getId, Function.identity()));
 
         // 按推荐顺序组织数据
         for (RecommendItem item : recommendItems) {
-            ArticleVo articleVo = articleVoList.stream()
-                    .filter(article -> article.getId().equals(item.getContentId()))
-                    .findFirst()
-                    .orElse(null);
-            
+            ArticleVo articleVo = articleMap.get(item.getContentId());
             if (articleVo != null) {
                 items.add(articleVo);
             }

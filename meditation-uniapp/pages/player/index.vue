@@ -1,13 +1,11 @@
 <template>
   <view class="player-page">
     <!-- 自定义导航栏 -->
-    <!-- <tn-nav-bar :isBack="true" :bottomShadow="false" backgroundColor="transparent" :fixed="true">
+    <tn-nav-bar :isBack="false" :bottomShadow="false" backgroundColor="transparent" :fixed="true">
       <view class="nav-title">
         <text class="nav-title-text">{{ track.title || '播放器' }}</text>
       </view>
-    </tn-nav-bar> -->
-    <view class="topNav" :style="{ height: navHeight + 'px', paddingTop: statusBarHeight + 'px' }">
-    </view>
+    </tn-nav-bar>
     <view class="imggo" @click="go">
       <image class="w64" src="/static/player/back-arrow.png" lazy-load="false" binderror="" bindload="" />
 
@@ -102,7 +100,7 @@
         <div class="">
           <!-- 内容 -->
         </div>
-        <view v-for="(item, index) in playlist" :key="index" @click="setCurrent(index)">
+        <view v-for="(item, index) in localPlaylist" :key="index" @click="setCurrent(index)">
           <view class="playlist-item">
             <view class="song-info">
               <view class="song-index">{{ index + 1 }}</view>
@@ -207,8 +205,9 @@ export default {
       favoriteId: null, // 收藏记录ID
       audioContext: null,
       showModal: false,
-      currentIndex: 0,
-      playlist: [], // 播放列表，从API获取
+      // currentIndex: 0, // 已移至Vuex state
+      // playlist: [], // 已移至Vuex state
+      localPlaylist: [], // 本地播放列表，用于显示
       seriesId: null, // 系列ID
       categoryId: null, // 分类ID
       playlistSource: 'default', // 播放列表来源: default/history/favorites/series
@@ -220,26 +219,21 @@ export default {
       showbad: false,
       navHeight: "", // 导航栏高度
       statusBarHeight: '', // 状态栏高度
-      // playHistoryId: null, // 不再需要，使用upsert自动处理
-      lastUpdateTime: 0, // 上次更新播放进度的时间
-      updateInterval: null, // 更新播放进度的定时器
+              // playHistoryId: null, // 不再需要，使用upsert自动处理
+        lastUpdateTime: 0, // 上次更新播放进度的时间
+        updateInterval: null, // 更新播放进度的定时器
+        hasRecordedInitialHistory: false, // 是否已记录初始播放历史
     }
   },
-  
-  computed: {
-    ...mapState('timer', ['isTimerActive']),
-    ...mapGetters('timer', {
-      timerRemainingSeconds: 'remainingSeconds',
-      timerRemainingTime: 'remainingTime'
-    })
-  },
+
+
 
   async onLoad(options) {
     console.log('播放器页面 onLoad 参数:', options)
-    
+
     // 恢复定时器状态
     this.$store.dispatch('timer/restoreTimer')
-    
+
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
       statusBarHeight,
@@ -258,7 +252,7 @@ export default {
       this.playlistSource = options.source // history/favorites/series/default
       console.log('播放列表来源:', this.playlistSource)
     }
-    
+
     // 如果传入了源数据列表（如历史记录或收藏列表）
     if (options.list) {
       try {
@@ -268,7 +262,7 @@ export default {
         console.error('解析源列表数据失败:', error)
       }
     }
-    
+
     // 检查参数：支持直接传入音轨ID或系列ID，或者使用列表
     if (!options.id && !options.seriesId && (!this.sourceList || this.sourceList.length === 0)) {
       console.error('播放器页面错误：未传入有效参数')
@@ -294,7 +288,7 @@ export default {
         const historyList = await this.loadHistoryList()
         if (historyList && historyList.length > 0) {
           this.trackId = historyList[0].id || historyList[0].trackId
-          this.currentIndex = 0
+          // this.currentIndex = 0 // 使用Vuex管理
         } else {
           throw new Error('暂无播放历史')
         }
@@ -308,7 +302,7 @@ export default {
         const favoritesList = await this.loadFavoritesList()
         if (favoritesList && favoritesList.length > 0) {
           this.trackId = favoritesList[0].id || favoritesList[0].trackId
-          this.currentIndex = 0
+          // this.currentIndex = 0 // 使用Vuex管理
         } else {
           throw new Error('暂无收藏')
         }
@@ -318,7 +312,7 @@ export default {
       console.log('系列播放模式，系列ID:', options.seriesId)
       this.seriesId = options.seriesId
       this.playlistSource = 'series'
-      
+
       // 先加载系列的音频列表
       try {
         const tracks = await this.loadSeriesTracks(options.seriesId)
@@ -328,14 +322,14 @@ export default {
             this.trackId = options.id
             const index = tracks.findIndex(item => String(item.id) === String(options.id))
             if (index !== -1) {
-              this.currentIndex = index
+              // this.currentIndex = index // 使用Vuex管理
             }
           } else {
             // 使用系列的第一个音频作为当前播放音频
             this.trackId = tracks[0].id
-            this.currentIndex = 0
+            // this.currentIndex = 0 // 使用Vuex管理
           }
-          console.log('系列音频ID:', this.trackId, '索引:', this.currentIndex)
+          console.log('系列音频ID:', this.trackId)
         } else {
           throw new Error('该系列暂无音频')
         }
@@ -416,12 +410,12 @@ export default {
     ...mapGetters('timer', ['remainingSeconds', 'remainingTime']),
     ...mapState('playlist', ['playlist', 'currentIndex', 'currentTrack', 'playMode']),
     ...mapGetters('playlist', ['hasNext', 'hasPrevious']),
-    
+
     // 定时器剩余时间（兼容旧代码）
     sleepTimerRemaining() {
       return this.remainingSeconds
     },
-    
+
     // 计算是否是自定义时间
     isCustom() {
       return this.selectedTime === this.customTime && this.customTime > 0;
@@ -479,7 +473,7 @@ export default {
   methods: {
     ...mapActions('timer', ['startSleepTimer', 'stopSleepTimer']),
     ...mapActions('playlist', ['setPlaylistAndPlay', 'playNext', 'playPrevious', 'togglePlayMode', 'addAndPlay']),
-    
+
     // 加载系列的音频列表
     async loadSeriesTracks(seriesId) {
       try {
@@ -501,7 +495,7 @@ export default {
         throw error
       }
     },
-    
+
     // 加载播放历史列表
     async loadHistoryList() {
       try {
@@ -537,7 +531,7 @@ export default {
         return []
       }
     },
-    
+
     // 加载收藏列表
     async loadFavoritesList() {
       try {
@@ -571,7 +565,7 @@ export default {
         return []
       }
     },
-    
+
     initAudio() {
       // 使用后台音频管理器，支持后台播放
       this.audioContext = uni.getBackgroundAudioManager()
@@ -602,10 +596,11 @@ export default {
         if (this.duration > 0) {
           this.progress = (this.currentTime / this.duration) * 100
         }
-        
+
         // 每30秒自动保存一次进度（减少请求频率）
+        // 只有在播放开始后才保存进度，避免页面刚加载时立即保存
         const now = Date.now()
-        if (this.lastUpdateTime && (now - this.lastUpdateTime) >= 30000) {
+        if (this.lastUpdateTime && (now - this.lastUpdateTime) >= 30000 && this.playing) {
           this.savePlayProgress()
           this.lastUpdateTime = now
         }
@@ -658,15 +653,15 @@ export default {
     async loadTrack() {
       try {
         console.log('开始加载音轨，ID:', this.trackId)
-        
+
         // 显示加载提示
         uni.showLoading({
           title: '加载中...',
           mask: true
         })
-        
+
         const res = await getTrackDetail(this.trackId)
-        
+
         console.log('音轨详情API响应:', res)
 
         if (res.code === 200 && res.data) {
@@ -682,7 +677,7 @@ export default {
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
-          
+
           console.log('处理后的音轨数据:', this.track)
 
           // 设置seriesId和categoryId如果没有传入
@@ -709,7 +704,7 @@ export default {
             // 设置其他可选属性
             this.audioContext.epname = this.track.title || '冥想音频' // 专辑名，选填
             this.audioContext.singer = this.track.artist || '冥想音乐' // 歌手名，选填
-            
+
             // 处理封面图URL
             let coverUrl = '/static/images/default-cover.jpg'
             if (this.track.coverUrl) {
@@ -732,7 +727,7 @@ export default {
                 audioUrl = `${this.$baseUrl}/system/oss/download/${this.track.audioUrl}`
               }
             }
-            
+
             // 最后设置 src，这会触发音频加载
             // 注意：src 必须最后设置
             this.audioContext.src = audioUrl
@@ -743,7 +738,7 @@ export default {
               singer: this.audioContext.singer,
               coverImgUrl: this.audioContext.coverImgUrl
             })
-            
+
             // 更新全局播放状态
             const trackForPlaylist = {
               id: this.track.id,
@@ -766,7 +761,7 @@ export default {
                 this.audioContext.seek(this.currentTime)
               }, 100)
             }
-            
+
             // 隐藏加载提示
             uni.hideLoading()
           } else {
@@ -779,20 +774,20 @@ export default {
         // 检查收藏状态
         await this.checkFavoriteStatus(this.trackId)
 
-        // 添加播放历史记录
+        // 添加播放历史记录（只在页面加载时记录一次）
         this.addToPlayHistory()
       } catch (error) {
         console.error('加载音频失败:', error)
-        
+
         // 隐藏加载提示
         uni.hideLoading()
-        
+
         uni.showToast({
           title: error.message || '加载失败',
           icon: 'none',
           duration: 2000
         })
-        
+
         // 如果加载失败，延迟返回上一页
         setTimeout(() => {
           uni.navigateBack()
@@ -802,6 +797,12 @@ export default {
 
     // 添加或更新播放历史（使用upsert自动处理重复）
     async addToPlayHistory() {
+      // 防止重复记录初始历史
+      if (this.hasRecordedInitialHistory) {
+        console.log('已记录过初始播放历史，跳过')
+        return
+      }
+
       try {
         const res = await upsertPlayHistory({
           trackId: this.trackId,
@@ -810,7 +811,8 @@ export default {
         })
 
         if (res.code === 200) {
-          // upsert成功，不需要保存ID，因为下次还是用upsert
+          // upsert成功，标记已记录
+          this.hasRecordedInitialHistory = true
           console.log('播放历史已记录/更新')
         }
       } catch (error) {
@@ -823,11 +825,14 @@ export default {
     startProgressTracking() {
       // 设置初始更新时间
       this.lastUpdateTime = Date.now()
-      
+
       // 每30秒更新一次播放进度作为备份（主要依赖 onTimeUpdate）
-      this.updateInterval = setInterval(() => {
-        this.savePlayProgress()
-      }, 30000)
+      // 延迟5秒后开始定时保存，避免页面刚加载时立即保存
+      setTimeout(() => {
+        this.updateInterval = setInterval(() => {
+          this.savePlayProgress()
+        }, 30000)
+      }, 5000)
     },
 
     // 停止跟踪播放进度
@@ -958,7 +963,7 @@ export default {
 
     previous() {
       // 实现上一曲逻辑
-      if (this.playlist.length === 0) {
+      if (this.localPlaylist.length === 0) {
         uni.showToast({
           title: '暂无上一曲',
           icon: 'none'
@@ -972,7 +977,7 @@ export default {
 
     next() {
       // 实现下一曲逻辑
-      if (this.playlist.length === 0) {
+      if (this.localPlaylist.length === 0) {
         uni.showToast({
           title: '暂无下一曲',
           icon: 'none'
@@ -989,7 +994,7 @@ export default {
     async loadPlaylist() {
       try {
         let tracks = []
-        
+
         // 根据不同来源加载播放列表
         if (this.playlistSource === 'history') {
           // 从API加载历史列表
@@ -1034,15 +1039,15 @@ export default {
         if (tracks && tracks.length > 0) {
           // 如果当前音频不在列表中，将其添加到列表开头
           let finalTracks = [...tracks]
-          const currentTrackInList = tracks.find(item => 
+          const currentTrackInList = tracks.find(item =>
             String(item.id) === String(this.trackId)
           )
-          
+
           if (!currentTrackInList && this.track) {
             // 将当前播放的音频添加到列表开头
             finalTracks = [this.track, ...tracks]
           }
-          
+
           // 格式化播放列表数据
           const formattedTracks = finalTracks.map(item => ({
             id: item.id,
@@ -1054,18 +1059,18 @@ export default {
             categoryCode: item.categoryCode,
             seriesId: item.seriesId
           }))
-          
+
           // 找到当前播放音频在列表中的位置
           const currentIndex = formattedTracks.findIndex(item => item.id === parseInt(this.trackId))
-          
+
           // 只设置播放列表，不重新播放（因为loadTrack已经在播放了）
           this.$store.commit('playlist/SET_PLAYLIST', formattedTracks)
           if (currentIndex !== -1) {
             this.$store.commit('playlist/SET_CURRENT_INDEX', currentIndex)
           }
-          
+
           // 本地也保存一份用于显示
-          this.playlist = formattedTracks.map(item => ({
+          this.localPlaylist = formattedTracks.map(item => ({
             id: item.id,
             name: item.title,
             duration: item.durationSec ? this.formatDuration(item.durationSec) : '未知',
@@ -1073,10 +1078,11 @@ export default {
             coverUrl: item.coverUrl,
             artist: item.artist
           }))
-          
-          if (currentIndex !== -1) {
-            this.currentIndex = currentIndex
-          }
+
+          // currentIndex 已通过 Vuex 管理
+          // if (currentIndex !== -1) {
+          //   this.currentIndex = currentIndex
+          // }
         }
       } catch (error) {
         console.error('加载播放列表失败:', error)
@@ -1085,9 +1091,9 @@ export default {
 
     // 播放指定索引的音频
     async playTrackAtIndex(index) {
-      if (index < 0 || index >= this.playlist.length) return
+      if (index < 0 || index >= this.localPlaylist.length) return
 
-      const track = this.playlist[index]
+      const track = this.localPlaylist[index]
       if (!track) return
 
       // 停止当前播放
@@ -1097,7 +1103,7 @@ export default {
 
       // 更新当前音频信息
       this.trackId = track.id
-      this.currentIndex = index
+      // this.currentIndex = index // 使用Vuex管理
       this.track = {
         id: track.id,
         title: track.name,
@@ -1116,7 +1122,7 @@ export default {
         // 设置其他可选属性
         this.audioContext.epname = track.name || '冥想音频' // 专辑名
         this.audioContext.singer = track.artist || '冥想音乐' // 歌手名
-        
+
         // 处理封面图URL
         let coverUrl = '/static/images/default-cover.jpg'
         if (track.coverUrl) {
@@ -1332,7 +1338,8 @@ export default {
       this.showModal = false;
     },
     setCurrent(index) {
-      this.currentIndex = index;
+      // this.currentIndex = index; // 使用Vuex管理
+      this.$store.commit('playlist/SET_CURRENT_INDEX', index);
       this.playTrackAtIndex(index);
       this.closeModal();
     },

@@ -51,11 +51,22 @@ public class FaqController extends BaseController {
         String contactQQ = configService.selectConfigByKey("miniapp.contact.qq");
         String contactAddress = configService.selectConfigByKey("miniapp.contact.address");
         
-        contactInfo.setEmail(contactEmail != null ? contactEmail : "");
-        contactInfo.setPhone(contactPhone != null ? contactPhone : "");
-        contactInfo.setWechat(contactWechat != null ? contactWechat : "");
-        contactInfo.setQq(contactQQ != null ? contactQQ : "");
-        contactInfo.setAddress(contactAddress != null ? contactAddress : "");
+        // 只设置有值的联系方式，空值不设置
+        if (contactEmail != null && !contactEmail.trim().isEmpty()) {
+            contactInfo.setEmail(contactEmail.trim());
+        }
+        if (contactPhone != null && !contactPhone.trim().isEmpty()) {
+            contactInfo.setPhone(contactPhone.trim());
+        }
+        if (contactWechat != null && !contactWechat.trim().isEmpty()) {
+            contactInfo.setWechat(contactWechat.trim());
+        }
+        if (contactQQ != null && !contactQQ.trim().isEmpty()) {
+            contactInfo.setQq(contactQQ.trim());
+        }
+        if (contactAddress != null && !contactAddress.trim().isEmpty()) {
+            contactInfo.setAddress(contactAddress.trim());
+        }
         result.setContactInfo(contactInfo);
         
         // 获取FAQ问题字典数据
@@ -94,11 +105,22 @@ public class FaqController extends BaseController {
         String contactQQ = configService.selectConfigByKey("miniapp.contact.qq");
         String contactAddress = configService.selectConfigByKey("miniapp.contact.address");
         
-        contactInfo.setEmail(contactEmail != null ? contactEmail : "support@meditation.com");
-        contactInfo.setPhone(contactPhone != null ? contactPhone : "400-123-4567");
-        contactInfo.setWechat(contactWechat != null ? contactWechat : "");
-        contactInfo.setQq(contactQQ != null ? contactQQ : "");
-        contactInfo.setAddress(contactAddress != null ? contactAddress : "");
+        // 只设置有值的联系方式，空值不设置
+        if (contactEmail != null && !contactEmail.trim().isEmpty()) {
+            contactInfo.setEmail(contactEmail.trim());
+        }
+        if (contactPhone != null && !contactPhone.trim().isEmpty()) {
+            contactInfo.setPhone(contactPhone.trim());
+        }
+        if (contactWechat != null && !contactWechat.trim().isEmpty()) {
+            contactInfo.setWechat(contactWechat.trim());
+        }
+        if (contactQQ != null && !contactQQ.trim().isEmpty()) {
+            contactInfo.setQq(contactQQ.trim());
+        }
+        if (contactAddress != null && !contactAddress.trim().isEmpty()) {
+            contactInfo.setAddress(contactAddress.trim());
+        }
         
         return R.ok(contactInfo);
     }

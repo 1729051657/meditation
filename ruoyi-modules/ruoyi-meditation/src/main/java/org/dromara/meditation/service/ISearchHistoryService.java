@@ -65,4 +65,11 @@ public interface ISearchHistoryService {
      * @return 是否删除成功
      */
     Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+
+    /**
+     * 清除当前用户的搜索历史记录
+     *
+     * @return 是否清除成功
+     */
+    Boolean clearMyHistory();
 }

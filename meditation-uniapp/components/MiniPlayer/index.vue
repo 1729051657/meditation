@@ -259,7 +259,7 @@ export default {
 <style lang="scss" scoped>
 .mini-player {
   position: fixed;
-  bottom: 100rpx;
+  bottom: 60rpx;
   left: 24rpx;
   right: 24rpx;
   display: flex;

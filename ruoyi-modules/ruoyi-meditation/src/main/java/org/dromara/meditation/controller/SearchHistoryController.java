@@ -100,4 +100,13 @@ public class SearchHistoryController extends BaseController {
                           @PathVariable Long[] ids) {
         return toAjax(searchHistoryService.deleteWithValidByIds(List.of(ids), true));
     }
+
+    /**
+     * 清除当前用户的搜索历史记录
+     */
+    @Log(title = "搜索历史", businessType = BusinessType.DELETE)
+    @DeleteMapping("/clear")
+    public R<Void> clearMyHistory() {
+        return toAjax(searchHistoryService.clearMyHistory());
+    }
 }

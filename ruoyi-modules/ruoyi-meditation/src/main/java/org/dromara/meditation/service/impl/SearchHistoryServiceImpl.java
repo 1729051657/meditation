@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.common.satoken.utils.LoginHelper;
 import org.springframework.stereotype.Service;
 import org.dromara.meditation.domain.bo.SearchHistoryBo;
 import org.dromara.meditation.domain.vo.SearchHistoryVo;
@@ -95,6 +96,7 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
         SearchHistory add = MapstructUtils.convert(bo, SearchHistory.class);
         validEntityBeforeSave(add);
         add.setLastTime(DateUtil.date());
+        add.setUserId(LoginHelper.getUserId());
         boolean flag = baseMapper.insert(add) > 0;
         if (flag) {
             bo.setId(add.getId());
@@ -135,5 +137,25 @@ public class SearchHistoryServiceImpl implements ISearchHistoryService {
             //TODO 做一些业务上的校验,判断是否需要校验
         }
         return baseMapper.deleteByIds(ids) > 0;
+    }
+
+    /**
+     * 清除当前用户的搜索历史记录
+     *
+     * @return 是否清除成功
+     */
+    @Override
+    public Boolean clearMyHistory() {
+        Long userId = LoginHelper.getUserId();
+        if (userId == null) {
+            log.warn("用户未登录，无法清除搜索历史");
+            return false;
+        }
+        
+        // 使用LambdaQueryWrapper构建删除条件
+        LambdaQueryWrapper<SearchHistory> deleteWrapper = Wrappers.lambdaQuery();
+        deleteWrapper.eq(SearchHistory::getUserId, userId);
+        
+        return baseMapper.delete(deleteWrapper) > 0;
     }
 }
