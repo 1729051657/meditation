@@ -1,7 +1,7 @@
 <template>
 	<view class="mg-search">
 		<!-- 导航栏 -->
-		<tn-nav-bar :alpha="true">
+		<tn-nav-bar :alpha="true" backgroundColor="#D8E2F0">
 		</tn-nav-bar>
 		<view class="search-bar">
 			<input class="ipt" v-model="kw" placeholder="输入关键词" placeholder-color="#ADBCD1;" @confirm="doSearch" />

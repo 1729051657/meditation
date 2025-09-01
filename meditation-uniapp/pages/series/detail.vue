@@ -1,7 +1,7 @@
 <template>
   <view class="series-detail">
       <!-- 导航栏 -->
-    <tn-nav-bar :alpha="true">
+    <tn-nav-bar :alpha="true" backgroundColor="#D8E2F0">
     </tn-nav-bar>
     <view class="header">
       <text class="title">{{ series && series.title ? series.title : '' }}</text>

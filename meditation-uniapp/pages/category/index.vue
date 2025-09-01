@@ -1,7 +1,7 @@
 <template>
   <view class="mg-category">
     <!-- 导航栏 -->
-    <tn-nav-bar :alpha="true">
+    <tn-nav-bar :alpha="true" backgroundColor="#D8E2F0">
     </tn-nav-bar>
 
 
@@ -412,7 +412,7 @@ export default {
 <style lang="scss" scoped>
 .mg-category {
   min-height: 100vh;
-  background: linear-gradient(180deg, #E8F4FF 0%, #F5F7FA 100%);
+  background: #D8E2F0;
   padding-bottom: 100rpx;
 }
 

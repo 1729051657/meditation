@@ -4,7 +4,7 @@
     <tn-nav-bar
       :isBack="true"
       :bottomShadow="false"
-      backgroundColor="#7C3AED"
+      backgroundColor="#D8E2F0"
       :fixed="true"
     >
       <view class="nav-title">
@@ -115,7 +115,7 @@ export default {
 <style lang="scss" scoped>
 .faq-page {
   min-height: 100vh;
-  background: #F5F7FA;
+  background: #D8E2F0;
 }
 
 .nav-title {

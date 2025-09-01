@@ -1398,6 +1398,7 @@ export default {
 .player-page {
   min-height: 100vh;
   position: relative;
+  background: #D8E2F0;
 }
 
 .nav-title {
@@ -1668,7 +1669,7 @@ export default {
 .container {
   width: 100%;
   height: 100vh;
-  background: #f7f7f7;
+  background: #D8E2F0;
   display: flex;
   flex-direction: column;
   align-items: center;
