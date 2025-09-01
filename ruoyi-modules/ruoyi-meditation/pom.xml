@@ -103,6 +103,12 @@
             <artifactId>ruoyi-common-websocket</artifactId>
         </dependency>
 
+        <!-- 系统模块依赖，用于访问系统配置和字典服务 -->
+        <dependency>
+            <groupId>org.dromara</groupId>
+            <artifactId>ruoyi-system</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

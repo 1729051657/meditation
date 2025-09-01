@@ -35,10 +35,22 @@
 </template>
 
 <script>
+import { getFaqData } from '@/api/faq'
+
 export default {
   data() {
     return {
-      faqList: [
+      faqList: [],
+      contactInfo: {
+        email: 'support@meditation.com',
+        phone: '400-123-4567',
+        wechat: '',
+        qq: '',
+        address: ''
+      },
+      loading: false,
+      // 默认FAQ数据（后端获取失败时使用）
+      defaultFaqList: [
         {
           question: '如何开始冥想？',
           answer: '选择一个安静的环境，采用舒适的坐姿，闭上眼睛，专注于呼吸。初学者可以从5-10分钟开始，逐渐增加时长。',
@@ -83,15 +95,76 @@ export default {
     }
   },
   
+  onLoad() {
+    this.loadFaqData()
+  },
+  
   methods: {
+    // 加载FAQ数据
+    async loadFaqData() {
+      this.loading = true
+      try {
+        const res = await getFaqData()
+        if (res.code === 200 && res.data) {
+          // 设置联系信息
+          if (res.data.contactInfo) {
+            this.contactInfo = {
+              ...this.contactInfo,
+              ...res.data.contactInfo
+            }
+          }
+          
+          // 设置问题列表
+          if (res.data.questions && res.data.questions.length > 0) {
+            this.faqList = res.data.questions
+          } else {
+            // 如果后端没有返回问题，使用默认问题
+            this.faqList = this.defaultFaqList
+          }
+        } else {
+          // 请求失败，使用默认数据
+          this.faqList = this.defaultFaqList
+        }
+      } catch (error) {
+        console.error('加载FAQ数据失败:', error)
+        // 出错时使用默认数据
+        this.faqList = this.defaultFaqList
+      } finally {
+        this.loading = false
+      }
+    },
+    
     toggleAnswer(index) {
       this.faqList[index].expanded = !this.faqList[index].expanded
     },
     
     contactUs() {
+      // 构建联系信息内容
+      let content = ''
+      if (this.contactInfo.email) {
+        content += `客服邮箱：${this.contactInfo.email}\n`
+      }
+      if (this.contactInfo.phone) {
+        content += `客服电话：${this.contactInfo.phone}\n`
+      }
+      if (this.contactInfo.wechat) {
+        content += `微信号：${this.contactInfo.wechat}\n`
+      }
+      if (this.contactInfo.qq) {
+        content += `QQ号：${this.contactInfo.qq}\n`
+      }
+      if (this.contactInfo.address) {
+        content += `地址：${this.contactInfo.address}`
+      }
+      
+      // 如果没有配置任何联系方式，使用默认值
+      if (!content) {
+        content = '客服邮箱：support@meditation.com\n客服电话：400-123-4567'
+      }
+      
       uni.showModal({
         title: '联系客服',
-        content: '客服邮箱：support@meditation.com\n客服电话：400-123-4567',
+        content: content.trim(),
         showCancel: false,
         confirmText: '我知道了'
       })

@@ -52,6 +52,20 @@ export const updatePlayHistory = (data: PlayHistoryForm) => {
 };
 
 /**
+ * 新增或更新音频播放记录
+ * 如果userId+trackId已存在，则更新记录（包括最后播放时间）
+ * 如果不存在，则新增记录
+ * @param data
+ */
+export const upsertPlayHistory = (data: PlayHistoryForm) => {
+  return request({
+    url: '/meditation/playHistory/upsert',
+    method: 'post',
+    data: data
+  });
+};
+
+/**
  * 删除音频播放记录
  * @param id
  */

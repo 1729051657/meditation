@@ -188,7 +188,7 @@
 <script>
 import { getTrackDetail, recordPlay, listTracks } from '@/api/track'
 import { addFavorite, removeFavorite, checkFavorite, listFavorites } from '@/api/favorite'
-import { addPlayHistory, updatePlayHistory, listPlayHistoryDetail } from '@/api/play'
+import { addPlayHistory, updatePlayHistory, upsertPlayHistory, listPlayHistoryDetail } from '@/api/play'
 import { mapState, mapGetters, mapActions } from 'vuex'
 
 export default {
@@ -220,7 +220,7 @@ export default {
       showbad: false,
       navHeight: "", // 导航栏高度
       statusBarHeight: '', // 状态栏高度
-      playHistoryId: null, // 播放历史记录ID
+      // playHistoryId: null, // 不再需要，使用upsert自动处理
       lastUpdateTime: 0, // 上次更新播放进度的时间
       updateInterval: null, // 更新播放进度的定时器
     }
@@ -800,17 +800,18 @@ export default {
       }
     },
 
-    // 添加到播放历史
+    // 添加或更新播放历史（使用upsert自动处理重复）
     async addToPlayHistory() {
       try {
-        const res = await addPlayHistory({
+        const res = await upsertPlayHistory({
           trackId: this.trackId,
           progressSec: Math.floor(this.currentTime),
-          isCompleted: '0'
+          isCompleted: 'N'
         })
 
-        if (res.code === 200 && res.data) {
-          this.playHistoryId = res.data.id
+        if (res.code === 200) {
+          // upsert成功，不需要保存ID，因为下次还是用upsert
+          console.log('播放历史已记录/更新')
         }
       } catch (error) {
         // 静默处理错误，不显示提示
@@ -839,16 +840,15 @@ export default {
       this.savePlayProgress()
     },
 
-    // 保存播放进度
+    // 保存播放进度（使用upsert自动处理）
     async savePlayProgress() {
-      if (!this.playHistoryId || !this.trackId) return
+      if (!this.trackId) return
 
       try {
         const progressSec = Math.floor(this.currentTime)
-        const isCompleted = this.duration > 0 && this.currentTime >= this.duration * 0.95 ? '1' : '0'
+        const isCompleted = this.duration > 0 && this.currentTime >= this.duration * 0.95 ? 'Y' : 'N'
 
-        await updatePlayHistory({
-          id: this.playHistoryId,
+        await upsertPlayHistory({
           trackId: this.trackId,
           progressSec: progressSec,
           isCompleted: isCompleted
@@ -859,16 +859,15 @@ export default {
       }
     },
 
-    // 标记为已完成
+    // 标记为已完成（使用upsert自动处理）
     async markAsCompleted() {
-      if (!this.playHistoryId || !this.trackId) return
+      if (!this.trackId) return
 
       try {
-        await updatePlayHistory({
-          id: this.playHistoryId,
+        await upsertPlayHistory({
           trackId: this.trackId,
           progressSec: Math.floor(this.duration),
-          isCompleted: '1'
+          isCompleted: 'Y'
         })
       } catch (error) {
         // 静默处理错误，不显示提示

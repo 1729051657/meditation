@@ -83,4 +83,14 @@ public interface IPlayHistoryService {
      * @return 播放历史详情
      */
     PlayHistoryDetailVo queryDetailById(Long id);
+
+    /**
+     * 插入或更新播放记录
+     * 如果userId+trackId组合已存在，则更新记录（包括最后播放时间）
+     * 如果不存在，则新增记录
+     *
+     * @param bo 音频播放记录
+     * @return 操作是否成功
+     */
+    Boolean insertOrUpdateByBo(PlayHistoryBo bo);
 }

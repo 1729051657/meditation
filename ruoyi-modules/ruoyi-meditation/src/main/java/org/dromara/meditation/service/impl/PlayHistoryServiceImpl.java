@@ -390,4 +390,76 @@ public class PlayHistoryServiceImpl implements IPlayHistoryService {
             }
         }
     }
+
+    /**
+     * 插入或更新播放记录
+     * 如果userId+trackId组合已存在，则更新记录（包括最后播放时间）
+     * 如果不存在，则新增记录
+     *
+     * @param bo 音频播放记录
+     * @return 操作是否成功
+     */
+    @Override
+    public Boolean insertOrUpdateByBo(PlayHistoryBo bo) {
+        // 设置默认值
+        if (bo.getUserId() == null) {
+            bo.setUserId(LoginHelper.getUserId());
+        }
+        if (bo.getLastPlayTime() == null) {
+            bo.setLastPlayTime(new Date());
+        }
+
+        // 查询是否已存在记录
+        LambdaQueryWrapper<PlayHistory> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(PlayHistory::getUserId, bo.getUserId())
+                    .eq(PlayHistory::getTrackId, bo.getTrackId());
+        
+        PlayHistory existingHistory = baseMapper.selectOne(queryWrapper);
+        
+        if (existingHistory != null) {
+            // 记录已存在，更新记录
+            bo.setId(existingHistory.getId());
+            
+            // 更新播放次数（如果前端没有传递）
+            if (bo.getPlayCount() == null) {
+                bo.setPlayCount(existingHistory.getPlayCount() + 1);
+            }
+            
+            // 更新进度（如果前端没有传递，保留原有进度）
+            if (bo.getProgressSec() == null) {
+                bo.setProgressSec(existingHistory.getProgressSec());
+            }
+            
+            // 更新是否完成状态（如果前端没有传递，保留原有状态）
+            if (bo.getIsCompleted() == null) {
+                bo.setIsCompleted(existingHistory.getIsCompleted());
+            }
+            
+            // 更新最后播放时间为当前时间
+            bo.setLastPlayTime(new Date());
+            
+            PlayHistory update = MapstructUtils.convert(bo, PlayHistory.class);
+            validEntityBeforeSave(update);
+            return baseMapper.updateById(update) > 0;
+        } else {
+            // 记录不存在，新增记录
+            if (bo.getPlayCount() == null) {
+                bo.setPlayCount(1);
+            }
+            if (bo.getProgressSec() == null) {
+                bo.setProgressSec(0);
+            }
+            if (bo.getIsCompleted() == null) {
+                bo.setIsCompleted("N");
+            }
+            
+            PlayHistory add = MapstructUtils.convert(bo, PlayHistory.class);
+            validEntityBeforeSave(add);
+            boolean flag = baseMapper.insert(add) > 0;
+            if (flag) {
+                bo.setId(add.getId());
+            }
+            return flag;
+        }
+    }
 }

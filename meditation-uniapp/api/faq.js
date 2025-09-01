@@ -1,10 +1,23 @@
 import { get } from '@/utils/request'
 
-// 常见问题
-export const listFaq = (params) => get('/meditation/faq/list', params)
-export const getFaq = (id) => get(`/meditation/faq/${id}`)
+/**
+ * 获取FAQ页面所有数据
+ * 包含联系信息和问题列表
+ */
+export const getFaqData = () => get('/meditation/faq/data')
 
-export default { 
-  listFaq, 
-  getFaq
+/**
+ * 获取联系信息
+ */
+export const getContactInfo = () => get('/meditation/faq/contact')
+
+/**
+ * 获取FAQ问题列表
+ */
+export const getFaqQuestions = () => get('/meditation/faq/questions')
+
+export default {
+  getFaqData,
+  getContactInfo,
+  getFaqQuestions
 }
