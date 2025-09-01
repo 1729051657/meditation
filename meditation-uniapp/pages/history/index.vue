@@ -1,17 +1,5 @@
 <template>
   <view class="history-page">
-    <!-- 自定义导航栏 -->
-    <tn-nav-bar
-      :isBack="true"
-      :bottomShadow="false"
-      backgroundColor="#D8E2F0"
-      :fixed="true"
-    >
-      <view class="nav-title">
-        <text class="nav-title-text">最近播放</text>
-      </view>
-    </tn-nav-bar>
-    
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 历史记录列表 -->
@@ -401,21 +389,8 @@ export default {
   background: #D8E2F0;
 }
 
-.nav-title {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .nav-title-text {
-    font-size: 32rpx;
-    color: #fff;
-    font-weight: 500;
-  }
-}
-
 .content-area {
-  padding-top: 120rpx;
+  padding-top: 20rpx;
   padding-bottom: 120rpx;
 }
 

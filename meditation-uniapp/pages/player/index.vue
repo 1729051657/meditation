@@ -602,6 +602,13 @@ export default {
         if (this.duration > 0) {
           this.progress = (this.currentTime / this.duration) * 100
         }
+        
+        // 每30秒自动保存一次进度（减少请求频率）
+        const now = Date.now()
+        if (this.lastUpdateTime && (now - this.lastUpdateTime) >= 30000) {
+          this.savePlayProgress()
+          this.lastUpdateTime = now
+        }
       })
 
       this.audioContext.onEnded(() => {
@@ -813,10 +820,13 @@ export default {
 
     // 开始跟踪播放进度
     startProgressTracking() {
-      // 每10秒更新一次播放进度
+      // 设置初始更新时间
+      this.lastUpdateTime = Date.now()
+      
+      // 每30秒更新一次播放进度作为备份（主要依赖 onTimeUpdate）
       this.updateInterval = setInterval(() => {
         this.savePlayProgress()
-      }, 10000)
+      }, 30000)
     },
 
     // 停止跟踪播放进度
@@ -1398,7 +1408,6 @@ export default {
 .player-page {
   min-height: 100vh;
   position: relative;
-  background: #D8E2F0;
 }
 
 .nav-title {
@@ -1669,7 +1678,7 @@ export default {
 .container {
   width: 100%;
   height: 100vh;
-  background: #D8E2F0;
+  background: #f7f7f7;
   display: flex;
   flex-direction: column;
   align-items: center;
