@@ -225,6 +225,8 @@ export default {
   },
 
   async onLoad(options) {
+    console.log('播放器页面 onLoad 参数:', options)
+    
     //获取手机系统的信息 里面有状态栏高度和设备型号
     let {
       statusBarHeight,
@@ -238,9 +240,30 @@ export default {
     this.navHeight = statusBarHeight + (system.indexOf('iOS') > -1 ? 40 : 44)
     console.log(this.navHeight, "导航栏高度");
 
+    // 检查是否传入了有效的 ID
+    if (!options.id) {
+      console.error('播放器页面错误：未传入音轨ID')
+      uni.showToast({
+        title: '参数错误：缺少音轨ID',
+        icon: 'none',
+        duration: 2000
+      })
+      // 延迟返回上一页
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 2000)
+      return
+    }
+
     this.trackId = options.id
     this.seriesId = options.seriesId || null
     this.categoryId = options.categoryId || null
+
+    console.log('音轨信息:', {
+      trackId: this.trackId,
+      seriesId: this.seriesId,
+      categoryId: this.categoryId
+    })
 
     // 重置收藏状态
     this.isFavorite = false
@@ -435,7 +458,17 @@ export default {
 
     async loadTrack() {
       try {
+        console.log('开始加载音轨，ID:', this.trackId)
+        
+        // 显示加载提示
+        uni.showLoading({
+          title: '加载中...',
+          mask: true
+        })
+        
         const res = await getTrackDetail(this.trackId)
+        
+        console.log('音轨详情API响应:', res)
 
         if (res.code === 200 && res.data) {
           // 映射后端返回的数据字段
@@ -450,6 +483,8 @@ export default {
             categoryId: res.data.categoryId,
             seriesId: res.data.seriesId
           }
+          
+          console.log('处理后的音轨数据:', this.track)
 
           // 设置seriesId和categoryId如果没有传入
           if (!this.seriesId && res.data.seriesId) {
@@ -510,6 +545,11 @@ export default {
                 this.audioContext.seek(this.currentTime)
               }, 100)
             }
+            
+            // 隐藏加载提示
+            uni.hideLoading()
+          } else {
+            throw new Error('音频URL不存在')
           }
         } else {
           throw new Error(res.msg || '获取音频信息失败')
@@ -522,10 +562,20 @@ export default {
         this.addToPlayHistory()
       } catch (error) {
         console.error('加载音频失败:', error)
+        
+        // 隐藏加载提示
+        uni.hideLoading()
+        
         uni.showToast({
-          title: '加载失败',
-          icon: 'none'
+          title: error.message || '加载失败',
+          icon: 'none',
+          duration: 2000
         })
+        
+        // 如果加载失败，延迟返回上一页
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 2000)
       }
     },
 

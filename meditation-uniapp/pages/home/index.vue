@@ -347,9 +347,9 @@ export default {
 
     // 跳转到冥想详情
     goToMeditation(item) {
-      // 跳转到系列详情页
+      // 跳转到系列详情页（series是系列，不是单个音轨）
       uni.navigateTo({
-        url: `/pages/player/index?id=${item.id}`
+        url: `/pages/series/detail?id=${item.id}`
       })
     },
 
