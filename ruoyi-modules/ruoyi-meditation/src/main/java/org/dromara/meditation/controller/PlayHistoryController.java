@@ -87,6 +87,18 @@ public class PlayHistoryController extends BaseController {
     }
 
     /**
+     * 新增或更新音频播放记录
+     * 如果userId+trackId已存在，则更新记录（包括最后播放时间）
+     * 如果不存在，则新增记录
+     */
+    @Log(title = "音频播放记录", businessType = BusinessType.INSERT)
+    @RepeatSubmit()
+    @PostMapping("/upsert")
+    public R<Void> upsert(@Validated(AddGroup.class) @RequestBody PlayHistoryBo bo) {
+        return toAjax(playHistoryService.insertOrUpdateByBo(bo));
+    }
+
+    /**
      * 修改音频播放记录
      */
     @SaCheckPermission("meditation:playHistory:edit")
