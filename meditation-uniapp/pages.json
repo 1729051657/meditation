@@ -39,7 +39,8 @@
       "path": "pages/faq/index",
       "style": {
         "navigationBarTitleText": "常见问题",
-        "navigationStyle": "custom"
+        "navigationBarBackgroundColor": "#D8E2F0",
+        "navigationBarTextStyle": "black"
       }
     },
     {

@@ -195,10 +195,26 @@ export default {
       }
     },
     
+    // 将日期字符串转换为 iOS 兼容格式
+    parseDate(dateString) {
+      if (!dateString) return null
+      
+      // 如果已经是 Date 对象，直接返回
+      if (dateString instanceof Date) {
+        return dateString
+      }
+      
+      // 将 "2025-09-01 12:41:06" 格式转换为 "2025/09/01 12:41:06"
+      // iOS 支持这种格式
+      const iOSCompatibleString = dateString.replace(/-/g, '/')
+      return new Date(iOSCompatibleString)
+    },
+    
     // 格式化时间
     formatTime(timestamp) {
       if (!timestamp) return '--:--'
-      const date = new Date(timestamp)
+      const date = this.parseDate(timestamp)
+      if (!date || isNaN(date.getTime())) return '--:--'
       const hours = date.getHours().toString().padStart(2, '0')
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${hours}:${minutes}`
@@ -209,7 +225,8 @@ export default {
       if (!timestamp) return '未知日期'
       
       try {
-        const date = new Date(timestamp)
+        const date = this.parseDate(timestamp)
+        if (!date || isNaN(date.getTime())) return '未知日期'
         const today = new Date()
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
