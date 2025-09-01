@@ -35,10 +35,6 @@
                 </view>
                 <!-- 播放时间 -->
                 <view class="time-badge">{{ formatTime(item.lastPlayTime) }}</view>
-                <!-- 更多选项 -->
-                <view class="more-btn" @click.stop="showMoreOptions(item)">
-                  <text class="tn-icon-more"></text>
-                </view>
               </view>
               <view class="card-content">
                 <text class="card-title">{{ item.title }}</text>
@@ -496,30 +492,6 @@ export default {
             border-radius: 20rpx;
             font-size: 24rpx;
             backdrop-filter: blur(10rpx);
-          }
-          
-          // 更多按钮
-          .more-btn {
-            position: absolute;
-            top: 16rpx;
-            right: 16rpx;
-            width: 60rpx;
-            height: 60rpx;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10rpx);
-            
-            text {
-              font-size: 32rpx;
-              color: #666666;
-            }
-            
-            &:active {
-              transform: scale(0.9);
-            }
           }
         }
         
